@@ -1,1 +1,4 @@
 julia 0.6
+PhyloNetworks 0.7
+Gadfly 0.4
+RCall 0.6.1

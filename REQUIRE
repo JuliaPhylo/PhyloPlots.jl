@@ -1,4 +1,4 @@
 julia 0.6
 PhyloNetworks 0.7
-Gadfly 0.4
+Gadfly 0.4 # check status of this PR then up the lower bound: https://github.com/GiovineItalia/Gadfly.jl/pull/1090
 RCall 0.6.1

@@ -1,4 +1,4 @@
-# PhyloPlots: for plotting phylogenetic trees and networks
+# PhyloPlots: to plot phylogenetic trees and networks
 
 [![Build Status](https://travis-ci.org/cecileane/PhyloPlots.jl.svg?branch=master)](https://travis-ci.org/cecileane/PhyloPlots.jl)
 

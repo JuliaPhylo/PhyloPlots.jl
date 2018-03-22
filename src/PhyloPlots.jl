@@ -18,5 +18,6 @@ export
 include("phylonetworksPlots.jl")
 include("plotGadfly.jl")
 include("plotRCall.jl")
+include("substitutionmodels.jl")
 
 end # of module

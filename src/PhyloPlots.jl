@@ -16,7 +16,7 @@ export
     plot
 
 include("phylonetworksPlots.jl")
-include("plotsGadfly.jl")
-include("plotsRCall.jl")
+include("plotGadfly.jl")
+include("plotRCall.jl")
 
 end # of module

@@ -2,7 +2,7 @@
 # calculate plotting coordinates of nodes & edges for PhyloNetworks objects
 
 """
-`getEdgeNodeCoordinates(net, useEdgeLength)`
+    getEdgeNodeCoordinates(net, useEdgeLength)
 
 Calculate coordinates for plotting later with Gadfly or RCall.
 
@@ -138,7 +138,7 @@ end
 
 
 """
-`checkNodeDataFrame(net, nodeLabel)`
+    checkNodeDataFrame(net, nodeLabel)
 
 Check data frame for node annotations:
 - check that the data has at least 2 columns (if it has any)
@@ -168,10 +168,15 @@ function checkNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame)
 end
 
 """
-`prepareNodeDataFrame`
+    prepareNodeDataFrame(net, nodeLabel::DataFrame,
+        showNodeNumber::Bool, showIntNodeLabel::Bool, labelnodes::Bool,
+        node_x, node_y)
 
-return data frame for node annotation, with columns
-- x, y: coordinates on the plots
+Make data frame for node annotation. `node_*` should be Float64 vectors.
+`nodeLabel` should have columns as required by [`checkNodeDataFrame`](@ref)
+
+Columns of output data frame:
+- x, y: coordinates on the plots (from `node_*`)
 - name: node name
 - num: node number
 - lab: node label
@@ -205,9 +210,11 @@ function prepareNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame,
 end
 
 """
-`prepareEdgeDataFrame`
+    prepareEdgeDataFrame(net, edgeLabel::DataFrame, mainTree::Bool,
+        edge_xB, edge_xE, edge_yB, edge_yE)
 
 Check data frame for edge annotation.
+`edge_*`: Float64 vectors giving the coordinates for the beginning and end of edges.
 Return data frame with columns
 - x, y: coordinates on the plots
 - len: node name

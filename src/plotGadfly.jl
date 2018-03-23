@@ -31,7 +31,7 @@ as it calls `directEdges!`, `preorder!` and `cladewiseorder!`.
 If hybrid edges cross tree and major edges, you may choose to rotate some tree
 edges to eliminate crossing edges, using `rotate!`.
 """
-function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
+function plot(net::HybridNetwork; useEdgeLength=false::Bool,
         mainTree=false::Bool, showTipLabel=true::Bool, showNodeNumber=false::Bool,
         showEdgeLength=false::Bool, showGamma=false::Bool,
         edgeColor=colorant"black"::ColorTypes.Colorant,
@@ -100,30 +100,30 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
     # data frame for edge annotations.
     labeledges, edf = prepareEdgeDataFrame(net, edgeLabel, mainTree,
                         edge_xB, edge_xE, edge_yB, edge_yE)
-        if labeledges
-            push!(mylayers, layer(edf[:,[:x,:y,:lab]], y="y", x="x", label="lab",
-                  Geom.label(position=:above ;hide_overlaps=false))[1])
-        end
-        if (showEdgeLength)
-            push!(mylayers, layer(edf[:,[:x,:y,:len]], y="y", x="x", label="len",
-                  Geom.label(position=:below ;hide_overlaps=false))[1])
-        end
-        if (showGamma && net.numHybrids>0)
-            if !mainTree
-            push!(mylayers, layer(edf[edf[:hyb] .& edf[:min], [:x,:y,:gam]], y="y", x="x",label="gam",
-                  Geom.label(position=:below ;hide_overlaps=true),
-                  Theme(point_label_color=minorHybridEdgeColor))[1])
-            end
-            push!(mylayers, layer(edf[edf[:hyb] .& .!edf[:min],[:x,:y,:gam]], y="y", x="x",label="gam",
-                  Geom.label(position=:below ;hide_overlaps=true),
-                  Theme(point_label_color=majorHybridEdgeColor))[1])
-        end
-        if (showEdgeNumber)
-            push!(mylayers, layer(edf[:,[:x,:y,:num]], y="y", x="x", label="num",
-                  Geom.label(position=:dynamic ;hide_overlaps=false))[1])
-        end
+    if labeledges
+      push!(mylayers, layer(edf[:,[:x,:y,:lab]], y="y", x="x", label="lab",
+            Geom.label(position=:above ;hide_overlaps=false))[1])
+    end
+    if (showEdgeLength)
+      push!(mylayers, layer(edf[:,[:x,:y,:len]], y="y", x="x", label="len",
+            Geom.label(position=:below ;hide_overlaps=false))[1])
+    end
+    if (showGamma && net.numHybrids>0)
+      if !mainTree
+        push!(mylayers, layer(edf[edf[:hyb] .& edf[:min], [:x,:y,:gam]], y="y", x="x",label="gam",
+              Geom.label(position=:below ;hide_overlaps=true),
+              Theme(point_label_color=minorHybridEdgeColor))[1])
+      end
+      push!(mylayers, layer(edf[edf[:hyb] .& .!edf[:min],[:x,:y,:gam]], y="y", x="x",label="gam",
+            Geom.label(position=:below ;hide_overlaps=true),
+            Theme(point_label_color=majorHybridEdgeColor))[1])
+    end
+    if (showEdgeNumber)
+      push!(mylayers, layer(edf[:,[:x,:y,:num]], y="y", x="x", label="num",
+            Geom.label(position=:dynamic ;hide_overlaps=false))[1])
+    end
 
-    plot(mylayers, Guide.ylabel(nothing), Guide.xlabel(nothing), #("time"),
+    Gadfly.plot(mylayers, Guide.ylabel(nothing), Guide.xlabel(nothing), #("time"),
          Guide.xticks(ticks=:auto, label=false), # ticks=[xmin,xmin,xmax,xmax*1.1],
          Guide.yticks(ticks=:auto, label=false), # ticks=[ymin,ymax],
          Theme(default_color=edgeColor,grid_color=colorant"white",grid_line_width=0pt))

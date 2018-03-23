@@ -11,6 +11,7 @@ via [RCall](https://github.com/JuliaInterop/RCall.jl).
 
 ```@contents
 Pages = ["lib/public.md", "lib/internals.md"]
+Depth = 1
 ```
 
 ## functions

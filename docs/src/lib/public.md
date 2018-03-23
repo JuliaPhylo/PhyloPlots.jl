@@ -2,10 +2,6 @@
 
 Documentation for `PhyloPlots`'s public (exported) functions.
 
-```@contents
-Pages = ["public.md"]
-```
-
 ## index
 
 ```@index

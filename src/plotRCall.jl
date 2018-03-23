@@ -1,5 +1,5 @@
 """
-`plot(net::HybridNetwork, method::Symbol)`
+    plot(net::HybridNetwork, method::Symbol)
 
 Plot a network using R graphics.
 `method` should be `:RCall` or `:ape`.

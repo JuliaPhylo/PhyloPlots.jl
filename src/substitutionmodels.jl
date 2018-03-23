@@ -1,7 +1,7 @@
 plot(mod::PhyloNetworks.TraitSubstitutionModel) = error("plot not defined for $(typeof(mod)).")
 
 """
-    plot(mod::TwoBinaryTraitSubstitutionModel)
+    plot(model::TwoBinaryTraitSubstitutionModel)
 
 Display substitution rates for a trait evolution model for two
 possibly dependent binary traits; using `R` via `RCall`.
@@ -9,10 +9,10 @@ Adapted from fitPagel functions found in the `R` package `phytools`.
 
 # Examples
 
-```jldoctest
+```
 julia> using PhyloNetworks
 
-julia> m3 = TwoBinaryTraitSubstitutionModel([2.0,1.2,1.1,2.2,1.0,3.1,2.0,1.1],
+julia> m = TwoBinaryTraitSubstitutionModel([2.0,1.2,1.1,2.2,1.0,3.1,2.0,1.1],
                 ["carnivory", "noncarnivory", "wet", "dry"])
 Substitution model for 2 binary traits, with rate matrix:
                      carnivory-wet    carnivory-dry noncarnivory-wet noncarnivory-dry
@@ -21,7 +21,7 @@ Substitution model for 2 binary traits, with rate matrix:
  noncarnivory-wet           1.2000           0.0000                *           2.0000
  noncarnivory-dry           0.0000           2.2000           1.1000                *
 
-julia> plot(m3)
+julia> plot(m);
 ```
 """
 function plot(object::PhyloNetworks.TwoBinaryTraitSubstitutionModel)

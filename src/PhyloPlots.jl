@@ -9,15 +9,13 @@ import Gadfly.plot
 using RCall
 using PhyloNetworks
 
-export
-    # network comparative methods
-    expectationsPlot,
-    predintPlot, # prediction intervals at ancestral nodes
-    plot
+export plot
+export sexp
 
 include("phylonetworksPlots.jl")
 include("plotGadfly.jl")
 include("plotRCall.jl")
 include("substitutionmodels.jl")
+include("rexport.jl")
 
 end # of module

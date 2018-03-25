@@ -1,4 +1,7 @@
 julia 0.6
-PhyloNetworks 0.7
-Gadfly 0.4 # check status of this PR then up the lower bound: https://github.com/GiovineItalia/Gadfly.jl/pull/1090
+PhyloNetworks 0.6.1
+StatsBase 0.18 0.19.6
+Gadfly 0.4 0.6.6
+# Gadfly 0.6.5 requires DataFrames < 0.11.0, and causes issues with StatsBase
+# check https://github.com/GiovineItalia/Gadfly.jl/pull/1090
 RCall 0.6.1

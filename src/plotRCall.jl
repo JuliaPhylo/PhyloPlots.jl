@@ -2,7 +2,7 @@
     plot(net::HybridNetwork, method::Symbol)
 
 Plot a network using R graphics.
-`method` should be `:RCall` or `:ape`.
+`method` should be `:RCall` (actually, for now any symbol would do!).
 
 optional arguments, shared with the Gadfly-based plot function:
 - useEdgeLength: if true, the tree edges and major hybrid edges are
@@ -31,7 +31,11 @@ Note that `plot` actually modifies some (minor) attributes of the network,
 as it calls `directEdges!`, `preorder!` and `cladewiseorder!`.
 
 If hybrid edges cross tree and major edges, you may choose to rotate some tree
-edges to eliminate crossing edges, using `rotate!`.
+edges to eliminate crossing edges, using `rotate!`
+(in [`PhyloNetworks`](http://crsl4.github.io/PhyloNetworks.jl/latest/lib/public/#PhyloNetworks.rotate!)).
+
+**Alternative**: a tree or network can be exported with [`sexp`](@ref)
+and then displayed with R's "plot" and all its options.
 """
 
 function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,

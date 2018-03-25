@@ -12,4 +12,5 @@ using Colors # is REQUIREd by Gadfly
   include("test_plotGadfly.jl") # uses Colors
   include("test_plotRCall.jl")  # uses DataFrames to test annotations
   include("test_substitutionmodels.jl")
+  include("test_rexport.jl")    # uses RCall, but NOT library(ape)
 end

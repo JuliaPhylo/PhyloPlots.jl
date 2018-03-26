@@ -1,5 +1,5 @@
 julia 0.6
-PhyloNetworks 0.6.1
+PhyloNetworks 0.6
 StatsBase 0.18 0.19.6
 Gadfly 0.4 0.6.6
 # Gadfly 0.6.5 requires DataFrames < 0.11.0, and causes issues with StatsBase

@@ -67,20 +67,20 @@ function sexp(net::HybridNetwork)
     Nnode = totalnodes - ntips
     o = sortperm([n.number for n in net.leaf])
     tipLabel = [net.leaf[i].name for i in o]
-    edge = PhyloNetworks.generateMajorEdge(net)
+    edge = PhyloNetworks.majoredgematrix(net)
     phy = Dict{Symbol, Any}() # dictionary exported with regular sexp at the end
     phy[:Nnode] = Nnode
     phy[Symbol("tip.label")] = tipLabel
     phy[:edge] = edge
-    edgeLength = PhyloNetworks.generateMajorLength(net)
+    edgeLength = PhyloNetworks.majoredgelength(net)
     nBL = sum([!isnull(e) for e in edgeLength]) # number of non-missing branch lengths
     if nBL>0
         phy[Symbol("edge.length")] = edgeLength
     end
     if net.numHybrids > 0
-        reticulation = PhyloNetworks.generateMinorReticulation(net)
-        reticulationGamma = PhyloNetworks.generateMinorReticulationGamma(net)
-        reticulationLength = PhyloNetworks.generateMinorReticulationLength(net)
+        reticulation = PhyloNetworks.minorreticulationmatrix(net)
+        reticulationGamma = PhyloNetworks.minorreticulationgamma(net)
+        reticulationLength = PhyloNetworks.minorreticulationlength(net)
         phy[:reticulation] = reticulation
         if sum([!isnull(e) for e in reticulationGamma]) > 0
             phy[Symbol("reticulation.gamma")] = reticulationGamma
@@ -198,12 +198,12 @@ function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=t
     Nnode = totalnodes - ntips
     o = sortperm([n.number for n in net.leaf])
     tipLabel = [net.leaf[i].name for i in o]
-    edge = PhyloNetworks.generateMajorEdge(net)
+    edge = PhyloNetworks.majoredgematrix(net)
     R"""
     phy = list(Nnode = $Nnode, edge = $edge, tip.label = $tipLabel)
     """
     if useEdgeLength == true
-        edgeLength = PhyloNetworks.generateMajorLength(net)
+        edgeLength = PhyloNetworks.majoredgelength(net)
         if sum([!isnull(e) for e in edgeLength])>0
             R"""
             phy[['edge.length']] = $edgeLength
@@ -211,8 +211,8 @@ function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=t
         end
     end
     if net.numHybrids > 0
-        reticulation = PhyloNetworks.generateMinorReticulation(net)
-        reticulationGamma = PhyloNetworks.generateMinorReticulationGamma(net)
+        reticulation = PhyloNetworks.minorreticulationmatrix(net)
+        reticulationGamma = PhyloNetworks.minorreticulationgamma(net)
         R"""
         phy[['reticulation']] = $reticulation
         class(phy) <- c("evonet", "phylo")
@@ -221,7 +221,7 @@ function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=t
             R"phy[['reticulation.gamma']] = $reticulationGamma"
         end
         if useEdgeLength # extract minor edge lengths
-            reticulationLength = PhyloNetworks.generateMinorReticulationLength(net)
+            reticulationLength = PhyloNetworks.minorreticulationlength(net)
             if sum([!isnull(e) for e in reticulationLength])>0
                 R"""
                 phy[['reticulation.length']] = $reticulationLength

@@ -30,7 +30,7 @@ second line:
 - creates or updates a `build/` directory with markdown files.
 - does *not* convert the markdown files into html files.
 
-To do this html conversion, use MkDocs directly,
+To do this html conversion, use [MkDocs](http://www.mkdocs.org) directly,
 and the mkdocs-material package (for the "material" theme).
 First check/install MkDocs:
 

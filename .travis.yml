@@ -30,6 +30,9 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then wget "https://cran.rstudio.com/bin/macosx/$(wget -qO- https://cran.rstudio.com/bin/macosx/ | sed -n 's/.*href="\(R-[^"]*.pkg\)".*/\1/p' | head -n 1)"; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then sudo installer -pkg R-*.pkg -target /; fi
 
+  # track master branch of PhyloNetworks
+  - julia -e 'Pkg.clone("https://github.com/crsl4/PhyloNetworks.jl"); Pkg.build("PhyloNetworks")';
+
 ## uncomment the following lines to override the default test script
 #script:
 #  - julia -e 'Pkg.clone(pwd()); Pkg.build("PhyloPlots"); Pkg.test("PhyloPlots"; coverage=true)'

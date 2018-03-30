@@ -31,7 +31,7 @@ as it calls `directEdges!`, `preorder!` and `cladewiseorder!`.
 If hybrid edges cross tree and major edges, you may choose to rotate some tree
 edges to eliminate crossing edges, using `rotate!`.
 """
-function plot(net::HybridNetwork; useEdgeLength=false::Bool,
+function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
         mainTree=false::Bool, showTipLabel=true::Bool, showNodeNumber=false::Bool,
         showEdgeLength=false::Bool, showGamma=false::Bool,
         edgeColor=colorant"black"::ColorTypes.Colorant,

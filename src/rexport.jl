@@ -73,8 +73,7 @@ function sexp(net::HybridNetwork)
     phy[Symbol("tip.label")] = tipLabel
     phy[:edge] = edge
     edgeLength = PhyloNetworks.majoredgelength(net)
-    nBL = sum([!isnull(e) for e in edgeLength]) # number of non-missing branch lengths
-    if nBL>0
+    if any(.!ismissing.(edgeLength))
         phy[Symbol("edge.length")] = edgeLength
     end
     if net.numHybrids > 0
@@ -82,20 +81,20 @@ function sexp(net::HybridNetwork)
         reticulationGamma = PhyloNetworks.minorreticulationgamma(net)
         reticulationLength = PhyloNetworks.minorreticulationlength(net)
         phy[:reticulation] = reticulation
-        if sum([!isnull(e) for e in reticulationGamma]) > 0
+        if any(.!ismissing.(reticulationGamma))
             phy[Symbol("reticulation.gamma")] = reticulationGamma
         end
-        if sum([!isnull(e) for e in reticulationLength]) > 0
+        if any(.!ismissing.(reticulationLength))
             phy[Symbol("reticulation.length")] = reticulationLength
         end
     end
-    sobj = protect(sexp(phy)) # RObject
+    sobj = RCall.protect(sexp(phy)) # RObject
     if net.numHybrids == 0
         setclass!(sobj, sexp("phylo"))
     else
         setclass!(sobj, sexp(["evonet", "phylo"]))
     end
-    unprotect(1)
+    RCall.unprotect(1)
     return(sobj)
 end
 
@@ -204,7 +203,7 @@ function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=t
     """
     if useEdgeLength == true
         edgeLength = PhyloNetworks.majoredgelength(net)
-        if sum([!isnull(e) for e in edgeLength])>0
+        if any(.!ismissing.(edgeLength))
             R"""
             phy[['edge.length']] = $edgeLength
             """
@@ -217,12 +216,12 @@ function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=t
         phy[['reticulation']] = $reticulation
         class(phy) <- c("evonet", "phylo")
         """
-        if sum([!isnull(e) for e in reticulationGamma])>0
+        if any(.!ismissing.(reticulationGamma))
             R"phy[['reticulation.gamma']] = $reticulationGamma"
         end
         if useEdgeLength # extract minor edge lengths
             reticulationLength = PhyloNetworks.minorreticulationlength(net)
-            if sum([!isnull(e) for e in reticulationLength])>0
+            if any(.!ismissing.(reticulationLength))
                 R"""
                 phy[['reticulation.length']] = $reticulationLength
                 """

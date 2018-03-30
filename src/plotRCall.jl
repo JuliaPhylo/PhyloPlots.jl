@@ -89,8 +89,8 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     end
     if showIntNodeLabel
     R"""
-    text($(ndf[!ndf[:lea],:x]), $(ndf[!ndf[:lea],:y]),
-         $(ndf[!ndf[:lea],:name]), adj=c(.5,0))
+    text($(ndf[.!ndf[:lea],:x]), $(ndf[.!ndf[:lea],:y]),
+         $(ndf[.!ndf[:lea],:name]), adj=c(.5,0))
     """
     end
     if showNodeNumber

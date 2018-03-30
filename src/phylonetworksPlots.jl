@@ -61,7 +61,7 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
             elenCalculate = true
         end
         if (!nonBLmissing && !allBLmissing) # not all, but some are missing
-            warn("At least one non-missing edge length: plotting any NA length as 1.0")
+            warn("At least one non-missing edge length: plotting any missing length as 1.0")
         end
     end
     elen = Float64[] # edge lengths to be used for plotting. same order as net.edge.
@@ -148,12 +148,12 @@ Check data frame for node annotations:
 """
 function checkNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame)
     labelnodes = size(nodeLabel,1)>0
-    if (labelnodes && (size(nodeLabel,2)<2 || !(eltype(nodeLabel[:,1]) <: Integer)))
+    if (labelnodes && (size(nodeLabel,2)<2 || !(Missings.T(eltype(nodeLabel[1])) <: Integer)))
         warn("nodeLabel should have 2+ columns, the first one giving the node numbers (Integer)")
         labelnodes = false
     end
     if labelnodes # remove rows with no node number, check if at least one row remains
-        nodeLabel = nodeLabel[.~DataFrames.isna.(nodeLabel[1]),:]
+        nodeLabel = nodeLabel[.~ismissing.(nodeLabel[1]),:]
         labelnodes = size(nodeLabel,1)>0
     end
     if labelnodes
@@ -195,8 +195,8 @@ function prepareNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame,
         ndf[j,:num] = string(net.node[i].number)
         if (labelnodes)
           jn = findfirst(nodeLabel[:,1],net.node[i].number)
-          ndf[j,:lab] = (jn==0 || DataFrames.isna(nodeLabel[jn,2]) ? "" :  # node label not in table or NA
-            (eltype(nodeLabel[:,2])<:AbstractFloat ?
+          ndf[j,:lab] = (jn==0 || ismissing(nodeLabel[jn,2]) ? "" :  # node label not in table or missing
+            (Missings.T(eltype(nodeLabel[:,2])) <: AbstractFloat ?
               @sprintf("%0.3g",nodeLabel[jn,2]) : string(nodeLabel[jn,2])))
         end
         ndf[j,:lea] = net.node[i].leaf # use this later to remove #H? labels
@@ -232,12 +232,12 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
                   [Symbol("len"),Symbol("gam"),Symbol("num"),Symbol("lab"),
                    Symbol("hyb"),Symbol("min"),Symbol("x"),Symbol("y")], nrows)
     labeledges = size(edgeLabel,1)>0
-    if (labeledges && (size(edgeLabel,2)<2 || !(eltype(edgeLabel[:,1]) <: Integer)))
+    if (labeledges && (size(edgeLabel,2)<2 || !(Missings.T(eltype(edgeLabel[:,1])) <: Integer)))
         warn("edgeLabel should have 2+ columns, the first one giving the edge numbers (Integer)")
         labeledges = false
     end
     if labeledges # remove rows with no edge number and check if at least one remains
-        edgeLabel = edgeLabel[.~DataFrames.isna.(edgeLabel[1]),:]
+        edgeLabel = edgeLabel[.~ismissing.(edgeLabel[1]),:]
         labeledges = size(edgeLabel,1)>0
     end
     if labeledges
@@ -257,8 +257,8 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
             edf[j,:num] = string(net.edge[i].number)
             if (labeledges)
               je = findfirst(edgeLabel[:,1],net.edge[i].number)
-              edf[j,:lab] = (je==0 || DataFrames.isna(edgeLabel[je,2]) ? "" :  # edge label not found in table
-                (eltype(edgeLabel[:,2])<:AbstractFloat ?
+              edf[j,:lab] = (je==0 || ismissing(edgeLabel[je,2]) ? "" :  # edge label not found in table
+                (Missings.T(eltype(edgeLabel[:,2])) <: AbstractFloat ?
                   @sprintf("%0.3g",edgeLabel[je,2]) : string(edgeLabel[je,2])))
             end
             edf[j,:hyb] = net.edge[i].hybrid

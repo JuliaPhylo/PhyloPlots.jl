@@ -67,7 +67,7 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
         xmin=xlim[1]; xmax=xlim[2]
     end
     if length(ylim)==2
-        ymin=ylim[1]; xmax=ylim[2]
+        ymin=ylim[1]; ymax=ylim[2]
     end
     leaves = [n.leaf for n in net.node]
     eCol = fill(edgeColor, length(net.edge))

@@ -28,24 +28,47 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
     node_yB = zeros(Float64,net.numNodes) # min (B=begin) and max (E=end)
     node_yE = zeros(Float64,net.numNodes) #   of at children's nodes
     nexty = ymax # first tips at the top, last at bottom
-    for i=length(net.node):-1:1 # post-order traversal in major tree
+    # set node_y of leaves: follow cladewise order
+    for i=length(net.node):-1:1
         ni = net.cladewiseorder_nodeIndex[i]
         if net.node[ni].leaf
             node_y[ni] = nexty
             nexty -= 1.0
-        else
-            node_yB[ni]=ymax; node_yE[ni]=ymin;
-            for e in net.node[ni].edge
-                if net.node[ni] == (e.isChild1 ? e.node[2] : e.node[1]) # if e = child of node
-                    if (!e.isMajor) continue; end
+        end
+    end
+    # set node_y of internal nodes: follow post-order
+    for i=length(net.node):-1:1
+        nn = net.nodes_changed[i]
+        !nn.leaf || continue # previous loop took care of leaves
+        ni = findfirst(net.node, nn)
+        node_yB[ni]=ymax; node_yE[ni]=ymin;
+        minor_yB  = ymax; minor_yE  = ymin;
+        nomajorchild=true
+        for e in nn.edge
+            if nn == PhyloNetworks.getParent(e) # if e = child of node
+                if e.isMajor
+                    nomajorchild = false # we found a child edge that is a major edge
                     yy = node_y[findfirst(net.node, PhyloNetworks.getChild(e))]
                     yy!=0 || error("oops, child has not been visited and its y value is 0.")
                     node_yB[ni] = min(node_yB[ni], yy)
                     node_yE[ni] = max(node_yE[ni], yy)
+                elseif nomajorchild # e is minor edge, and no major found so far
+                    yy = node_y[findfirst(net.node, PhyloNetworks.getChild(e))]
+                    yy!=0 || error("oops, child has not been visited and its y value is 0.")
+                    minor_yB = min(minor_yB, yy)
+                    minor_yE = max(minor_yE, yy)
                 end
-                node_y[ni] = (node_yB[ni]+node_yE[ni])/2
             end
         end
+        if nomajorchild # if all children edges are minor hybrid edges. If so: not level 1, not tree-child
+            if minor_yB == minor_yE # one single child. jitter by 0.1 to make the plot readable
+                minor_yB += (minor_yB < (ymax+ymin)/2 ? 0.1 : -0.1)
+                minor_yE = minor_yB
+            end
+            node_yB[ni] = minor_yB
+            node_yE[ni] = minor_yE
+        end
+        node_y[ni] = (node_yB[ni]+node_yE[ni])/2
     end
 
     # setting branch lengths for plotting

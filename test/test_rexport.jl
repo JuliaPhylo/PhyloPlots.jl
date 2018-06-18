@@ -32,8 +32,8 @@ class(tree2r) = "phylo"
 @rput net2
 @test convert(Bool, R"isTRUE(all.equal(net2, tree2r))")
 
-# network, h=1, some missing gamma values
-s = "(((A:4.0,(B:1.0)#H1:1.1::0.9):0.5,(C:0.6,#H1:1.0):1.0):3.0,D:5.0);";
+# network, h=1, missing gamma values
+s = "(((A:4.0,(B:1.0)#H1:1.1):0.5,(C:0.6,#H1:1.0):1.0):3.0,D:5.0);";
 phy1 = PhyloPlots.rexport(readTopology(s));
 net2 = readTopology(s);
 if useape # needs ape version > 4.1 with read.evonet (not in 4.1)
@@ -73,7 +73,9 @@ storage.mode(tree1r$edge) <- "integer"
 class(tree1r) = "phylo"
 phy2r = list(edge=matrix(c(5,5,6,6,7,8,8,9, 6,4,8,7,3,1,9,2), 8,2),
              Nnode=5L, edge.length=c(3,5,.5,1,.6,4,1.1,NA),
-             reticulation=matrix(c(7L,9L),1,2), tip.label=c("A","B","C","D"))
+             reticulation=matrix(c(7L,9L),1,2),
+             reticulation.gamma=0.1,
+             tip.label=c("A","B","C","D"))
 storage.mode(phy2r$edge) <- "integer"
 class(phy2r) = c("evonet","phylo")
 """;

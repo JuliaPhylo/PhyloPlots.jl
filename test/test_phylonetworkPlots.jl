@@ -53,4 +53,31 @@
     min=[false,false,true,false,false,false,false,false,false],
     x=collect(6.:14),y=collect(26.:34)))
 
+  # example with level-2 network, non-tree child:
+  # one hybrid node ends up as a leaf in the major tree.
+  # no major child edge to follow to set coordinates
+  net = readTopology("((((B)#H1:::0.2)#H2,((D,C,#H2:::0.8)S1,(#H1,A)S2)S3)S4);")
+  @test_nowarn plot(net, :R, showNodeNumber=true, showGamma=true);
+  @test PhyloPlots.getEdgeNodeCoordinates(net, false) == (
+    [5.,4.,1.,3.,3.,3.,2.,4.,4.,2.,1.],
+    [6.,5.,4.,6.,6.,4.,3.,5.,6.,4.,2.],
+    [2.,2.1,2.275,4.,3.,2.1,3.05,2.,1.,1.5,2.275],
+    [2.,2. ,2.1,  4.,3.,2.1,3.05,2.,1.,1.5,2.275],
+    [6.,5.,4., 6.,6.,3.,  6.,4., 2.,   1.],
+    [2.,2.,2.1,4.,3.,3.05,1.,1.5,2.275,2.275],
+    [0.,2.,2.1,0.,0.,2.1,0.,1.,1.5, 2.275],
+    [0.,2.,2.1,0.,0.,4. ,0.,2.,3.05,2.275],
+    1.,6.,1.,4.)
+  net = readTopology("((((B)#H1:::0.2)#H2,((D,C,#H2)S1,(#H1,A)S2)S3)S4);")
+  @test_nowarn plot(net, :R, showNodeNumber=true, showGamma=true);
+  @test PhyloPlots.getEdgeNodeCoordinates(net, false) == (
+    [5.,4.,1.,3.,3.,3.,2.,4.,4.,2.,1.],
+    [6.,5.,4.,6.,6.,4.,3.,5.,6.,4.,2.],
+    [2.,2.1,2.1,4.,3.,3.5,3.5,2.,1.,1.5,2.5],
+    [2.,2. ,2.1,4.,3.,2.1,3.5,2.,1.,1.5,2.5],
+    [6.,5.,4., 6.,6.,3., 6.,4., 2., 1.],
+    [2.,2.,2.1,4.,3.,3.5,1.,1.5,2.5,2.3],
+    [0.,2.,2.1,0.,0.,3.,0.,1.,1.5,2.1],
+    [0.,2.,2.1,0.,0.,4.,0.,2.,3.5,2.5],
+    1.,6.,1.,4.0)
 end

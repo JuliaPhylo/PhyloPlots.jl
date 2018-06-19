@@ -46,15 +46,16 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
         nomajorchild=true
         for e in nn.edge
             if nn == PhyloNetworks.getParent(e) # if e = child of node
+                if e.isMajor || nomajorchild
+                    cc = PhyloNetworks.getChild(e)
+                    yy = node_y[findfirst(net.node, cc)]
+                    yy!=0 || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
+                end
                 if e.isMajor
                     nomajorchild = false # we found a child edge that is a major edge
-                    yy = node_y[findfirst(net.node, PhyloNetworks.getChild(e))]
-                    yy!=0 || error("oops, child has not been visited and its y value is 0.")
                     node_yB[ni] = min(node_yB[ni], yy)
                     node_yE[ni] = max(node_yE[ni], yy)
                 elseif nomajorchild # e is minor edge, and no major found so far
-                    yy = node_y[findfirst(net.node, PhyloNetworks.getChild(e))]
-                    yy!=0 || error("oops, child has not been visited and its y value is 0.")
                     minor_yB = min(minor_yB, yy)
                     minor_yE = max(minor_yE, yy)
                 end

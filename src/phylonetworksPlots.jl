@@ -27,8 +27,8 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
     node_y  = zeros(Float64, net.numNodes) # order: in net.nodes, *!not in nodes_changed!*
     node_yB = zeros(Float64,net.numNodes) # min (B=begin) and max (E=end)
     node_yE = zeros(Float64,net.numNodes) #   of at children's nodes
-    nexty = ymax # first tips at the top, last at bottom
     # set node_y of leaves: follow cladewise order
+    nexty = ymax # first tips at the top, last at bottom
     for i=length(net.node):-1:1
         ni = net.cladewiseorder_nodeIndex[i]
         if net.node[ni].leaf

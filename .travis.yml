@@ -4,7 +4,7 @@ os:
   - linux
   - osx
 julia:
-  - 0.6
+  - 1.0
 notifications:
   email: false
 git:
@@ -30,17 +30,23 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then wget "https://cran.rstudio.com/bin/macosx/$(wget -qO- https://cran.rstudio.com/bin/macosx/ | sed -n 's/.*href="\(R-[^"]*.pkg\)".*/\1/p' | head -n 1)"; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then sudo installer -pkg R-*.pkg -target /; fi
 
-  # track master branch of PhyloNetworks
-  - julia -e 'Pkg.clone("https://github.com/crsl4/PhyloNetworks.jl"); Pkg.build("PhyloNetworks")';
-
-## uncomment the following lines to override the default test script
-#script:
-#  - julia -e 'Pkg.clone(pwd()); Pkg.build("PhyloPlots"); Pkg.test("PhyloPlots"; coverage=true)'
+  # track ~~master~~ j07 branch of PhyloNetworks
+  # - julia -e 'using Pkg; Pkg.clone("https://github.com/crsl4/PhyloNetworks.jl"); Pkg.checkout("PhyloNetworks","j07"); Pkg.build("PhyloNetworks")';
+  # - julia -e 'using Pkg; cd(Pkg.dir("PhyloPlots")); Pkg.add(PackageSpec(name="PhyloNetworks", rev="j07"));';
 
 after_success:
   # push coverage results to Coveralls
-  - julia -e 'cd(Pkg.dir("PhyloPlots")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia -e 'using Pkg; cd(Pkg.dir("PhyloPlots")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
   # push coverage results to Codecov
-  - julia -e 'cd(Pkg.dir("PhyloPlots")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
-  - julia -e 'Pkg.add("Documenter")'
-  - julia -e 'cd(Pkg.dir("PhyloPlots")); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg; cd(Pkg.dir("PhyloPlots")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg; Pkg.instantiate();
+                                    Pkg.develop(PackageSpec(path=pwd()))'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip

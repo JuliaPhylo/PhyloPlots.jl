@@ -1,6 +1,6 @@
 # sexp uses helper functions defined in PhyloNetworks
 
-doc"""
+@doc doc"""
     function sexp(net::HybridNetwork)
 
 Export a HybridNework object to the R language
@@ -59,7 +59,6 @@ NULL
 R> plot(net)
 ```
 """ #"
-
 function sexp(net::HybridNetwork)
     PhyloNetworks.resetNodeNumbers!(net)
     ntips = length(net.leaf)
@@ -98,7 +97,7 @@ function sexp(net::HybridNetwork)
     return(sobj)
 end
 
-doc"""
+@doc doc"""
     rexport(net::HybridNetwork; mainTree=false, useEdgeLength=true)
 
 Create an RObject of class `phylo` (and `evonet` depending on the number
@@ -185,9 +184,10 @@ $ reticulation.gamma: num 0.1
 - attr(*, "class")= chr [1:2] "evonet" "phylo"
 ```
 """ #"
+function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=true)
 # worry about R object created within the function not accessible from outside:
 # can it be garbage collected?
-function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=true)
+
     if mainTree == true && net.numHybrids > 0
         net = majorTree(net)
     end

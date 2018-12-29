@@ -1,6 +1,10 @@
+# track ~~master~~ j07 branch of PhyloNetworks
+using Pkg
+Pkg.add(PackageSpec(name="PhyloNetworks", rev="j07"))
+
 using RCall # before using PhyloNetworks and PhyloPlots
 using PhyloPlots
-using Base.Test
+using Test
 
 using DataFrames
 using PhyloNetworks # to read topologies

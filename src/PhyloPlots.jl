@@ -2,6 +2,11 @@ __precompile__()
 
 module PhyloPlots
 
+# standard libraries
+using Markdown
+using Printf: @printf, @sprintf
+
+# dependencies that need explicit declaration
 using DataFrames
 using ColorTypes # used by Gadfly already. To resolve data type names (Colorant)
 using Gadfly

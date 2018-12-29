@@ -2,7 +2,7 @@
     plot(net::HybridNetwork, method::Symbol)
 
 Plot a network using R graphics.
-`method` should be `:RCall` (actually, for now any symbol would do!).
+`method` should be `:R` (actually, for now any symbol would do!).
 
 optional arguments, shared with the Gadfly-based plot function:
 - useEdgeLength: if true, the tree edges and major hybrid edges are
@@ -37,7 +37,6 @@ edges to eliminate crossing edges, using `rotate!`
 **Alternative**: a tree or network can be exported with [`sexp`](@ref)
 and then displayed with R's "plot" and all its options.
 """
-
 function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     mainTree=false::Bool, showTipLabel=true::Bool, showNodeNumber=false::Bool,
     showEdgeLength=false::Bool, showGamma=false::Bool,
@@ -71,8 +70,8 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     end
     leaves = [n.leaf for n in net.node]
     eCol = fill(edgeColor, length(net.edge))
-    eCol[ [ e.hybrid  for e in net.edge] ] = majorHybridEdgeColor
-    eCol[ [!e.isMajor for e in net.edge] ] = minorHybridEdgeColor
+    eCol[ [ e.hybrid  for e in net.edge] ] .= majorHybridEdgeColor
+    eCol[ [!e.isMajor for e in net.edge] ] .= minorHybridEdgeColor
 
     R"""
     plot($(node_x[leaves]), $(node_y[leaves]), type='n',

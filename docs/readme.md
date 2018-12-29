@@ -1,8 +1,8 @@
 # notes to maintain documentation
 
 - built with [Documenter](https://juliadocs.github.io/Documenter.jl)
-- deployed [here](http://cecile.github.io/PhyloPlots.jl/)
-  (go to `latest/` or `stable/`)
+- deployed [here](https://cecileane.github.io/PhyloPlots.jl/)
+  (go to `dev/` or `stable/`)
   using github and files committed to the `gh-pages` branch.
 
 ## how it works: overview
@@ -15,39 +15,49 @@
 
 ## what to update
 
-- update Julia version in `docs/make.jl`
+- update Julia version in `.travis.yml`, Documentation section
 
 ## to make a local version of the website
 
 ```shell
-cd ~/.julia/v0.6/PhyloPlots/docs
-julia --color=yes make.jl
+julia --project=docs/ -e 'using Pkg; Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'
+julia --project=docs/ --color=yes docs/make.jl
 ```
 
-first line: adapt to where the package lives  
-second line:
+or interactively in `docs/`:
+```shell
+pkg> activate .
+pkg> instantiate
+pkg> # dev PhyloNetworks # to get the j07 branch: master still at julia v0.6
+pkg> dev ~/.julia/dev/PhyloPlots
+julia> include("make.jl")
+```
+
+it will:
 - tests the `jldoctest` blocks of examples in the docstrings
 - creates or updates a `build/` directory with markdown files.
 - does *not* convert the markdown files into html files.
 
 To do this html conversion, use [MkDocs](http://www.mkdocs.org) directly,
-and the mkdocs-material package (for the "material" theme).
-First check/install MkDocs:
+and the `mkdocs-material` package (for the "material" theme).
+First check/install `MkDocs`:
 
 ```shell
 pip install --upgrade pip
 pip install --upgrade mkdocs
 pip install --upgrade mkdocs-material
 pip install --upgrade python-markdown-math
+pip install --upgrade Pygments
 ```
-and check the installed versions:
+and check the installed versions
+(in comments are versions that work okay together):
 ```shell
-python --version
-mkdocs --version
-pip show mkdocs-material
-pip show Pygments
-pip show pymdown-extensions
-pip show python-markdown-math
+python --version # Python 3.5.5 :: Anaconda, Inc.
+mkdocs --version              # v0.17.4  v1.0.4
+pip show mkdocs-material      # v2.9.2   v3.2.0
+pip show Pygments             # v2.2.0   v2.3.1
+pip show pymdown-extensions   # v4.11    v4.11
+pip show python-markdown-math # v0.6     v0.6
 ```
 
 then use mkdocs to build the site.

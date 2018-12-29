@@ -1,7 +1,7 @@
-julia 0.6
-Missings
-DataFrames 0.11
-PhyloNetworks 0.7
+julia 0.7
 Colors
-Gadfly 0.7
-RCall 0.6.1
+ColorTypes
+DataFrames 0.13
+Gadfly 1.0
+PhyloNetworks 0.8 # up this to 0.9 when registered: with julia v0.7 support
+RCall 0.11

@@ -1,3 +1,4 @@
+# this is for MkDocs, to turn the .md files produced by Documenter into .html files
 site_name:        PhyloPlots.jl
 repo_url:         https://github.com/cecileane/PhyloPlots.jl
 site_description: Display utilities for phylogenetic trees and networks
@@ -8,13 +9,13 @@ theme:
   palette:
     primary: 'teal'
     accent:  'teal'
-  logo: 'snaq_small.png'
+  logo: 'networky_a.png' # 'snaq_small.png'
 
 extra_css:
   - assets/Documenter.css
 
 extra_javascript:
-  - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML
   - assets/mathjaxhelper.js
 
 markdown_extensions:
@@ -26,7 +27,7 @@ markdown_extensions:
 
 docs_dir: 'build'
 
-pages:
+nav:
   - home: index.md
   - library:
     - public: lib/public.md

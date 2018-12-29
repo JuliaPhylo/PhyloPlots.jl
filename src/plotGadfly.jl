@@ -44,7 +44,7 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
      xmin, xmax, ymin, ymax) = getEdgeNodeCoordinates(net, useEdgeLength)
 
     !net.node[net.root].leaf ||
-        warn("the root is leaf $(net.node[net.root].name): the plot will look weird...")
+        @warn "the root is leaf $(net.node[net.root].name): the plot will look weird..."
 
 
     mylayers = Layer[] # gadfly layers
@@ -93,7 +93,7 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
             Geom.label(position=:dynamic ;hide_overlaps=true))[1])
       end
       if labelnodes
-        push!(mylayers, layer(ndf[:,[:x,:y,:lab]], y="y", x="x", label="lab",
+        push!(mylayers, layer(ndf[[:x,:y,:lab]], y="y", x="x", label="lab",
             Geom.label(position=:left ;hide_overlaps=false))[1])
       end
     end
@@ -101,11 +101,11 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
     labeledges, edf = prepareEdgeDataFrame(net, edgeLabel, mainTree,
                         edge_xB, edge_xE, edge_yB, edge_yE)
     if labeledges
-      push!(mylayers, layer(edf[:,[:x,:y,:lab]], y="y", x="x", label="lab",
+      push!(mylayers, layer(edf[[:x,:y,:lab]], y="y", x="x", label="lab",
             Geom.label(position=:above ;hide_overlaps=false))[1])
     end
     if (showEdgeLength)
-      push!(mylayers, layer(edf[:,[:x,:y,:len]], y="y", x="x", label="len",
+      push!(mylayers, layer(edf[[:x,:y,:len]], y="y", x="x", label="len",
             Geom.label(position=:below ;hide_overlaps=false))[1])
     end
     if (showGamma && net.numHybrids>0)
@@ -119,7 +119,7 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
             Theme(point_label_color=majorHybridEdgeColor))[1])
     end
     if (showEdgeNumber)
-      push!(mylayers, layer(edf[:,[:x,:y,:num]], y="y", x="x", label="num",
+      push!(mylayers, layer(edf[[:x,:y,:num]], y="y", x="x", label="num",
             Geom.label(position=:dynamic ;hide_overlaps=false))[1])
     end
 

@@ -40,7 +40,7 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
     for i=length(net.node):-1:1
         nn = net.nodes_changed[i]
         !nn.leaf || continue # previous loop took care of leaves
-        ni = findfirst(net.node, nn)
+        ni = findfirst(x -> x===nn, net.node)
         node_yB[ni]=ymax; node_yE[ni]=ymin;
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild=true
@@ -48,8 +48,8 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
             if nn == PhyloNetworks.getParent(e) # if e = child of node
                 if e.isMajor || nomajorchild
                     cc = PhyloNetworks.getChild(e)
-                    yy = node_y[findfirst(net.node, cc)]
-                    yy!=0 || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
+                    yy = node_y[findfirst(x -> x===cc, net.node)]
+                    yy!==nothing || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
                 end
                 if e.isMajor
                     nomajorchild = false # we found a child edge that is a major edge
@@ -85,7 +85,7 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
             elenCalculate = true
         end
         if (!nonBLmissing && !allBLmissing) # not all, but some are missing
-            warn("At least one non-missing edge length: plotting any missing length as 1.0")
+            @warn "At least one non-missing edge length: plotting any missing length as 1.0"
         end
     end
     elen = Float64[] # edge lengths to be used for plotting. same order as net.edge.
@@ -97,11 +97,11 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
         node_age = zeros(Float64,net.numNodes)
         for i=length(net.node):-1:1 # post-order traversal
             if (net.nodes_changed[i].leaf) continue; end
-            ni = findfirst(net.node, net.nodes_changed[i])
+            ni = findfirst(x -> x===net.nodes_changed[i], net.node)
             for e in net.nodes_changed[i].edge # loop over children only
                 if net.nodes_changed[i] == (e.isChild1 ? e.node[2] : e.node[1])
                     node_age[ni] = max(node_age[ni], 1 +
-                     node_age[findfirst(net.node, PhyloNetworks.getChild(e))])
+                     node_age[findfirst(x -> x=== PhyloNetworks.getChild(e), net.node)])
                 end
             end
         end
@@ -120,19 +120,19 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
     edge_yE = zeros(Float64,net.numEdges) # yE of edge = y of child node
     node_x[net.root] = xmin # root node: x=xmin=0
     for i=2:length(net.node)              # true pre-order, skipping the root (i=1)
-        ni = findfirst(net.node, net.nodes_changed[i])
-        ei = 0 # index of major parent edge of current node
+        ni = findfirst(x -> x===net.nodes_changed[i], net.node)
+        ei = nothing # index of major parent edge of current node
         for e in net.nodes_changed[i].edge
             if (e.isMajor && net.nodes_changed[i] == e.node[e.isChild1 ? 1 : 2]) # major parent edge
-                ei = findfirst(net.edge, e)
+                ei = findfirst(x -> x===e, net.edge)
                 break
             end
         end
-        ei>0 || error("oops, could not find major parent edge of node number $ni.")
+        ei !== nothing || error("oops, could not find major parent edge of node number $ni.")
         edge_yE[ei] = node_y[ni]
-        pni = findfirst(net.node, PhyloNetworks.getParent(net.edge[ei])) # parent node index
+        pni = findfirst(x -> x===PhyloNetworks.getParent(net.edge[ei]), net.node) # parent node index
         edge_xB[ei] = node_x[pni]
-        if (elenCalculate)
+        if elenCalculate
             elen[ei] = node_age[pni] - node_age[ni]
         end
         edge_xE[ei] = edge_xB[ei] + elen[ei]
@@ -142,8 +142,8 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool)
     edge_yB = copy(edge_yE) # true for tree and major edges
     for i=1:net.numEdges
         if (!net.edge[i].isMajor) # minor hybrid edges
-            cni = findfirst(net.node, PhyloNetworks.getChild( net.edge[i]))
-            pni = findfirst(net.node, PhyloNetworks.getParent(net.edge[i]))
+            cni = findfirst(x -> x===PhyloNetworks.getChild( net.edge[i]), net.node)
+            pni = findfirst(x -> x===PhyloNetworks.getParent(net.edge[i]), net.node)
             # indices of child and parent nodes
             edge_xB[i] = node_x[pni]
             edge_xE[i] = node_x[cni]
@@ -173,7 +173,7 @@ Check data frame for node annotations:
 function checkNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame)
     labelnodes = size(nodeLabel,1)>0
     if (labelnodes && (size(nodeLabel,2)<2 || !(Missings.T(eltype(nodeLabel[1])) <: Integer)))
-        warn("nodeLabel should have 2+ columns, the first one giving the node numbers (Integer)")
+        @warn "nodeLabel should have 2+ columns, the first one giving the node numbers (Integer)"
         labelnodes = false
     end
     if labelnodes # remove rows with no node number, check if at least one row remains
@@ -185,7 +185,7 @@ function checkNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame)
       if length(tmp)>0
         msg = "Some node numbers in the nodeLabel data frame are not found in the network:\n"
         for a in tmp msg *= string(" ",a); end
-        warn(msg)
+        @warn msg
       end
     end
     return(labelnodes, nodeLabel)
@@ -214,13 +214,13 @@ function prepareNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame,
            [Symbol("name"),Symbol("num"),Symbol("lab"),Symbol("lea"),Symbol("x"),Symbol("y")], nrows)
     j=1
     for i=1:net.numNodes
-    if (net.node[i].leaf  || showNodeNumber || showIntNodeLabel || labelnodes)
+    if net.node[i].leaf  || showNodeNumber || showIntNodeLabel || labelnodes
         ndf[j,:name] = net.node[i].name
         ndf[j,:num] = string(net.node[i].number)
-        if (labelnodes)
-          jn = findfirst(nodeLabel[:,1],net.node[i].number)
-          ndf[j,:lab] = (jn==0 || ismissing(nodeLabel[jn,2]) ? "" :  # node label not in table or missing
-            (Missings.T(eltype(nodeLabel[:,2])) <: AbstractFloat ?
+        if labelnodes
+          jn = findfirst(isequal(net.node[i].number), nodeLabel[1])
+          ndf[j,:lab] = (jn===nothing || ismissing(nodeLabel[jn,2]) ? "" :  # node label not in table or missing
+            (Missings.T(eltype(nodeLabel[2])) <: AbstractFloat ?
               @sprintf("%0.3g",nodeLabel[jn,2]) : string(nodeLabel[jn,2])))
         end
         ndf[j,:lea] = net.node[i].leaf # use this later to remove #H? labels
@@ -256,8 +256,8 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
                   [Symbol("len"),Symbol("gam"),Symbol("num"),Symbol("lab"),
                    Symbol("hyb"),Symbol("min"),Symbol("x"),Symbol("y")], nrows)
     labeledges = size(edgeLabel,1)>0
-    if (labeledges && (size(edgeLabel,2)<2 || !(Missings.T(eltype(edgeLabel[:,1])) <: Integer)))
-        warn("edgeLabel should have 2+ columns, the first one giving the edge numbers (Integer)")
+    if (labeledges && (size(edgeLabel,2)<2 || !(Missings.T(eltype(edgeLabel[1])) <: Integer)))
+        @warn "edgeLabel should have 2+ columns, the first one giving the edge numbers (Integer)"
         labeledges = false
     end
     if labeledges # remove rows with no edge number and check if at least one remains
@@ -269,7 +269,7 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
       if length(tmp)>0
         msg = "Some edge numbers in the edgeLabel data frame are not found in the network:\n"
         for a in tmp msg *= string(" ",a); end
-        warn(msg)
+        @warn msg
       end
     end
     j=1
@@ -279,10 +279,10 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
             # @sprintf("%c=%0.3g",'γ',net.edge[i].length)
             edf[j,:gam] = (net.edge[i].gamma==-1.0  ? "" : @sprintf("%0.3g",net.edge[i].gamma))
             edf[j,:num] = string(net.edge[i].number)
-            if (labeledges)
-              je = findfirst(edgeLabel[:,1],net.edge[i].number)
-              edf[j,:lab] = (je==0 || ismissing(edgeLabel[je,2]) ? "" :  # edge label not found in table
-                (Missings.T(eltype(edgeLabel[:,2])) <: AbstractFloat ?
+            if labeledges
+              je = findfirst(isequal(net.edge[i].number), edgeLabel[1])
+              edf[j,:lab] = (je===nothing || ismissing(edgeLabel[je,2]) ? "" :  # edge label not found in table
+                (Missings.T(eltype(edgeLabel[2])) <: AbstractFloat ?
                   @sprintf("%0.3g",edgeLabel[je,2]) : string(edgeLabel[je,2])))
             end
             edf[j,:hyb] = net.edge[i].hybrid

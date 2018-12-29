@@ -26,8 +26,8 @@
       [0.,0.,3.,0.,0.,1.,2., 3.,  4.],
       1., 5.,1., 4.)
   dat = DataFrame(node=[-5,-3,-4,5,100],bs=["90","95","99","mytip","bogus"],edge=[8,9,4,6,200]);
-  @test_warn "Some node numbers in the nodeLabel data frame are not found in the network:\n 100" PhyloPlots.checkNodeDataFrame(net, dat);
-  @test_warn "nodeLabel should have 2+ columns, the first one giving the node numbers (Integer)" PhyloPlots.checkNodeDataFrame(net, dat[2:3])
+  @test_logs (:warn, "Some node numbers in the nodeLabel data frame are not found in the network:\n 100") PhyloPlots.checkNodeDataFrame(net, dat);
+  @test_logs (:warn, "nodeLabel should have 2+ columns, the first one giving the node numbers (Integer)") PhyloPlots.checkNodeDataFrame(net, dat[2:3])
   dat = DataFrame(node=[-5,-3,missing,5],
                   bs=["90","95","99","mytip"],edge=[8,9,4,6]);
   @test PhyloPlots.checkNodeDataFrame(net, dat) == (true,
@@ -40,7 +40,7 @@
     lea=[true,true,false,true,true,false,false,false,false],
     x=collect(1.:9), y=collect(10.:18))
   dat = DataFrame(edge=[8,9,4,6,200],bs=["90","95","99","mytips","bogus"]);
-  @test_warn "Some edge numbers in the edgeLabel data frame are not found in the network:\n 200" PhyloPlots.prepareEdgeDataFrame(
+  @test_logs (:warn, "Some edge numbers in the edgeLabel data frame are not found in the network:\n 200") PhyloPlots.prepareEdgeDataFrame(
     net,dat,true,collect(1.:9),collect(10.:18),collect(19.:27),collect(28.:36));
   dat = DataFrame(edge=[8,9,4,6],bs=[missing,"95","99","mytips"]);
   @test PhyloPlots.prepareEdgeDataFrame(net,dat,false,collect(1.:9),collect(11.:19),
@@ -57,7 +57,7 @@
   # one hybrid node ends up as a leaf in the major tree.
   # no major child edge to follow to set coordinates
   net = readTopology("((((B)#H1:::0.2)#H2,((D,C,#H2:::0.8)S1,(#H1,A)S2)S3)S4);")
-  @test_nowarn plot(net, :R, showNodeNumber=true, showGamma=true);
+  @test_logs plot(net, :R, showNodeNumber=true, showGamma=true);
   @test PhyloPlots.getEdgeNodeCoordinates(net, false) == (
     [5.,4.,1.,3.,3.,3.,2.,4.,4.,2.,1.],
     [6.,5.,4.,6.,6.,4.,3.,5.,6.,4.,2.],
@@ -69,7 +69,7 @@
     [0.,2.,2.1,0.,0.,4. ,0.,2.,3.05,2.275],
     1.,6.,1.,4.)
   net = readTopology("((((B)#H1:::0.2)#H2,((D,C,#H2)S1,(#H1,A)S2)S3)S4);")
-  @test_nowarn plot(net, :R, showNodeNumber=true, showGamma=true);
+  @test_logs plot(net, :R, showNodeNumber=true, showGamma=true);
   @test PhyloPlots.getEdgeNodeCoordinates(net, false) == (
     [5.,4.,1.,3.,3.,3.,2.,4.,4.,2.,1.],
     [6.,5.,4.,6.,6.,4.,3.,5.,6.,4.,2.],

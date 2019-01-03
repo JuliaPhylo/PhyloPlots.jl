@@ -30,15 +30,14 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then wget "https://cran.rstudio.com/bin/macosx/$(wget -qO- https://cran.rstudio.com/bin/macosx/ | sed -n 's/.*href="\(R-[^"]*.pkg\)".*/\1/p' | head -n 1)"; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then sudo installer -pkg R-*.pkg -target /; fi
 
-  # track ~~master~~ j07 branch of PhyloNetworks
-  # - julia -e 'using Pkg; Pkg.clone("https://github.com/crsl4/PhyloNetworks.jl"); Pkg.checkout("PhyloNetworks","j07"); Pkg.build("PhyloNetworks")';
-  # - julia -e 'using Pkg; cd(Pkg.dir("PhyloPlots")); Pkg.add(PackageSpec(name="PhyloNetworks", rev="j07"));';
+  # track ~~master~~ j07 branch of PhyloNetworks: otherwise Pkg.clone(pwd()) may fail
+  - julia --color=yes -e 'using Pkg; Pkg.activate("."); Pkg.add(PackageSpec(name="PhyloNetworks", rev="j07"));'
 
-after_success:
-  # push coverage results to Coveralls
-  - julia -e 'using Pkg; cd(Pkg.dir("PhyloPlots")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
-  # push coverage results to Codecov
-  - julia -e 'using Pkg; cd(Pkg.dir("PhyloPlots")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+script:
+  - julia --color=yes -e 'using Pkg; Pkg.clone(pwd()); Pkg.build("PhyloPlots"); Pkg.test("PhyloPlots", coverage=true);'
+
+codecov: true
+coveralls: true
 
 jobs:
   include:

@@ -3,5 +3,5 @@ Colors
 ColorTypes
 DataFrames 0.13
 Gadfly 1.0
-PhyloNetworks 0.8 # up this to 0.9 when registered: with julia v0.7 support
+PhyloNetworks 0.9
 RCall 0.11

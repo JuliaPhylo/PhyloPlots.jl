@@ -30,12 +30,6 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then wget "https://cran.rstudio.com/bin/macosx/$(wget -qO- https://cran.rstudio.com/bin/macosx/ | sed -n 's/.*href="\(R-[^"]*.pkg\)".*/\1/p' | head -n 1)"; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then sudo installer -pkg R-*.pkg -target /; fi
 
-  # track ~~master~~ j07 branch of PhyloNetworks: otherwise Pkg.clone(pwd()) may fail
-  - julia --color=yes -e 'using Pkg; Pkg.activate("."); Pkg.add(PackageSpec(name="PhyloNetworks", rev="j07"));'
-
-script:
-  - julia --color=yes -e 'using Pkg; Pkg.clone(pwd()); Pkg.build("PhyloPlots"); Pkg.test("PhyloPlots", coverage=true);'
-
 codecov: true
 coveralls: true
 

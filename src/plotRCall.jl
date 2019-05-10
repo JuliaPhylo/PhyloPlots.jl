@@ -46,7 +46,7 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     showEdgeNumber=false::Bool, showIntNodeLabel=false::Bool,
     edgeLabel=DataFrame()::DataFrame, nodeLabel=DataFrame()::DataFrame,
     xlim=Float64[]::Array{Float64,1}, ylim=Float64[]::Array{Float64,1},
-    tipOffset=0.0::Float64)
+    tipOffset=0.0::Float64, tipcex=1.0::Float64)
 
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      xmin, xmax, ymin, ymax) = getEdgeNodeCoordinates(net, useEdgeLength)
@@ -73,6 +73,7 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     eCol[ [ e.hybrid  for e in net.edge] ] .= majorHybridEdgeColor
     eCol[ [!e.isMajor for e in net.edge] ] .= minorHybridEdgeColor
 
+
     R"""
     plot($(node_x[leaves]), $(node_y[leaves]), type='n',
          xlim=c($xmin,$xmax), ylim=c($ymin,$ymax),
@@ -80,10 +81,11 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     segments($edge_xB, $edge_yB, $edge_xE, $edge_yE, col=$eCol)
     segments($node_x, $node_yB, $node_x, $node_yE, col=$edgeColor)
     """
+    @rput tipcex
     if showTipLabel
     R"""
     text($(node_x[leaves])+$tipOffset, $(node_y[leaves]),
-         $(tipLabels(net)), adj=0, font=3)
+         $(tipLabels(net)), adj=0, font=3, cex=tipcex)
     """
     end
     if showIntNodeLabel

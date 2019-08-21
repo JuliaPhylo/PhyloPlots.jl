@@ -17,7 +17,7 @@ optional arguments, shared with the Gadfly-based plot function:
 - minorHybridEdgeColor: color for minor hybrid edges
 - showEdgeNumber: if true, edges are labelled with the number used internally.
 - showIntNodeLabel: if true, internal nodes are labelled with their names.
-  Useful for hybrid nodes, which do have tags like '#H1'.
+  Useful for hybrid nodes, which do have tags like 'H1'.
 - edgeLabel: dataframe with two columns: the first with edge numbers, the second with labels
   (like bootstrap values) to annotate edges. empty by default.
 - nodeLabel: dataframe with two columns: the first with node numbers, the second with labels
@@ -81,55 +81,38 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     segments($edge_xB, $edge_yB, $edge_xE, $edge_yE, col=$eCol)
     segments($node_x, $node_yB, $node_x, $node_yE, col=$edgeColor)
     """
-    @rput tipcex
     if showTipLabel
-    R"""
-    text($(node_x[leaves])+$tipOffset, $(node_y[leaves]),
-         $(tipLabels(net)), adj=0, font=3, cex=tipcex)
-    """
+      R"text"(node_x[leaves] .+ tipOffset, node_y[leaves],
+              tipLabels(net), adj=0, font=3, cex=tipcex)
     end
     if showIntNodeLabel
-    R"""
-    text($(ndf[.!ndf[:lea],:x]), $(ndf[.!ndf[:lea],:y]),
-         $(ndf[.!ndf[:lea],:name]), adj=c(.5,0))
-    """
+      R"text"(ndf[.!ndf[!,:lea],:x], ndf[.!ndf[!,:lea],:y],
+              ndf[.!ndf[!,:lea],:name], adj=[.5,0])
     end
     if showNodeNumber
-    R"""
-    text($(ndf[:x]), $(ndf[:y]), $(ndf[:num]), adj=1)
-    """
+      R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:num], adj=1)
     end
     if labelnodes
-    R"""
-    text($(ndf[:x]), $(ndf[:y]), $(ndf[:lab]), adj=1)
-    """
+      R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:lab], adj=1)
     end
     labeledges, edf = prepareEdgeDataFrame(net, edgeLabel, mainTree,
                         edge_xB, edge_xE, edge_yB, edge_yE)
     if labeledges
-    R"""
-    text($(edf[:x]), $(edf[:y]), $(edf[:lab]), adj=c(.5,0))
-    """
+      R"text"(edf[!,:x], edf[!,:y], edf[!,:lab], adj=[.5,0])
     end
     if showEdgeLength
-    R"""
-    text($(edf[:x]), $(edf[:y]), $(edf[:len]), adj=c(.5,1))
-    """
+      R"text"(edf[!,:x], edf[!,:y], edf[!,:len], adj=[.5,1.])
     end
     if (showGamma && net.numHybrids>0)
-    im = edf[:hyb] .& edf[:min]
-    iM = edf[:hyb] .& .!edf[:min]
-    R"""
-    text($(edf[im,:x]), $(edf[im,:y]),$(edf[im,:gam]),
-         adj=c(.5,1), col=$minorHybridEdgeColor)
-    text($(edf[iM,:x]), $(edf[iM,:y]),$(edf[iM,:gam]),
-         adj=c(.5,1), col=$majorHybridEdgeColor)
-    """
+      im = edf[!,:hyb] .& edf[!,:min]
+      iM = edf[!,:hyb] .& .!edf[!,:min]
+      R"text"(edf[im,:x], edf[im,:y], edf[im,:gam],
+              adj=[.5,1], col=minorHybridEdgeColor)
+      R"text"(edf[iM,:x], edf[iM,:y], edf[iM,:gam],
+              adj=[.5,1], col=majorHybridEdgeColor)
     end
     if showEdgeNumber
-    R"""
-    text($(edf[:x]), $(edf[:y]), $(edf[:num]), adj=c(.5,0))
-    """
+      R"text"(edf[!,:x], edf[!,:y], edf[!,:num], adj=[.5,0])
     end
     return (xmin, xmax, ymin, ymax, node_x, node_y, node_yB, node_yE,
       edge_xB, edge_xE, edge_yB, edge_yE, ndf, edf)

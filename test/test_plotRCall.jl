@@ -13,7 +13,7 @@
           majorHybridEdgeColor="tan");
   dat = DataFrame(node=[-5,-10,-1],bs=["90","95","100"],edge=[11,22,26]);
   @test_logs (:warn, "Some node numbers in the nodeLabel data frame are not found in the network:\n -1") plot(net,:RCall, nodeLabel=dat);
-  @test_logs plot(net,:RCall, edgeLabel=dat[[:edge,:bs]]);
+  @test_logs plot(net,:RCall, edgeLabel=dat[!,[:edge,:bs]]);
 
   # plot based on RCall and ape:
   tre = readTopology("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");

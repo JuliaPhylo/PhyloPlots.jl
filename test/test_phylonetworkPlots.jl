@@ -27,7 +27,7 @@
       1., 5.,1., 4.)
   dat = DataFrame(node=[-5,-3,-4,5,100],bs=["90","95","99","mytip","bogus"],edge=[8,9,4,6,200]);
   @test_logs (:warn, "Some node numbers in the nodeLabel data frame are not found in the network:\n 100") PhyloPlots.checkNodeDataFrame(net, dat);
-  @test_logs (:warn, "nodeLabel should have 2+ columns, the first one giving the node numbers (Integer)") PhyloPlots.checkNodeDataFrame(net, dat[2:3])
+  @test_logs (:warn, "nodeLabel should have 2+ columns, the first one giving the node numbers (Integer)") PhyloPlots.checkNodeDataFrame(net, dat[!,2:3])
   dat = DataFrame(node=[-5,-3,missing,5],
                   bs=["90","95","99","mytip"],edge=[8,9,4,6]);
   @test PhyloPlots.checkNodeDataFrame(net, dat) == (true,

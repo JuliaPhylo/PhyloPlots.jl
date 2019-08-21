@@ -19,7 +19,7 @@ Plots a network, from left to right.
 - minorHybridEdgeColor: color for minor hybrid edges
 - showEdgeNumber: if true, edges are labelled with the number used internally.
 - showIntNodeLabel: if true, internal nodes are labelled with their names.
-  Useful for hybrid nodes, which do have tags like '#H1'.
+  Useful for hybrid nodes, which do have tags like 'H1'.
 - edgeLabel: dataframe with two columns: the first with edge numbers, the second with labels
   (like bootstrap values) to annotate edges. empty by default.
 - nodeLabel: dataframe with two columns: the first with node numbers, the second with labels
@@ -81,11 +81,11 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
       ndf = prepareNodeDataFrame(net, nodeLabel, showNodeNumber,
               showIntNodeLabel, labelnodes, node_x, node_y)
       if (showTipLabel)
-        push!(mylayers, layer(ndf[ndf[:lea], [:x,:y,:name]], y="y", x="x", label="name",
+        push!(mylayers, layer(ndf[ndf[!,:lea], [:x,:y,:name]], y="y", x="x", label="name",
             Geom.label(position=:right ;hide_overlaps=true))[1])
       end
       if (showIntNodeLabel)
-        push!(mylayers, layer(ndf[.!ndf[:lea], [:x,:y,:name]], y="y", x="x", label="name",
+        push!(mylayers, layer(ndf[.!ndf[!,:lea], [:x,:y,:name]], y="y", x="x", label="name",
             Geom.label(position=:above ;hide_overlaps=true))[1])
       end
       if (showNodeNumber)
@@ -93,7 +93,7 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
             Geom.label(position=:dynamic ;hide_overlaps=true))[1])
       end
       if labelnodes
-        push!(mylayers, layer(ndf[[:x,:y,:lab]], y="y", x="x", label="lab",
+        push!(mylayers, layer(ndf[!,[:x,:y,:lab]], y="y", x="x", label="lab",
             Geom.label(position=:left ;hide_overlaps=false))[1])
       end
     end
@@ -101,25 +101,25 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
     labeledges, edf = prepareEdgeDataFrame(net, edgeLabel, mainTree,
                         edge_xB, edge_xE, edge_yB, edge_yE)
     if labeledges
-      push!(mylayers, layer(edf[[:x,:y,:lab]], y="y", x="x", label="lab",
+      push!(mylayers, layer(edf[!,[:x,:y,:lab]], y="y", x="x", label="lab",
             Geom.label(position=:above ;hide_overlaps=false))[1])
     end
     if (showEdgeLength)
-      push!(mylayers, layer(edf[[:x,:y,:len]], y="y", x="x", label="len",
+      push!(mylayers, layer(edf[!,[:x,:y,:len]], y="y", x="x", label="len",
             Geom.label(position=:below ;hide_overlaps=false))[1])
     end
     if (showGamma && net.numHybrids>0)
       if !mainTree
-        push!(mylayers, layer(edf[edf[:hyb] .& edf[:min], [:x,:y,:gam]], y="y", x="x",label="gam",
+        push!(mylayers, layer(edf[edf[!,:hyb] .& edf[!,:min], [:x,:y,:gam]], y="y", x="x",label="gam",
               Geom.label(position=:below ;hide_overlaps=true),
               Theme(point_label_color=minorHybridEdgeColor))[1])
       end
-      push!(mylayers, layer(edf[edf[:hyb] .& .!edf[:min],[:x,:y,:gam]], y="y", x="x",label="gam",
+      push!(mylayers, layer(edf[edf[!,:hyb] .& .!edf[!,:min], [:x,:y,:gam]], y="y", x="x",label="gam",
             Geom.label(position=:below ;hide_overlaps=true),
             Theme(point_label_color=majorHybridEdgeColor))[1])
     end
     if (showEdgeNumber)
-      push!(mylayers, layer(edf[[:x,:y,:num]], y="y", x="x", label="num",
+      push!(mylayers, layer(edf[!,[:x,:y,:num]], y="y", x="x", label="num",
             Geom.label(position=:dynamic ;hide_overlaps=false))[1])
     end
 

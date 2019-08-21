@@ -7,4 +7,4 @@ DocumenterMarkdown = "997ab1e6-3595-5248-9280-8efb232c3433"
 # PhyloNetworks = "33ad39ac-ed31-50eb-9b15-43d0656eaa72"
 
 [compat]
-Documenter = "~0.21"
+Documenter = "~0.23"

@@ -8,8 +8,6 @@ Documentation for `PhyloPlots`'s public (exported) functions.
 Pages = ["public.md"]
 ```
 
-<!-- ## Types -->
-
 ## functions
 
 ```@autodocs

@@ -2,7 +2,7 @@
     plot(net::HybridNetwork, method::Symbol)
 
 Plot a network using R graphics.
-`method` should be `:R` (actually, for now any symbol would do!).
+`method` should be `:R` (actually, any symbol would do, for now!).
 
 optional arguments, shared with the Gadfly-based plot function:
 - useEdgeLength: if true, the tree edges and major hybrid edges are
@@ -43,7 +43,7 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     edgeColor="black"::String,
     majorHybridEdgeColor="deepskyblue4"::String,
     minorHybridEdgeColor="deepskyblue"::String,
-    showEdgeNumber=false::Bool, showIntNodeLabel=false::Bool,
+    showEdgeNumber=false::Bool, showIntNodeLabel=true::Bool,
     edgeLabel=DataFrame()::DataFrame, nodeLabel=DataFrame()::DataFrame,
     xlim=Float64[]::Array{Float64,1}, ylim=Float64[]::Array{Float64,1},
     tipOffset=0.0::Float64, tipcex=1.0::Float64)
@@ -87,7 +87,7 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     end
     if showIntNodeLabel
       R"text"(ndf[.!ndf[!,:lea],:x], ndf[.!ndf[!,:lea],:y],
-              ndf[.!ndf[!,:lea],:name], adj=[.5,0])
+              ndf[.!ndf[!,:lea],:name], font=3, cex=tipcex, adj=[.5,0])
     end
     if showNodeNumber
       R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:num], adj=1)

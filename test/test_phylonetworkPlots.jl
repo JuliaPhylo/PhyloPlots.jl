@@ -34,7 +34,7 @@
     DataFrame(node=[-5,-3,5],bs=["90","95","mytip"],edge=[8,9,6]))
   dat = DataFrame(node=[-5,-3,-4,5],bs=["90","95","99","mytips"]);
   @test PhyloPlots.prepareNodeDataFrame(net,dat,true,true,true,collect(1.:9),collect(10.:18)) ==
-    DataFrame(name=["A","B","","C","D","#H1","","",""],
+    DataFrame(name=["A","B","","C","D","H1","","",""],
     num=["1","2","-4","4","5","3","-5","-3","-2"],
     lab=["","","99","","mytips","","90","95",""],
     lea=[true,true,false,true,true,false,false,false,false],

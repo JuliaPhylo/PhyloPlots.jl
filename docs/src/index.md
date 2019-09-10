@@ -20,5 +20,3 @@ Depth = 1
 Pages = ["lib/public.md", "lib/internals.md"]
 Order = [:function]
 ```
-
-<!--Order = [:type] -->

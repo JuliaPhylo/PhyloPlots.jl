@@ -172,7 +172,8 @@ Check data frame for node annotations:
 """
 function checkNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame)
     labelnodes = size(nodeLabel,1)>0
-    if (labelnodes && (size(nodeLabel,2)<2 || !(nonmissingtype(eltypes(nodeLabel)[1]) <: Integer)))
+    if (labelnodes && (size(nodeLabel,2)<2 ||
+            !(nonmissingtype(eltype(nodeLabel[!,1])) <: Integer)))
         @warn "nodeLabel should have 2+ columns, the first one giving the node numbers (Integer)"
         labelnodes = false
     end
@@ -220,7 +221,7 @@ function prepareNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame,
         if labelnodes
           jn = findfirst(isequal(net.node[i].number), nodeLabel[!,1])
           ndf[j,:lab] = (jn===nothing || ismissing(nodeLabel[jn,2]) ? "" :  # node label not in table or missing
-            (nonmissingtype(eltypes(nodeLabel)[2]) <: AbstractFloat ?
+            (nonmissingtype(eltype(nodeLabel[!,2])) <: AbstractFloat ?
               @sprintf("%0.3g",nodeLabel[jn,2]) : string(nodeLabel[jn,2])))
         end
         ndf[j,:lea] = net.node[i].leaf # use this later to remove H? labels
@@ -256,7 +257,8 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
                   [Symbol("len"),Symbol("gam"),Symbol("num"),Symbol("lab"),
                    Symbol("hyb"),Symbol("min"),Symbol("x"),Symbol("y")], nrows)
     labeledges = size(edgeLabel,1)>0
-    if (labeledges && (size(edgeLabel,2)<2 || !(nonmissingtype(eltypes(edgeLabel)[1]) <: Integer)))
+    if (labeledges && (size(edgeLabel,2)<2 ||
+            !(nonmissingtype(eltype(edgeLabel[!,1])) <: Integer)))
         @warn "edgeLabel should have 2+ columns, the first one giving the edge numbers (Integer)"
         labeledges = false
     end
@@ -282,7 +284,7 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
             if labeledges
               je = findfirst(isequal(net.edge[i].number), edgeLabel[!,1])
               edf[j,:lab] = (je===nothing || ismissing(edgeLabel[je,2]) ? "" :  # edge label not found in table
-                (nonmissingtype(eltypes(edgeLabel)[2]) <: AbstractFloat ?
+                (nonmissingtype(eltype(edgeLabel[!,2])) <: AbstractFloat ?
                   @sprintf("%0.3g",edgeLabel[je,2]) : string(edgeLabel[je,2])))
             end
             edf[j,:hyb] = net.edge[i].hybrid

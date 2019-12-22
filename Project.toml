@@ -1,7 +1,7 @@
 name = "PhyloPlots"
 uuid = "c0d5b6db-e3fc-52bc-a87d-1d050989ed3b"
 license = "MIT"
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"

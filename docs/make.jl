@@ -22,4 +22,5 @@ makedocs(
 
 deploydocs(
     repo = "github.com/cecileane/PhyloPlots.jl.git",
+    push_preview = true,
 )

@@ -211,8 +211,10 @@ function prepareNodeDataFrame(net::HybridNetwork, nodeLabel::DataFrame,
         showNodeNumber::Bool, showIntNodeLabel::Bool, labelnodes::Bool,
         node_x::Array{Float64,1}, node_y::Array{Float64,1})
     nrows = (showNodeNumber || showIntNodeLabel || labelnodes ? net.numNodes : net.numTaxa)
-    ndf = DataFrame([String,String,String,Bool,Float64,Float64], # column types, column names, nrows
-           [Symbol("name"),Symbol("num"),Symbol("lab"),Symbol("lea"),Symbol("x"),Symbol("y")], nrows)
+    ndf = DataFrame(:name => Vector{String}(undef,nrows),
+        :num => Vector{String}(undef,nrows), :lab => Vector{String}(undef,nrows),
+        :lea => Vector{Bool}(  undef,nrows), :x => Vector{Float64}( undef,nrows),
+        :y => Vector{Float64}( undef,nrows), copycols=false)
     j=1
     for i=1:net.numNodes
     if net.node[i].leaf  || showNodeNumber || showIntNodeLabel || labelnodes
@@ -253,9 +255,11 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
         edge_xB::Array{Float64,1}, edge_xE::Array{Float64,1},
         edge_yB::Array{Float64,1}, edge_yE::Array{Float64,1})
     nrows = net.numEdges - (mainTree ? net.numHybrids : 0)
-    edf = DataFrame([String,String,String,String,Bool,Bool,Float64,Float64],
-                  [Symbol("len"),Symbol("gam"),Symbol("num"),Symbol("lab"),
-                   Symbol("hyb"),Symbol("min"),Symbol("x"),Symbol("y")], nrows)
+    edf = DataFrame(:len => Vector{String}(undef,nrows),
+        :gam => Vector{String}(undef,nrows), :num => Vector{String}(undef,nrows),
+        :lab => Vector{String}(undef,nrows), :hyb => Vector{Bool}(undef,nrows),
+        :min => Vector{Bool}(  undef,nrows), :x => Vector{Float64}(undef,nrows),
+        :y  => Vector{Float64}(undef,nrows), copycols=false)
     labeledges = size(edgeLabel,1)>0
     if (labeledges && (size(edgeLabel,2)<2 ||
             !(nonmissingtype(eltype(edgeLabel[!,1])) <: Integer)))

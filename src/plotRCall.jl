@@ -43,7 +43,7 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     edgeColor="black"::String,
     majorHybridEdgeColor="deepskyblue4"::String,
     minorHybridEdgeColor="deepskyblue"::String,
-    showEdgeNumber=false::Bool, showIntNodeLabel=true::Bool,
+    showEdgeNumber=false::Bool, showIntNodeLabel=false::Bool,
     edgeLabel=DataFrame()::DataFrame, nodeLabel=DataFrame()::DataFrame,
     xlim=Float64[]::Array{Float64,1}, ylim=Float64[]::Array{Float64,1},
     tipOffset=0.0::Float64, tipcex=1.0::Float64)

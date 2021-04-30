@@ -18,7 +18,10 @@
 
 ## what to update
 
-- update Julia version in `.github/workflows/ci.yml`, Documentation section
+- update the Documenter version in `docs/Project.toml`: check to see if a new
+  version of Documenter was released. If so, up the dependency, check locally
+  that it works, make any updates as needed.
+- update Julia version in `.github/workflows/ci.yml`, `matrix.version`
 
 ## to make a local version of the website
 

@@ -59,12 +59,12 @@ jobs:
             using Pkg
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()
-            Pkg.build("QuartetNetworkGoodnessFit")'
+            Pkg.build("PhyloPlots")'
       - run: |
           julia --project=docs -e '
             using Documenter: doctest
-            using QuartetNetworkGoodnessFit
-            doctest(QuartetNetworkGoodnessFit)'
+            using PhyloPlots
+            doctest(PhyloPlots)'
       - run: julia --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -7,7 +7,7 @@
 
 ## how it works: overview
 
-- `.travis.yml` asks to run `docs/make.jl` after a successful test & build.
+- `.github/workflows/ci.yml` asks to run `docs/make.jl` after a successful test & build.
 - the julia script `docs/make.jl` has these steps:
   1. install the master version of PhyloNetworks
   1. run `makedocs()` from `Documenter`: make the documentation;
@@ -18,7 +18,7 @@
 
 ## what to update
 
-- update Julia version in `.travis.yml`, Documentation section
+- update Julia version in `.github/workflows/ci.yml`, Documentation section
 
 ## to make a local version of the website
 

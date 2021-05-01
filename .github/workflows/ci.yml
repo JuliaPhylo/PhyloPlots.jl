@@ -1,4 +1,5 @@
 name: CI
+
 on:
   pull_request:
     branches:
@@ -7,6 +8,7 @@ on:
     branches:
       - master
     tags: '*'
+
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
@@ -22,15 +24,16 @@ jobs:
           #- windows-latest
         arch:
           - x64
-        include:
-          - os: ubuntu-latest
-            rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"
+        #include:
+        #  - os: ubuntu-latest
+        #    rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"
             # this is to add an additional variable if linux: R studio package manager
-    env:
-      RSPM: ${{ matrix.rspm }} # used by R setup
+    #env:
+    #  RSPM: ${{ matrix.rspm }} # used by R setup
     steps:
       - uses: actions/checkout@v2
       - uses: r-lib/actions/setup-r@v1
+      - run: echo "LD_LIBRARY_PATH=$(R RHOME)/lib" >> $GITHUB_ENV
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}
@@ -46,8 +49,7 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
-      - run: |
-          julia -e 'import Pkg; Pkg.precompile()'
+      #- run: julia -e 'import Pkg; Pkg.precompile()'
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v1
@@ -55,12 +57,13 @@ jobs:
           file: lcov.info
   docs:
     name: Documentation
-    runs-on: macos-latest #ubuntu-latest
-    #env:
-    #  RSPM: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"
+    runs-on: ubuntu-latest
+    env:
+      RSPM: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"
     steps:
       - uses: actions/checkout@v2
       - uses: r-lib/actions/setup-r@v1 # uses RSPM environment variable
+      - run: echo "LD_LIBRARY_PATH=$(R RHOME)/lib" >> $GITHUB_ENV
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1'

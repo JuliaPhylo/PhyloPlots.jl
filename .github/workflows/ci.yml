@@ -27,7 +27,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: r-lib/actions/setup-r@v1
-      - run: echo "LD_LIBRARY_PATH=$(R RHOME)/lib" >> $GITHUB_ENV # for ubuntu
+      - name: set R lib path to be found by julia RCall
+        if: matrix.os == 'ubuntu-latest'
+        run: echo "LD_LIBRARY_PATH=$(R RHOME)/lib" >> $GITHUB_ENV
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}

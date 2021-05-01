@@ -2,7 +2,7 @@
 
 @testset "rexport and sexp tests" begin
 
-useape = false; # these extra tests would require the installation of ape by Travis,
+useape = false; # these extra tests would require the installation of ape by the CI platform,
 # but ape itself requires a number of R packages.
 # would make the tests taken longer. overkill.
 # use it locally to run more checks when desired.

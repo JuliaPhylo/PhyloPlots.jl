@@ -22,6 +22,11 @@ optional arguments, shared with the Gadfly-based plot function:
   (like bootstrap values) to annotate edges. empty by default.
 - nodeLabel: dataframe with two columns: the first with node numbers, the second with labels
   (like bootstrap values for hybrid relationships) to annotate nodes. empty by default.
+- style: symbol indicating the style of the diagram
+    :majortree will simply draw minor edges onto the major tree.
+    :fulltree will draw minor edges as their own branches in the tree (like in icytree.org), 
+    usefull for overlapping or confusing networks.
+- arrowlen: the length of the arrow tips in the full tree style
 
 optional arguments specific to this function:
 - xlim, ylim: array of 2 values
@@ -37,7 +42,7 @@ edges to eliminate crossing edges, using `rotate!`
 **Alternative**: a tree or network can be exported with [`sexp`](@ref)
 and then displayed with R's "plot" and all its options.
 """
-function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
+function plot(net::HybridNetwork, ::Symbol; useEdgeLength=false::Bool,
     mainTree=false::Bool, showTipLabel=true::Bool, showNodeNumber=false::Bool,
     showEdgeLength=false::Bool, showGamma=false::Bool,
     edgeColor="black"::String,
@@ -46,10 +51,12 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     showEdgeNumber=false::Bool, showIntNodeLabel=false::Bool,
     edgeLabel=DataFrame()::DataFrame, nodeLabel=DataFrame()::DataFrame,
     xlim=Float64[]::Array{Float64,1}, ylim=Float64[]::Array{Float64,1},
-    tipOffset=0.0::Float64, tipcex=1.0::Float64)
+    tipOffset=0.0::Float64, tipcex=1.0::Float64,
+    style=:fulltree::Symbol, arrowlen=(style==:majortree ? 0 : 0.2)::Real)
 
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
-     xmin, xmax, ymin, ymax) = getEdgeNodeCoordinates(net, useEdgeLength)
+     hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
+     xmin, xmax, ymin, ymax) = getEdgeNodeCoordinates(net, useEdgeLength, style==:majortree)
     labelnodes, nodeLabel = checkNodeDataFrame(net, nodeLabel)
     ndf = prepareNodeDataFrame(net, nodeLabel, showNodeNumber,
             showIntNodeLabel, labelnodes, node_x, node_y)
@@ -73,13 +80,21 @@ function plot(net::HybridNetwork, method::Symbol; useEdgeLength=false::Bool,
     eCol[ [ e.hybrid  for e in net.edge] ] .= majorHybridEdgeColor
     eCol[ [!e.isMajor for e in net.edge] ] .= minorHybridEdgeColor
 
+     # this makes the arrows seem like normal segments using the old method
+    arrowstyle = style==:majortree ? "solid" : "dashed"
+
+    if !(style in [:fulltree, :majortree])
+      style = :fulltree
+      @warn "Style $style is unknown. Defaulted to :fulltree."
+    end
 
     R"""
     plot($(node_x[leaves]), $(node_y[leaves]), type='n',
          xlim=c($xmin,$xmax), ylim=c($ymin,$ymax),
          axes=FALSE, xlab='', ylab='')
     segments($edge_xB, $edge_yB, $edge_xE, $edge_yE, col=$eCol)
-    segments($node_x, $node_yB, $node_x, $node_yE, col=$edgeColor)
+    arrows($hybridedge_xB, $hybridedge_yB, $hybridedge_xE, $hybridedge_yE, length=$arrowlen, angle = 20, col=$minorHybridEdgeColor, lty=$arrowstyle)
+    segments($node_x, $node_yB, $node_x, $node_yE, col=$edgeColor,)
     """
     if showTipLabel
       R"text"(node_x[leaves] .+ tipOffset, node_y[leaves],

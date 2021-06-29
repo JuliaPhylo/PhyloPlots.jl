@@ -15,6 +15,11 @@
   @test_logs (:warn, "Some node numbers in the nodeLabel data frame are not found in the network:\n -1") plot(net,:RCall, nodeLabel=dat);
   @test_logs plot(net,:RCall, edgeLabel=dat[!,[:edge,:bs]]);
 
+  @test_logs plot(net,:RCall, style=:majortree, arrowlen=0.1);
+  @test_logs (:warn, "Style bogus is unknown. Defaulted to :fulltree.") plot(net,:RCall, style=:bogus);
+
+
+
   # plot based on RCall and ape:
   tre = readTopology("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");
   # fixit: plot(tre, :ape)

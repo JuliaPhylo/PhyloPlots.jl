@@ -38,10 +38,12 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
         majorHybridEdgeColor=colorant"deepskyblue4"::ColorTypes.Colorant,
         minorHybridEdgeColor=colorant"deepskyblue"::ColorTypes.Colorant,
         showEdgeNumber=false::Bool, showIntNodeLabel=false::Bool,
-        edgeLabel=DataFrame()::DataFrame, nodeLabel=DataFrame()::DataFrame)
+        edgeLabel=DataFrame()::DataFrame, nodeLabel=DataFrame()::DataFrame,
+        style=:fulltree::Symbol, arrowlen=(style==:majortree ? 0 : 0.2)::Real)
 
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
-     xmin, xmax, ymin, ymax) = getEdgeNodeCoordinates(net, useEdgeLength)
+        hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
+        xmin, xmax, ymin, ymax) = getEdgeNodeCoordinates(net, useEdgeLength, style==:majortree)
 
     !net.node[net.root].leaf ||
         @warn "the root is leaf $(net.node[net.root].name): the plot will look weird..."

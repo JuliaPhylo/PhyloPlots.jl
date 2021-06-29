@@ -84,8 +84,8 @@ function plot(net::HybridNetwork, ::Symbol; useEdgeLength=false::Bool,
     arrowstyle = style==:majortree ? "solid" : "dashed"
 
     if !(style in [:fulltree, :majortree])
-      style = :fulltree
       @warn "Style $style is unknown. Defaulted to :fulltree."
+      style = :fulltree
     end
 
     R"""

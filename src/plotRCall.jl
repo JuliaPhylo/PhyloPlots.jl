@@ -5,32 +5,33 @@ Plot a network using R graphics.
 `method` should be `:R` (actually, any symbol would do, for now!).
 
 optional arguments, shared with the Gadfly-based plot function:
-- useEdgeLength: if true, the tree edges and major hybrid edges are
+- `useEdgeLength = false` : if true, the tree edges and major hybrid edges are
   drawn proportionally to their length. Minor hybrid edges are not, however.
   Note that edge lengths in coalescent units may scale very poorly with time.
-- showTipLabel: if true, taxon labels are shown. You may need to zoom out to see them.
-- showNodeNumber: if true, nodes are labelled with the number used internally.
-- showEdgeLength: if true, edges are labelled with their length (above)
-- showGamma: if true, hybrid edges are labelled with their heritability (below)
-- edgeColor: color for tree edges. black by default.
-- majorHybridEdgeColor: color for major hybrid edges
-- minorHybridEdgeColor: color for minor hybrid edges
-- showEdgeNumber: if true, edges are labelled with the number used internally.
-- showIntNodeLabel: if true, internal nodes are labelled with their names.
+- `showTipLabel = true` : if true, taxon labels are shown. You may need to zoom out to see them.
+- `showNodeNumber = false` : if true, nodes are labelled with the number used internally.
+- `showEdgeLength = false` : if true, edges are labelled with their length (above)
+- `showGamma = false` : if true, hybrid edges are labelled with their heritability (below)
+- `edgeColor = "black"` : color for tree edges.
+- `majorHybridEdgeColor = "deepskyblue4"` : color for major hybrid edges
+- `minorHybridEdgeColor = "deepskyblue"` : color for minor hybrid edges
+- `showEdgeNumber = false` : if true, edges are labelled with the number used internally.
+- `showIntNodeLabel = false` : if true, internal nodes are labelled with their names.
   Useful for hybrid nodes, which do have tags like 'H1'.
-- edgeLabel: dataframe with two columns: the first with edge numbers, the second with labels
+- `edgeLabel = DataFrame()` : dataframe with two columns: the first with edge numbers, the second with labels
   (like bootstrap values) to annotate edges. empty by default.
-- nodeLabel: dataframe with two columns: the first with node numbers, the second with labels
+- `nodeLabel = DataFrame()` : dataframe with two columns: the first with node numbers, the second with labels
   (like bootstrap values for hybrid relationships) to annotate nodes. empty by default.
-- style: symbol indicating the style of the diagram
-    :majortree will simply draw minor edges onto the major tree.
-    :fulltree will draw minor edges as their own branches in the tree (like in icytree.org), 
+- `style = :fulltree` : symbol indicating the style of the diagram
+  * `:majortree` will simply draw minor edges onto the major tree.
+  * `:fulltree` will draw minor edges as their own branches in the tree (like in icytree.org), 
     usefull for overlapping or confusing networks.
-- arrowlen: the length of the arrow tips in the full tree style
+- `arrowlen` : the length of the arrow tips in the full tree style. if `style = :fulltree`, then 
+  `arrowlen = 0.2`. otherwise, `arrowlen = 0`, which makes the arrows appear as segments.
 
 optional arguments specific to this function:
-- xlim, ylim: array of 2 values
-- tipOffset: to offset tip labels
+- `xlim`, `ylim` : array of 2 values
+- `tipOffset = 0.0` : to offset tip labels
 
 Note that `plot` actually modifies some (minor) attributes of the network,
 as it calls `directEdges!`, `preorder!` and `cladewiseorder!`.

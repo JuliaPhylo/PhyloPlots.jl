@@ -2,7 +2,9 @@ using Documenter, DocumenterMarkdown
 
 using Pkg
 Pkg.add(PackageSpec(name="PhyloNetworks", rev="master"))
+Pkg.develop("PhyloPlots")
 
+using PhyloNetworks
 using PhyloPlots
 DocMeta.setdocmeta!(PhyloPlots, :DocTestSetup, :(using PhyloPlots); recursive=true)
 
@@ -13,6 +15,10 @@ makedocs(
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"), # easier local build
     pages = [
         "home" => "index.md",
+        "manuel" => [
+            "installation" => "man/installation.md",
+            "getting started" => "man/getting_started.md",
+        ],
         "library" => [
             "public" => "lib/public.md",
             "internals" => "lib/internals.md",

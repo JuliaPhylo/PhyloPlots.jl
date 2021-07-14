@@ -14,7 +14,10 @@ via [RCall](https://github.com/JuliaInterop/RCall.jl).
 ```@contents
 Pages = [
     "man/installation.md",
-    "man/getting_started.md"
+    "man/getting_started.md",
+    "man/untangling_edges.md",
+    "man/better_edges.md",
+    "man/adding_data.md"
 ]
 Depth = 3
 ```

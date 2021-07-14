@@ -33,8 +33,28 @@ optional arguments specific to this function:
 - `xlim`, `ylim` : array of 2 values
 - `tipOffset = 0.0` : to offset tip labels
 
+plot() returns the following tuple: 
+`(xmin, xmax, ymin, ymax, node_x, node_y, node_yB, node_yE, 
+edge_xB, edge_xE, edge_yB, edge_yE, ndf, edf)`
+
+1. `xmin` : the minimum x value of the plot
+2. `xmax` : the maximum x value of the plot
+3. `ymin` : the minimum y value of the plot
+4. `ymax` : the maximum y value of the plot
+5. `node_x` : the x values of the nodes in HybridNetWork.node in their respective order
+6. `node_y` : the y values of the nodes in HybridNetWork.node in their respective order
+7. `node_yB` : the y value of the beginning of the verticle bar coresponding to each node in HybridNetwork.node
+8. `node_yE` : the y value of the end of the verticle bar coresponding to each node in HybridNetwork.node
+9. `node_yE` : the y value of the end of the verticle bar coresponding to each node in HybridNetwork.node
+10. `edge_xB` : the x value of the beginning of the line coresponding to each edge in HybridNetwork.edge
+11. `edge_xE` : the x value of the end of the line coresponding to each edge in HybridNetwork.edge
+12. `edge_yB` : the y value of the beginning of the line coresponding to each edge in HybridNetwork.edge
+13. `edge_yE` : the y value of the end of the line coresponding to each edge in HybridNetwork.edge
+14. `ndf` : the node data frame: see here for more
+15. `edf` : the edge data frame: see here for more
+
 Note that `plot` actually modifies some (minor) attributes of the network,
-as it calls `directEdges!`, `preorder!` and `cladewiseorder!`.
+as it calls `directEdges!` and `preorder!`.
 
 If hybrid edges cross tree and major edges, you may choose to rotate some tree
 edges to eliminate crossing edges, using `rotate!`
@@ -92,7 +112,7 @@ function plot(net::HybridNetwork, ::Symbol; useEdgeLength=false::Bool,
     R"""
     plot($(node_x[leaves]), $(node_y[leaves]), type='n',
          xlim=c($xmin,$xmax), ylim=c($ymin,$ymax),
-         axes=FALSE, xlab='', ylab='')
+         axes=TRUE, xlab='', ylab='')
     segments($edge_xB, $edge_yB, $edge_xE, $edge_yE, col=$eCol)
     arrows($hybridedge_xB, $hybridedge_yB, $hybridedge_xE, $hybridedge_yE, length=$arrowlen, angle = 20, col=$minorHybridEdgeColor, lty=$arrowstyle)
     segments($node_x, $node_yB, $node_x, $node_yE, col=$edgeColor,)

@@ -2,7 +2,6 @@ using Documenter, DocumenterMarkdown
 
 using Pkg
 Pkg.add(PackageSpec(name="PhyloNetworks", rev="master"))
-Pkg.develop("PhyloPlots")
 
 using PhyloNetworks
 using PhyloPlots
@@ -18,6 +17,8 @@ makedocs(
         "manuel" => [
             "installation" => "man/installation.md",
             "getting started" => "man/getting_started.md",
+            "untangling edges" => "man/untangling_edges.md",
+            "better edges" => "man/better_edges.md",
         ],
         "library" => [
             "public" => "lib/public.md",

@@ -301,7 +301,8 @@ end
 
 """
     prepareEdgeDataFrame(net, edgeLabel::DataFrame, mainTree::Bool,
-        edge_xB, edge_xE, edge_yB, edge_yE)
+        edge_xB, edge_xE, edge_yB, edge_yE,
+        minoredge_xB, minoredge_xE, minoredge_yB, minoredge_yE)
 
 Check data frame for edge annotation.
 `edge_*`: Float64 vectors giving the coordinates for the beginning and end of edges.

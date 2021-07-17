@@ -100,7 +100,8 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
     end
     # data frame for edge annotations.
     labeledges, edf = prepareEdgeDataFrame(net, edgeLabel, mainTree,
-                        edge_xB, edge_xE, edge_yB, edge_yE)
+                        edge_xB, edge_xE, edge_yB, edge_yE,
+                        hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE)
     if labeledges
       push!(mylayers, layer(edf[!,[:x,:y,:lab]], y="y", x="x", label="lab",
             Geom.label(position=:above ;hide_overlaps=false))[1])

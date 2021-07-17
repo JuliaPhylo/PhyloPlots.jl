@@ -75,6 +75,8 @@ master. The typical commands to save and display a plot should hence be:
     ```
     ![my_useful_name](../assets/figures/my_useful_name.svg)
 
+I like to add `R"par"(mar=[.1,.1,.1,.1]) # hide` since the default margins are too wide for my preference.
+
 **Warning**: this is not like an interactive session. If the same file name
 is re-used by some other documentation page for some other plot, only the
 final version of the plot will be committed by git, with possible unintended

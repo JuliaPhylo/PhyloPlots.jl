@@ -23,7 +23,12 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool, useSimp
     # determine y for each node = y of its parent edge: post-order traversal
     # also [yB,yE] for each internal node: range of y's of all children nodes
     # y max is the numTaxa + number of minor edges
-    ymin = 1.0; ymax = Float64(net.numTaxa + sum(!e.isMajor for e in net.edge));
+    ymin = 1.0; 
+    ymax = net.numTaxa
+    if !useSimpleHybridLines
+        ymax += sum(!e.isMajor for e in net.edge)
+    end
+    
     node_y  = zeros(Float64, net.numNodes) # order: in net.nodes, *!not in nodes_changed!*
     node_yB = zeros(Float64,net.numNodes) # min (B=begin) and max (E=end)
     node_yE = zeros(Float64,net.numNodes) #   of at children's nodes
@@ -311,7 +316,9 @@ Return data frame with columns
 """
 function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree::Bool,
         edge_xB::Array{Float64,1}, edge_xE::Array{Float64,1},
-        edge_yB::Array{Float64,1}, edge_yE::Array{Float64,1})
+        edge_yB::Array{Float64,1}, edge_yE::Array{Float64,1},
+        minoredge_xB::Array{Float64,1}, minoredge_xE::Array{Float64,1}, 
+        minoredge_yB::Array{Float64,1}, minoredge_yE::Array{Float64,1})
     nrows = net.numEdges - (mainTree ? net.numHybrids : 0)
     edf = DataFrame(:len => Vector{String}(undef,nrows),
         :gam => Vector{String}(undef,nrows), :num => Vector{String}(undef,nrows),
@@ -351,8 +358,15 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
             end
             edf[j,:hyb] = net.edge[i].hybrid
             edf[j,:min] = !net.edge[i].isMajor
-            edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
-            edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
+            minorIndex = 1;
+            if net.edge[i].isMajor
+                edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
+                edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
+            else
+                edf[j,:y] = (minoredge_yB[minorIndex] + minoredge_yE[minorIndex])/2
+                edf[j,:x] = (minoredge_xB[minorIndex] + minoredge_xE[minorIndex])/2
+                minorIndex += 1
+            end
             j += 1
         end
     end

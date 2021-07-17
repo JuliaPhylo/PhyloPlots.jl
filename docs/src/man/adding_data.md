@@ -15,11 +15,12 @@ In this section, we will look over ways of adding extra information or data to a
     with notes on how to do the same for nodes in parentheses.
 
 To add labels on edges (or nodes), we need to know their numbers. We can use the 
-`showNodeNumbers = true` parameter for this. (Use `showEdgeNumbers = true` to see node numbers).
+`showNodeNumbers = true` option for this. (Use `showEdgeNumbers = true` to see node numbers).
 
 ```@example adding_data
-R"svg"(figname("adding_data1.svg"), width=4, height=4) # hide
-net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
+R"svg"(figname("adding_data1.svg"), width=3, height=3) # hide
+R"par"(mar=[.1,.1,.1,.1]) # hide
+net = readTopology("(A,((B,#H1),((C)#H1, D)));") # hide
 plot(net, :R, showEdgeNumber=true);
 R"dev.off()" # hide
 nothing # hide
@@ -39,9 +40,10 @@ After including the DataFrames package, we can define it as so:
 using DataFrames
 DataFrame(Number=[1, 2], Label=["My first edge", "My second edge"])
 ```
-Using this dataframe as input to the `edgeLabel` parameter puts the text on the correct nodes:
+Using this dataframe as input to the `edgeLabel` option puts the text on the correct nodes:
 ```@example adding_data
-R"svg"(figname("edge_labels_example.svg"), width=5, height=4) # hide
+R"svg"(figname("edge_labels_example.svg"), width=4, height=3) # hide
+R"par"(mar=[.1,.1,.1,.1]) # hide
 net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
 plot(net, :R, edgeLabel=DataFrame(Number=[1, 2], Label=["My first edge", "My second edge"]));
 R"dev.off()" # hide
@@ -65,7 +67,8 @@ See the documentation for descriptions on every element: [`plot`](@ref)
 Here's some example code that adds bars to denote clades in the margin:
 
 ```@example adding_data
-R"svg"(figname("side_bars.svg"), width=6, height=6) # hide
+R"svg"(figname("side_bars.svg"), width=4, height=4) # hide
+R"par"(mar=[.1,.1,.1,.1]) # hide
 net = readTopology("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");
 plot(net, :R, xlim=(1, 10))
 R"segments(c(9, 9, 9), c(0.8, 7.8, 9.8), c(9, 9, 9), c(7.2, 9.2, 10.2))"
@@ -75,8 +78,9 @@ nothing # hide
 ```
 ![example3](../assets/figures/side_bars.svg)
 
-First, we read the topology, and plot the graph normally with:
-```@example adding_data
+First, we read the topology, and plot the graph normally. Below is the 
+return value, which will be usefull.
+```julia
 plot(net, :R)
 ```
 
@@ -84,7 +88,7 @@ Looking at `xmin` and `xmax` in the return value, we can see that the x
 dimentions are about `(0.3, 9)`. To give us extra space to work with, we can 
 set `xlim` to `(1,10)`, forcing the dimentions to be wider.
 
-```
+```julia
 plot(net, :R, xlim=(1, 10));
 ```
 

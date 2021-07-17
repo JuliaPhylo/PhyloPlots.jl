@@ -73,7 +73,7 @@ function plot(net::HybridNetwork, ::Symbol; useEdgeLength=false::Bool,
     edgeLabel=DataFrame()::DataFrame, nodeLabel=DataFrame()::DataFrame,
     xlim=Float64[]::Array{Float64,1}, ylim=Float64[]::Array{Float64,1},
     tipOffset=0.0::Float64, tipcex=1.0::Float64,
-    style=:fulltree::Symbol, arrowlen=(style==:majortree ? 0 : 0.2)::Real)
+    style=:fulltree::Symbol, arrowlen=(style==:majortree ? 0 : 0.1)::Real)
 
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
@@ -101,8 +101,8 @@ function plot(net::HybridNetwork, ::Symbol; useEdgeLength=false::Bool,
     eCol[ [ e.hybrid  for e in net.edge] ] .= majorHybridEdgeColor
     eCol[ [!e.isMajor for e in net.edge] ] .= minorHybridEdgeColor
 
-     # this makes the arrows seem like normal segments using the old method
-    arrowstyle = style==:majortree ? "solid" : "dashed"
+     # this makes the arrows dashed if :fulltree is used
+     arrowstyle = style==:majortree ? "solid" : "longdash"
 
     if !(style in [:fulltree, :majortree])
       @warn "Style $style is unknown. Defaulted to :fulltree."
@@ -112,7 +112,7 @@ function plot(net::HybridNetwork, ::Symbol; useEdgeLength=false::Bool,
     R"""
     plot($(node_x[leaves]), $(node_y[leaves]), type='n',
          xlim=c($xmin,$xmax), ylim=c($ymin,$ymax),
-         axes=TRUE, xlab='', ylab='')
+         axes=FALSE, xlab='', ylab='')
     segments($edge_xB, $edge_yB, $edge_xE, $edge_yE, col=$eCol)
     arrows($hybridedge_xB, $hybridedge_yB, $hybridedge_xE, $hybridedge_yE, length=$arrowlen, angle = 20, col=$minorHybridEdgeColor, lty=$arrowstyle)
     segments($node_x, $node_yB, $node_x, $node_yE, col=$edgeColor,)
@@ -132,7 +132,8 @@ function plot(net::HybridNetwork, ::Symbol; useEdgeLength=false::Bool,
       R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:lab], adj=1)
     end
     labeledges, edf = prepareEdgeDataFrame(net, edgeLabel, mainTree,
-                        edge_xB, edge_xE, edge_yB, edge_yE)
+                        edge_xB, edge_xE, edge_yB, edge_yE,
+                        hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE)
     if labeledges
       R"text"(edf[!,:x], edf[!,:y], edf[!,:lab], adj=[.5,0])
     end

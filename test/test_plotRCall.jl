@@ -19,6 +19,9 @@
   @test_logs (:warn, "Style bogus is unknown. Defaulted to :fulltree.") plot(net,:RCall, style=:bogus);
 
 
+  # coverage for the nomajorchild
+  net2 = readTopology("((((B)#H1)#H2,((D,C,#H2)S1,(#H1:::.8,A)S2)S3)S4);")
+  @test_logs plot(net4, :R, style=:majortree);
 
   # plot based on RCall and ape:
   tre = readTopology("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");

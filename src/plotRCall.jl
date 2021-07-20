@@ -24,17 +24,17 @@ optional arguments, shared with the Gadfly-based plot function:
   (like bootstrap values for hybrid relationships) to annotate nodes. empty by default.
 - `style = :fulltree` : symbol indicating the style of the diagram
   * `:majortree` will simply draw minor edges onto the major tree.
-  * `:fulltree` will draw minor edges as their own branches in the tree (like in icytree.org), 
+  * `:fulltree` will draw minor edges as their own branches in the tree (like in icytree.org),
     usefull for overlapping or confusing networks.
-- `arrowlen` : the length of the arrow tips in the full tree style. if `style = :fulltree`, then 
+- `arrowlen` : the length of the arrow tips in the full tree style. if `style = :fulltree`, then
   `arrowlen = 0.2`. otherwise, `arrowlen = 0`, which makes the arrows appear as segments.
 
 optional arguments specific to this function:
 - `xlim`, `ylim` : array of 2 values
 - `tipOffset = 0.0` : to offset tip labels
 
-plot() returns the following tuple: 
-`(xmin, xmax, ymin, ymax, node_x, node_y, node_yB, node_yE, 
+plot() returns the following tuple:
+`(xmin, xmax, ymin, ymax, node_x, node_y, node_yB, node_yE,
 edge_xB, edge_xE, edge_yB, edge_yE, ndf, edf)`
 
 1. `xmin` : the minimum x value of the plot

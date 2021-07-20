@@ -8,8 +8,8 @@ figname(x) = joinpath("..", "assets", "figures", x)
 
 ## Different hybrid edge styles
 
-We can use the `style` option to visualize minor hybrid edges as simple lines, 
-unlike the [icytree](https://icytree.org/) style visualization. `style` is by default `:fulltree`, 
+We can use the `style` option to visualize minor hybrid edges as simple lines,
+unlike the [icytree](https://icytree.org/) style visualization. `style` is by default `:fulltree`,
 but by switching it to `:majortree`, we can draw minor hybrid edges as diagonal lines.
 
 ```@example better_edges
@@ -24,7 +24,7 @@ nothing # hide
 
 ## Using edge lengths
 
-We can use `useEdgeLength=true` to draw a plot that uses the network's edge lengths to determine the lengths of the 
+We can use `useEdgeLength=true` to draw a plot that uses the network's edge lengths to determine the lengths of the
 lines. For this, we'll use a network that has branch lengths:
 
 ```@example better_edges
@@ -43,19 +43,19 @@ nothing # hide
 ![example2](../assets/figures/edge_len_example.svg)
 
 !!! note
-    I used a DataFrame to add labels to the plot. For more on this, 
+    I used a DataFrame to add labels to the plot. For more on this,
     see the [Adding labels](@ref) section.
 
-If branch lengths represent time, D could represent a fossil, or a virus strain sequenced 
+If branch lengths represent time, D could represent a fossil, or a virus strain sequenced
 a year before the others. Seeing this visually is the advantage of `useEdgeLengths=true`
 
 This network happens to be time consistent, because the distance
-along the time (x) axis from node `N` to the hybrid node `H1` is 
+along the time (x) axis from node `N` to the hybrid node `H1` is
 the same both ways.
 
 !!! note "Time consistency"
     A network is time-consistent if all the paths between 2 given nodes all
-    have the same length. 
+    have the same length.
     Time inconsistency can occur when branch lengths are not measured in
     calendar time, such as if branch lengths are in substitutions per site
     (some paths might evolve with more substitutions than others), or in
@@ -82,9 +82,9 @@ nothing # hide
 ```
 ![example3](../assets/figures/edge_len_example2.svg)
 
-It may be usefull to consider using the `style=:majortree` if it causes 
-too much confusion, since the `:majortree` style doesn't visually represent 
-minor edge lengths. Because of this, I used the `showEdgeLength=true` option to 
+It may be usefull to consider using the `style=:majortree` if it causes
+too much confusion, since the `:majortree` style doesn't visually represent
+minor edge lengths. Because of this, I used the `showEdgeLength=true` option to
 see the information anyway.
 
 ```@example better_edges
@@ -98,5 +98,5 @@ nothing # hide
 ```
 ![example4](../assets/figures/edge_len_example3.svg)
 
-I also used the `arrowlen=0.1` option to show the arrow tips to show the direction of minor edges, 
+I also used the `arrowlen=0.1` option to show the arrow tips to show the direction of minor edges,
 which are hidden by default when using the `style=:majortree` option.

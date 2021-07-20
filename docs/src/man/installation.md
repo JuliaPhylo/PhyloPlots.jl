@@ -4,7 +4,7 @@ using PhyloPlots, RCall
 
 # Installation
 
-This will assume you have installed Julia and PhyloNetworks. For information on how to 
+This will assume you have installed Julia and PhyloNetworks. For information on how to
 install them, see
 [here](https://crsl4.github.io/PhyloNetworks.jl/dev/man/installation/#Installation)
 

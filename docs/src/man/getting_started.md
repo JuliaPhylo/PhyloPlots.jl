@@ -20,9 +20,9 @@ net = readTopology("(A,((B,#H1),(C,(D)#H1)));")
 ```
 and call `plot`, using :R for full funtionality:
 
-!!! note "About the two versions of plot()" 
+!!! note "About the two versions of plot()"
     One is made using Gadfly (`plot(net)`), the other using RCall (`plot(net, :R)`).
-    Since only the RCall version supports the option `style=:fulltree` for the same 
+    Since only the RCall version supports the option `style=:fulltree` for the same
     style used by [icytree](https://icytree.org), we will only use RCall.
 
 For the function's full documentation, see here: [`plot`](@ref)

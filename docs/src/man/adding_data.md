@@ -11,10 +11,10 @@ In this section, we will look over ways of adding extra information or data to a
 ## Adding labels
 
 !!! note
-    For demonstration purposes, I will walk through the process of adding labels to edges, 
+    For demonstration purposes, I will walk through the process of adding labels to edges,
     with notes on how to do the same for nodes in parentheses.
 
-To add labels on edges (or nodes), we need to know their numbers. We can use the 
+To add labels on edges (or nodes), we need to know their numbers. We can use the
 `showNodeNumbers = true` option for this. (Use `showEdgeNumbers = true` to see node numbers).
 
 ```@example adding_data
@@ -27,7 +27,7 @@ nothing # hide
 ```
 ![example1](../assets/figures/adding_data1.svg)
 
-We will need to define a DataFrame with two collumns of information: the number of the edge (or 
+We will need to define a DataFrame with two collumns of information: the number of the edge (or
 node), and the label that goes on it, like this:
 
 | Number | Label            |
@@ -57,7 +57,7 @@ We can use the return values of [`plot`](@ref) to get some information on the co
 
 The [`plot`](@ref) function returns the following tuple:
 ```
-(xmin, xmax, ymin, ymax, node_x, node_y, node_yB, node_yE, 
+(xmin, xmax, ymin, ymax, node_x, node_y, node_yB, node_yE,
 edge_xB, edge_xE, edge_yB, edge_yE, ndf, edf)
 ```
 See the documentation for descriptions on every element: [`plot`](@ref)
@@ -78,23 +78,23 @@ nothing # hide
 ```
 ![example3](../assets/figures/side_bars.svg)
 
-First, we read the topology, and plot the graph normally. Below is the 
+First, we read the topology, and plot the graph normally. Below is the
 return value, which will be usefull.
 ```julia
 plot(net, :R)
 ```
 
-Looking at `xmin` and `xmax` in the return value, we can see that the x 
-dimentions are about `(0.3, 9)`. To give us extra space to work with, we can 
+Looking at `xmin` and `xmax` in the return value, we can see that the x
+dimentions are about `(0.3, 9)`. To give us extra space to work with, we can
 set `xlim` to `(1,10)`, forcing the dimentions to be wider.
 
 ```julia
 plot(net, :R, xlim=(1, 10));
 ```
 
-Knowing the coordinates, we can now add more information to the plot through 
-`RCall`. Here, I use the `segments` and `text` functions to add side bars with 
-text on them. Don't forget to use backslashes to excape quotes in the RCall 
+Knowing the coordinates, we can now add more information to the plot through
+`RCall`. Here, I use the `segments` and `text` functions to add side bars with
+text on them. Don't forget to use backslashes to excape quotes in the RCall
 text.
 
 ```

@@ -23,17 +23,16 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool, useSimp
     # determine y for each node = y of its parent edge: post-order traversal
     # also [yB,yE] for each internal node: range of y's of all children nodes
     # y max is the numTaxa + number of minor edges
-    ymin = 1.0; 
+    ymin = 1.0;
     ymax = net.numTaxa
     if !useSimpleHybridLines
         ymax += sum(!e.isMajor for e in net.edge)
     end
-    
+
     node_y  = zeros(Float64, net.numNodes) # order: in net.nodes, *!not in nodes_changed!*
     node_yB = zeros(Float64,net.numNodes) # min (B=begin) and max (E=end)
     node_yE = zeros(Float64,net.numNodes) #   of at children's nodes
     edge_yB = zeros(Float64,net.numEdges) # yE of edge = y of child node
-
     # set node_y of leaves: follow cladewise order
     # also sets edge_yB of minor hybrid edges
     nexty = ymax # first tips at the top, last at bottom
@@ -42,7 +41,7 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool, useSimp
     while !isempty(cladewise_queue)
         cur_edge = pop!(cladewise_queue); # deliberate choice over shift! for cladewise order
         # increment spacing and add to node_y if leaf
-        if getChild(cur_edge).leaf 
+        if getChild(cur_edge).leaf
             node_y[findfirst(x->x===getChild(cur_edge), net.node)] = nexty
             nexty -= 1
         end
@@ -184,7 +183,7 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool, useSimp
         node_x[ni] = edge_xE[ei]
     end
     edge_yE = copy(edge_yB) # true for tree and major edges
-    
+
     # coordinates of the diagonal lines that connect hybrid edges with their targets
     minoredge_xB = Float64[]
     minoredge_xE = Float64[]
@@ -318,7 +317,7 @@ Return data frame with columns
 function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree::Bool,
         edge_xB::Array{Float64,1}, edge_xE::Array{Float64,1},
         edge_yB::Array{Float64,1}, edge_yE::Array{Float64,1},
-        minoredge_xB::Array{Float64,1}, minoredge_xE::Array{Float64,1}, 
+        minoredge_xB::Array{Float64,1}, minoredge_xE::Array{Float64,1},
         minoredge_yB::Array{Float64,1}, minoredge_yE::Array{Float64,1})
     nrows = net.numEdges - (mainTree ? net.numHybrids : 0)
     edf = DataFrame(:len => Vector{String}(undef,nrows),

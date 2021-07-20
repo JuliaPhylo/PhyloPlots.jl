@@ -67,7 +67,7 @@ the same both ways.
     between the root and the tips is the same across all tips),
     or not like the network above.
 
-Time inconsistent networks like these ones might cause confusion:
+Time inconsistent networks like these ones below might cause confusion:
 
 ```@example better_edges
 R"svg"(figname("edge_len_example2.svg"), width=6, height=3) # hide
@@ -91,8 +91,8 @@ see the information anyway.
 R"svg"(figname("edge_len_example3.svg"), width=6, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
 R"layout"([1 2]) # hide
-plot(net1, :R, useEdgeLength=true, style = :majortree, showEdgeLength=true, arrowlen=0.1); # hide
-plot(net2, :R, useEdgeLength=true, style = :majortree, showEdgeLength=true, arrowlen=0.1); # hide
+plot(net1, :R, useEdgeLength=true, style = :majortree, showEdgeLength=true, arrowlen=0.1);
+plot(net2, :R, useEdgeLength=true, style = :majortree, showEdgeLength=true, arrowlen=0.1);
 R"dev.off()" # hide
 nothing # hide
 ```

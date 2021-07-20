@@ -41,17 +41,18 @@ edge_xB, edge_xE, edge_yB, edge_yE, ndf, edf)`
 2. `xmax` : the maximum x value of the plot
 3. `ymin` : the minimum y value of the plot
 4. `ymax` : the maximum y value of the plot
-5. `node_x` : the x values of the nodes in HybridNetWork.node in their respective order
-6. `node_y` : the y values of the nodes in HybridNetWork.node in their respective order
-7. `node_yB` : the y value of the beginning of the verticle bar coresponding to each node in HybridNetwork.node
-8. `node_yE` : the y value of the end of the verticle bar coresponding to each node in HybridNetwork.node
-9. `node_yE` : the y value of the end of the verticle bar coresponding to each node in HybridNetwork.node
-10. `edge_xB` : the x value of the beginning of the line coresponding to each edge in HybridNetwork.edge
-11. `edge_xE` : the x value of the end of the line coresponding to each edge in HybridNetwork.edge
-12. `edge_yB` : the y value of the beginning of the line coresponding to each edge in HybridNetwork.edge
-13. `edge_yE` : the y value of the end of the line coresponding to each edge in HybridNetwork.edge
-14. `ndf` : the node data frame: see here for more
-15. `edf` : the edge data frame: see here for more
+5. `node_x` : the x values of the nodes in net.node in their respective order
+6. `node_y` : the y values of the nodes
+7. `node_yB` : the y value of the beginning of the verticle bar
+8. `node_yE` : the y value of the end of the verticle bar
+9. `node_yE` : the y value of the end of the verticle bar
+10. `edge_xB` : the x value of the beginning of the edges 
+  in net.edge in their respective order 
+11. `edge_xE` : the x value of the end of the edges
+12. `edge_yB` : the y value of the beginning of the edges
+13. `edge_yE` : the y value of the end of the edges
+14. `ndf` : the node data frame: see section [Adding labels](@ref) for more
+15. `edf` : the edge data frame
 
 Note that `plot` actually modifies some (minor) attributes of the network,
 as it calls `directEdges!` and `preorder!`.

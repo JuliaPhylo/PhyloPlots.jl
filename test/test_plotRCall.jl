@@ -21,7 +21,7 @@
 
   # coverage for the nomajorchild
   net2 = readTopology("((((B)#H1)#H2,((D,C,#H2)S1,(#H1:::.8,A)S2)S3)S4);")
-  @test_logs plot(net4, :R, style=:majortree);
+  @test_logs plot(net2, :R, style=:majortree);
 
   # plot based on RCall and ape:
   tre = readTopology("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");

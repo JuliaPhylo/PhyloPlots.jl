@@ -41,7 +41,8 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
         edgeLabel=DataFrame()::DataFrame, nodeLabel=DataFrame()::DataFrame)
 
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
-     xmin, xmax, ymin, ymax) = getEdgeNodeCoordinates(net, useEdgeLength)
+        hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
+        xmin, xmax, ymin, ymax) = getEdgeNodeCoordinates(net, useEdgeLength, true) # true for simple hybrid lines / style of v0.2.4 and earlier
 
     !net.node[net.root].leaf ||
         @warn "the root is leaf $(net.node[net.root].name): the plot will look weird..."
@@ -99,7 +100,8 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
     end
     # data frame for edge annotations.
     labeledges, edf = prepareEdgeDataFrame(net, edgeLabel, mainTree,
-                        edge_xB, edge_xE, edge_yB, edge_yE)
+                        edge_xB, edge_xE, edge_yB, edge_yE,
+                        hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE)
     if labeledges
       push!(mylayers, layer(edf[!,[:x,:y,:lab]], y="y", x="x", label="lab",
             Geom.label(position=:above ;hide_overlaps=false))[1])

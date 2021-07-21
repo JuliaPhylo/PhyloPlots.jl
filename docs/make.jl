@@ -9,7 +9,7 @@ DocMeta.setdocmeta!(PhyloPlots, :DocTestSetup, :(using PhyloPlots); recursive=tr
 
 makedocs(
     sitename = "PhyloPlots.jl",
-    authors = ["Cécile Ané", "Guilhem Ané"],
+    authors = "Cécile Ané and Guilhem Ané",
     modules = [PhyloPlots], # to list plot() methods from PhyloPlots only, not from Gadfly etc.
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"), # easier local build
     pages = [

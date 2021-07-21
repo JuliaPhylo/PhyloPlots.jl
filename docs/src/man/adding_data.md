@@ -79,24 +79,27 @@ nothing # hide
 ```
 ![example3](../assets/figures/side_bars.svg)
 
-First, we read the topology, and plot the graph normally. The return
-value is stored in `res`, which will be usefull. Below are the first two values
-of `res`.
-```julia
+Let's break this down step by step.
+First, we read the topology, and plot the graph normally. `plot` actually returns
+a value, from which we can get useful information.
+Below, we store the plot output in `res`, then check its first two values
+because they contain the default range of the x axis; `xmin` and `xmax`.
+
+```@example adding_data
 res = plot(net, :R);
 res[1:2]
 ```
 
-Looking at `xmin` and `xmax` in the return value, we can see that the x
-dimensions are about `(0.3, 9)`. To give us extra space to work with, we can
-set `xlim` to `(1,10)`, forcing the dimensions to be wider.
+Looking at `xmin` and `xmax` returned by default, we can see that the x
+range is about `(0.3, 9)`. To give us extra space to work with, we can
+set `xlim` to `(1,10)`, forcing the range to be wider.
 
 ```julia
 plot(net, :R, xlim=(1, 10));
 ```
 
 Knowing the coordinates, we can now add more information to the plot through
-`RCall`. Here, I use the `segments` and `text` functions to add side bars with
+`RCall`. For this, I use the `segments` and `text` functions to add side bars with
 text on them.
 
 ```

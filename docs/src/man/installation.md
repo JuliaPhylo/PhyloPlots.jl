@@ -1,6 +1,3 @@
-```@setup installation
-using PhyloPlots, RCall
-```
 
 # Installation
 
@@ -19,7 +16,7 @@ add PhyloPlots
 ```
 Or in julian mode:
 
-```@repl installation
+```julia
 using Pkg
 Pkg.add("PhyloPlots")
 ```

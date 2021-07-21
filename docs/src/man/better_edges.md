@@ -82,7 +82,7 @@ nothing # hide
 ```
 ![example3](../assets/figures/edge_len_example2.svg)
 
-It may be usefull to consider using the `style=:majortree` if it causes
+It may be useful to consider using `style=:majortree` if it causes
 too much confusion, since the `:majortree` style doesn't visually represent
 minor edge lengths. Because of this, I used the `showEdgeLength=true` option to
 see the information anyway.
@@ -90,7 +90,7 @@ see the information anyway.
 ```@example better_edges
 R"svg"(figname("edge_len_example3.svg"), width=6, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
-R"layout"([1 2]) # hide
+R"layout"([1 2])
 plot(net1, :R, useEdgeLength=true, style = :majortree, showEdgeLength=true, arrowlen=0.1);
 plot(net2, :R, useEdgeLength=true, style = :majortree, showEdgeLength=true, arrowlen=0.1);
 R"dev.off()" # hide

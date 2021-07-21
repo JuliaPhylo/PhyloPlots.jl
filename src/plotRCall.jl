@@ -25,7 +25,7 @@ optional arguments, shared with the Gadfly-based plot function:
 - `style = :fulltree` : symbol indicating the style of the diagram
   * `:majortree` will simply draw minor edges onto the major tree.
   * `:fulltree` will draw minor edges as their own branches in the tree (like in icytree.org),
-    usefull for overlapping or confusing networks.
+    useful for overlapping or confusing networks.
 - `arrowlen` : the length of the arrow tips in the full tree style. if `style = :fulltree`, then
   `arrowlen = 0.2`. otherwise, `arrowlen = 0`, which makes the arrows appear as segments.
 
@@ -46,8 +46,7 @@ edge_xB, edge_xE, edge_yB, edge_yE, ndf, edf)`
 7. `node_yB` : the y value of the beginning of the verticle bar
 8. `node_yE` : the y value of the end of the verticle bar
 9. `node_yE` : the y value of the end of the verticle bar
-10. `edge_xB` : the x value of the beginning of the edges 
-  in net.edge in their respective order 
+10. `edge_xB` : the x value of the beginning of the edges in net.edge in their respective order
 11. `edge_xE` : the x value of the end of the edges
 12. `edge_yB` : the y value of the beginning of the edges
 13. `edge_yE` : the y value of the end of the edges

@@ -41,5 +41,5 @@ nothing # hide
 ![example3](../assets/figures/untangling2.svg)
 
 
-This may seem unnecesary for a small network as shown, but it is a usefull tool for plotting
+This may seem unnecesary for a small network as shown, but it is a useful tool for plotting
 large networks.

@@ -353,7 +353,7 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
         edge_yB::Array{Float64,1}, edge_yE::Array{Float64,1},
         minoredge_xB::Array{Float64,1}, minoredge_xE::Array{Float64,1},
         minoredge_yB::Array{Float64,1}, minoredge_yE::Array{Float64,1})
-    nrows = net.numEdges - (mainTree ? net.numHybrids : 0)
+    nrows = net.numEdges - (mainTree ? length(minoredge_xB) : 0)
     edf = DataFrame(:len => Vector{String}(undef,nrows),
         :gam => Vector{String}(undef,nrows), :num => Vector{String}(undef,nrows),
         :lab => Vector{String}(undef,nrows), :hyb => Vector{Bool}(undef,nrows),
@@ -377,32 +377,33 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
         @warn msg
       end
     end
-    j=1
+    j=1   # index of row in edf
+    imh=1 # index of minor hybrid edge in filter(ee -> !ee.isMajor, net.edge)
     for i = 1:length(net.edge)
-        if (!mainTree || !net.edge[i].hybrid || net.edge[i].isMajor)
-            edf[j,:len] = (net.edge[i].length==-1.0 ? "" : @sprintf("%0.3g",net.edge[i].length))
-            # @sprintf("%c=%0.3g",'γ',net.edge[i].length)
-            edf[j,:gam] = (net.edge[i].gamma==-1.0  ? "" : @sprintf("%0.3g",net.edge[i].gamma))
-            edf[j,:num] = string(net.edge[i].number)
-            if labeledges
-              je = findfirst(isequal(net.edge[i].number), edgeLabel[!,1])
-              edf[j,:lab] = (je===nothing || ismissing(edgeLabel[je,2]) ? "" :  # edge label not found in table
-                (nonmissingtype(eltype(edgeLabel[!,2])) <: AbstractFloat ?
-                  @sprintf("%0.3g",edgeLabel[je,2]) : string(edgeLabel[je,2])))
-            end
-            edf[j,:hyb] = net.edge[i].hybrid
-            edf[j,:min] = !net.edge[i].isMajor
-            minorIndex = 1;
-            if net.edge[i].isMajor
-                edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
-                edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
-            else
-                edf[j,:y] = (minoredge_yB[minorIndex] + minoredge_yE[minorIndex])/2
-                edf[j,:x] = (minoredge_xB[minorIndex] + minoredge_xE[minorIndex])/2
-                minorIndex += 1
-            end
-            j += 1
+        ee = net.edge[i]
+        # skip the edge if it's minor and we only want the main tree:
+        mainTree && !ee.isMajor && continue
+        edf[j,:len] = (ee.length==-1.0 ? "" : @sprintf("%0.3g",ee.length))
+        # @sprintf("%c=%0.3g",'γ',ee.length)
+        edf[j,:gam] = (ee.gamma==-1.0  ? "" : @sprintf("%0.3g",ee.gamma))
+        edf[j,:num] = string(ee.number)
+        if labeledges
+            je = findfirst(isequal(ee.number), edgeLabel[!,1])
+            edf[j,:lab] = (je===nothing || ismissing(edgeLabel[je,2]) ? "" :  # edge label not found in table
+            (nonmissingtype(eltype(edgeLabel[!,2])) <: AbstractFloat ?
+                @sprintf("%0.3g",edgeLabel[je,2]) : string(edgeLabel[je,2])))
         end
+        edf[j,:hyb] = ee.hybrid
+        edf[j,:min] = !ee.isMajor
+        if ee.isMajor
+            edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
+            edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
+        else
+            edf[j,:y] = (minoredge_yB[imh] + minoredge_yE[imh])/2
+            edf[j,:x] = (minoredge_xB[imh] + minoredge_xE[imh])/2
+            imh += 1
+        end
+        j += 1
     end
     # @show edf
     return labeledges, edf

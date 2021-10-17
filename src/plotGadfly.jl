@@ -50,7 +50,7 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
 
     mylayers = Layer[] # gadfly layers
     # one layers for each edge
-    imh=0 # index of minor hybrid edge in filter(ee -> !ee.isMajor, net.edge)
+    imh=1 # index of minor hybrid edge in filter(ee -> !ee.isMajor, net.edge)
     for i=1:net.numEdges
         e = net.edge[i]
         if mainTree && !e.isMajor continue; end # don't draw minor edges
@@ -63,9 +63,9 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
           xe = [edge_xB[i], edge_xE[i]]
           ye = [edge_yB[i], edge_yE[i]]
         else # minor edge: draw diagonal segment only
-          imh += 1
           xe = [hybridedge_xB[imh], hybridedge_xE[imh]]
           ye = [hybridedge_yB[imh], hybridedge_yE[imh]]
+          imh += 1
         end
         push!(mylayers,
           layer(x = xe, y = ye, Geom.line, Theme(default_color=col))[1])

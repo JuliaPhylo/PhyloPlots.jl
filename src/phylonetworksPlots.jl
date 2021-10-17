@@ -7,7 +7,7 @@
 Calculate coordinates for plotting later with Gadfly or RCall.
 
 Actually modifies some (minor) attributes of the network,
-as it calls `directEdges!`, `preorder!` and `cladewiseorder!`.
+as it calls `directEdges!` and `preorder!`.
 
 output: tuple with the following elements, in which the order of
 nodes corresponds to the order in `net.node`, and the order of
@@ -22,10 +22,10 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
    or as 2 connected segments otherwise: one horizontal (whose length on the
    x axis can be used to represent the edge length), and the other diagonal to
    connect the horizontal segment to the child node.
-   edge_* contains the coordinates for the horizontal segment only, which is
+   `edge_*` contains the coordinates for the horizontal segment only, which is
    reduced to a single point (Begin = End) when using "SimpleHybridLines".
-   minoredge_* (see below) contains information for the diagonal segment.
-   Agreed, edge_yB = edge_yE always (relic from before v0.3:
+   `minoredge_*` (see below) contains information for the diagonal segment.
+   Agreed, `edge_yB` = `edge_yE` always (relic from before v0.3:
    no minoredge output back then, and simple diagonal lines only)
 5. `node_x`: x and ...
 6. `node_y`: ... y coordinate at the middle of the vertical bar that represents a node.

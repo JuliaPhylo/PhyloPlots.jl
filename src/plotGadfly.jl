@@ -50,18 +50,25 @@ function Gadfly.plot(net::HybridNetwork; useEdgeLength=false::Bool,
 
     mylayers = Layer[] # gadfly layers
     # one layers for each edge
+    imh=1 # index of minor hybrid edge in filter(ee -> !ee.isMajor, net.edge)
     for i=1:net.numEdges
-        if (!mainTree || net.edge[i].isMajor)
-            col = edgeColor
-            if net.edge[i].hybrid
-              if (net.edge[i].isMajor) col = majorHybridEdgeColor;
-              else col = minorHybridEdgeColor; end
-            end
-            push!(mylayers,
-              layer(x = [edge_xB[i],edge_xE[i]],
-                    y = [edge_yB[i],edge_yE[i]], Geom.line,
-                    Theme(default_color=col))[1])
+        e = net.edge[i]
+        if mainTree && !e.isMajor continue; end # don't draw minor edges
+        col = edgeColor
+        if e.hybrid
+          if e.isMajor col = majorHybridEdgeColor;
+          else col = minorHybridEdgeColor; end
         end
+        if e.isMajor # tree edge or major hybrid edge: horizontal segment only
+          xe = [edge_xB[i], edge_xE[i]]
+          ye = [edge_yB[i], edge_yE[i]]
+        else # minor edge: draw diagonal segment only
+          xe = [hybridedge_xB[imh], hybridedge_xE[imh]]
+          ye = [hybridedge_yB[imh], hybridedge_yE[imh]]
+          imh += 1
+        end
+        push!(mylayers,
+          layer(x = xe, y = ye, Geom.line, Theme(default_color=col))[1])
     end
     # one layer for each (vertical) clade
     for i=1:net.numNodes

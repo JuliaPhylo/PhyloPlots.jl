@@ -2,12 +2,46 @@
 # calculate plotting coordinates of nodes & edges for PhyloNetworks objects
 
 """
-    getEdgeNodeCoordinates(net, useEdgeLength)
+    getEdgeNodeCoordinates(net, useEdgeLength::Bool, useSimpleHybridLines::Bool)
 
 Calculate coordinates for plotting later with Gadfly or RCall.
 
 Actually modifies some (minor) attributes of the network,
-as it calls `directEdges!`, `preorder!` and `cladewiseorder!`.
+as it calls `directEdges!` and `preorder!`.
+
+output: tuple with the following elements, in which the order of
+nodes corresponds to the order in `net.node`, and the order of
+edges corresponds to that in `net.edge` (filtered to minor edges as needed).
+
+1. `edge_xB`: x coordinate for the Beginning and ...
+2. `edge_xE`: ...  End of each edge, in the same order as in `net.edge`
+3. `edge_yB`: y coordinate for edges, Begin ...
+4. `edge_yE`: ... and End.
+   Each major edge is drawn as a single horizontal line. Minor hybrid edges are
+   drawn as: a single diagonal segment if `useSimpleHybridLines` is true,
+   or as 2 connected segments otherwise: one horizontal (whose length on the
+   x axis can be used to represent the edge length), and the other diagonal to
+   connect the horizontal segment to the child node.
+   `edge_*` contains the coordinates for the horizontal segment only, which is
+   reduced to a single point (Begin = End) when using "SimpleHybridLines".
+   `minoredge_*` (see below) contains information for the diagonal segment.
+   Agreed, `edge_yB` = `edge_yE` always (relic from before v0.3:
+   no minoredge output back then, and simple diagonal lines only)
+5. `node_x`: x and ...
+6. `node_y`: ... y coordinate at the middle of the vertical bar that represents a node.
+   The (or each) parent edge of the node connects to this middle point,
+   but the node itself is drawn as a vertical bar connected to all it children edges.
+   order: same as in `net.node`
+7. `node_yB`: y coordinates of the Beginning and the ...
+8. `node_yE`: ... End of the vertical bar representing each node.
+   The x coordinate (Begin & End) of the end points of the vertical bar is
+   the same as that of the mid-point, given by `node_x`.
+9. `minoredge_xB`: x coordinate for the Beginning and ...
+10. `minoredge_xE`: ... End of the diagonal segment of each minor hybrid edge,
+   in the same order as in `filter(e -> !e.isMajor, net.edge)`.
+11. `minoredge_yB`: y coordinate for the beginning and ...
+12. `minoredge_yE`: ... end of the diagonal segment of each minor hybrid edge.
+13-16. `xmin`, `xmax`, `ymin`, `ymax`: ranges for the x and y axes.
 """
 function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool, useSimpleHybridLines::Bool)
     try
@@ -319,7 +353,7 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
         edge_yB::Array{Float64,1}, edge_yE::Array{Float64,1},
         minoredge_xB::Array{Float64,1}, minoredge_xE::Array{Float64,1},
         minoredge_yB::Array{Float64,1}, minoredge_yE::Array{Float64,1})
-    nrows = net.numEdges - (mainTree ? net.numHybrids : 0)
+    nrows = net.numEdges - (mainTree ? length(minoredge_xB) : 0)
     edf = DataFrame(:len => Vector{String}(undef,nrows),
         :gam => Vector{String}(undef,nrows), :num => Vector{String}(undef,nrows),
         :lab => Vector{String}(undef,nrows), :hyb => Vector{Bool}(undef,nrows),
@@ -343,32 +377,33 @@ function prepareEdgeDataFrame(net::HybridNetwork, edgeLabel::DataFrame, mainTree
         @warn msg
       end
     end
-    j=1
+    j=1   # index of row in edf
+    imh=1 # index of minor hybrid edge in filter(ee -> !ee.isMajor, net.edge)
     for i = 1:length(net.edge)
-        if (!mainTree || !net.edge[i].hybrid || net.edge[i].isMajor)
-            edf[j,:len] = (net.edge[i].length==-1.0 ? "" : @sprintf("%0.3g",net.edge[i].length))
-            # @sprintf("%c=%0.3g",'γ',net.edge[i].length)
-            edf[j,:gam] = (net.edge[i].gamma==-1.0  ? "" : @sprintf("%0.3g",net.edge[i].gamma))
-            edf[j,:num] = string(net.edge[i].number)
-            if labeledges
-              je = findfirst(isequal(net.edge[i].number), edgeLabel[!,1])
-              edf[j,:lab] = (je===nothing || ismissing(edgeLabel[je,2]) ? "" :  # edge label not found in table
-                (nonmissingtype(eltype(edgeLabel[!,2])) <: AbstractFloat ?
-                  @sprintf("%0.3g",edgeLabel[je,2]) : string(edgeLabel[je,2])))
-            end
-            edf[j,:hyb] = net.edge[i].hybrid
-            edf[j,:min] = !net.edge[i].isMajor
-            minorIndex = 1;
-            if net.edge[i].isMajor
-                edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
-                edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
-            else
-                edf[j,:y] = (minoredge_yB[minorIndex] + minoredge_yE[minorIndex])/2
-                edf[j,:x] = (minoredge_xB[minorIndex] + minoredge_xE[minorIndex])/2
-                minorIndex += 1
-            end
-            j += 1
+        ee = net.edge[i]
+        # skip the edge if it's minor and we only want the main tree:
+        mainTree && !ee.isMajor && continue
+        edf[j,:len] = (ee.length==-1.0 ? "" : @sprintf("%0.3g",ee.length))
+        # @sprintf("%c=%0.3g",'γ',ee.length)
+        edf[j,:gam] = (ee.gamma==-1.0  ? "" : @sprintf("%0.3g",ee.gamma))
+        edf[j,:num] = string(ee.number)
+        if labeledges
+            je = findfirst(isequal(ee.number), edgeLabel[!,1])
+            edf[j,:lab] = (je===nothing || ismissing(edgeLabel[je,2]) ? "" :  # edge label not found in table
+            (nonmissingtype(eltype(edgeLabel[!,2])) <: AbstractFloat ?
+                @sprintf("%0.3g",edgeLabel[je,2]) : string(edgeLabel[je,2])))
         end
+        edf[j,:hyb] = ee.hybrid
+        edf[j,:min] = !ee.isMajor
+        if ee.isMajor
+            edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
+            edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
+        else
+            edf[j,:y] = (minoredge_yB[imh] + minoredge_yE[imh])/2
+            edf[j,:x] = (minoredge_xB[imh] + minoredge_xE[imh])/2
+            imh += 1
+        end
+        j += 1
     end
     # @show edf
     return labeledges, edf

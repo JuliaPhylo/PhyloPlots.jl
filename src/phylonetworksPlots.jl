@@ -76,7 +76,10 @@ function getEdgeNodeCoordinates(net::HybridNetwork, useEdgeLength::Bool, useSimp
         cur_edge = pop!(cladewise_queue); # deliberate choice over shift! for cladewise order
         # increment spacing and add to node_y if leaf
         if getChild(cur_edge).leaf
-            node_y[findfirst(x->x===getChild(cur_edge), net.node)] = nexty
+            ni = findfirst(x->x===getChild(cur_edge), net.node)
+            node_y[ni]  = nexty
+            node_yB[ni] = nexty
+            node_yE[ni] = nexty
             nexty -= 1
         end
 

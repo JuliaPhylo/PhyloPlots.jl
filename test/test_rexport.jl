@@ -84,9 +84,9 @@ class(phy2r) = c("evonet","phylo")
 @rput net2
 @test convert(Bool, R"isTRUE(all.equal( net2, phy2r))")
 
-# on a network, h=1, with useEdgeLength=false
+# on a network, h=1, with useedgelength=false
 s = "(((A:1.0,(B:.5)#H1:.2::0.9):.8,(C:1.5,#H1:.01::0.1):2):.6,D:5.0);";
-phy1 = PhyloPlots.rexport(readTopology(s), useEdgeLength=false);
+phy1 = PhyloPlots.rexport(readTopology(s), useedgelength=false);
 if useape # needs ape version > 4.1 with read.evonet (not in 4.1), also dist.topo for networks
     R"phyr = read.evonet(text = $s)"
     @test convert(Bool, R"dist.topo($phy1, phyr) == 0")

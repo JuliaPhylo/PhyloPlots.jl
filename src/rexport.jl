@@ -98,7 +98,7 @@ function sexp(net::HybridNetwork)
 end
 
 @doc doc"""
-    rexport(net::HybridNetwork; mainTree=false, useEdgeLength=true)
+    rexport(net::HybridNetwork; mainTree=false, useedgelength=true)
 
 Create an RObject of class `phylo` (and `evonet` depending on the number
 of hybridizations) recognized by the `ape` library in R (S3 object). This
@@ -109,7 +109,7 @@ not exported: [`sexp`](@ref) is the best way to go.
 
 # Arguments
 
-- useEdgeLength: if true, export edge lengths from `net`.
+- useedgelength: if true, export edge lengths from `net`.
 - mainTree: if true, minor hybrid edges are omitted.
 
 # Examples
@@ -184,7 +184,7 @@ $ reticulation.gamma: num 0.1
 - attr(*, "class")= chr [1:2] "evonet" "phylo"
 ```
 """ #"
-function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=true)
+function rexport(net::HybridNetwork; mainTree::Bool=false, useedgelength::Bool=true)
 # worry about R object created within the function not accessible from outside:
 # can it be garbage collected?
 
@@ -201,7 +201,7 @@ function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=t
     R"""
     phy = list(Nnode = $Nnode, edge = $edge, tip.label = $tipLabel)
     """
-    if useEdgeLength == true
+    if useedgelength
         edgeLength = PhyloNetworks.majoredgelength(net)
         if any(.!ismissing.(edgeLength))
             R"""
@@ -219,7 +219,7 @@ function rexport(net::HybridNetwork; mainTree::Bool=false, useEdgeLength::Bool=t
         if any(.!ismissing.(reticulationGamma))
             R"phy[['reticulation.gamma']] = $reticulationGamma"
         end
-        if useEdgeLength # extract minor edge lengths
+        if useedgelength # extract minor edge lengths
             reticulationLength = PhyloNetworks.minorreticulationlength(net)
             if any(.!ismissing.(reticulationLength))
                 R"""

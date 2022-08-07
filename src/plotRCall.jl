@@ -26,7 +26,7 @@
 
 Plot a network using R graphics. Optional arguments are listed below.
 
-## about the lines forming the network:
+## lines forming the network:
 
 - `useedgelength = false` : if true, the tree edges and major hybrid edges are
   drawn proportionally to their length. Minor hybrid edges are not, however.
@@ -118,9 +118,9 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
     tipoffset=0.0::Float64, tipcex=1.0::Float64,
     nodecex=1.0::Float64, edgecex=1.0::Float64,
     style=:fulltree::Symbol, arrowlen=(style==:majortree ? 0 : 0.1)::Real,
-    edgenumbercolor = "grey"::String,
-    edgelabelcolor = "black"::String,
-    nodelabelcolor = "black"::String,
+    edgenumbercolor = "grey", # don't limit the type because R accepts many types
+    edgelabelcolor = "black", # and these colors are used as is
+    nodelabelcolor = "black",
 )
 
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
@@ -161,10 +161,11 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
     plot($(node_x[leaves]), $(node_y[leaves]), type='n',
          xlim=c($xmin,$xmax), ylim=c($ymin,$ymax),
          axes=FALSE, xlab='', ylab='')
-    segments($edge_xB, $edge_yB, $edge_xE, $edge_yE, col=$eCol)
-    arrows($hybridedge_xB, $hybridedge_yB, $hybridedge_xE, $hybridedge_yE, length=$arrowlen, angle = 20, col=$minorhybridedgecolor, lty=$arrowstyle)
-    segments($node_x, $node_yB, $node_x, $node_yE, col=$edgecolor,)
     """
+    R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol)
+    R"arrows"(hybridedge_xB, hybridedge_yB, hybridedge_xE, hybridedge_yE,
+              length=arrowlen, angle=20, col=minorhybridedgecolor, lty=arrowstyle)
+    R"segments"(node_x, node_yB, node_x, node_yE, col=edgecolor)
     if showtiplabel
       R"text"(node_x[leaves] .+ tipoffset, node_y[leaves],
               tipLabels(net), adj=0, font=3, cex=tipcex)

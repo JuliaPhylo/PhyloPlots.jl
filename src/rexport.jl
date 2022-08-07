@@ -22,25 +22,27 @@ julia> net = readTopology("(((A:.2,(B:.1)#H1:.1::0.9):.1,(C:.11,#H1:.01::0.1):.1
 R> library(ape); # type $ to switch from julia to R
 R> $net
 
-Evolutionary network with 1 reticulation
+    Evolutionary network with 1 reticulation
 
                --- Base tree ---
 Phylogenetic tree with 4 tips and 5 internal nodes.
 
 Tip labels:
-[1] "A" "B" "C" "D"
+  A, B, C, D
 
 Rooted; includes branch lengths.
-julia> @rput net # press the delete key to switch from R back to julia
+
+julia> @rput net; # press the delete key to switch from R back to julia
+
 R> net
 
-Evolutionary network with 1 reticulation
+    Evolutionary network with 1 reticulation
 
---- Base tree ---
+               --- Base tree ---
 Phylogenetic tree with 4 tips and 5 internal nodes.
 
 Tip labels:
-[1] "A" "B" "C" "D"
+  A, B, C, D
 
 Rooted; includes branch lengths.
 
@@ -54,7 +56,6 @@ List of 7
  $ reticulation.gamma : num 0.1
  $ tip.label          : chr [1:4] "A" "B" "C" "D"
  - attr(*, "class")= chr [1:2] "evonet" "phylo"
-NULL
 
 R> plot(net)
 ```
@@ -116,41 +117,9 @@ not exported: [`sexp`](@ref) is the best way to go.
 
 ```julia-repl
 julia> net = readTopology("(((A,(B)#H1:::0.9),(C,#H1:::0.1)),D);");
-julia> phy = rexport(net)
-RCall.RObject{RCall.VecSxp}
-$Nnode
-[1] 5
 
-$edge
-     [,1] [,2]
-[1,]    5    6
-[2,]    5    4
-[3,]    6    8
-[4,]    6    7
-[5,]    7    3
-[6,]    8    1
-[7,]    8    9
-[8,]    9    2
-
-$tip.label
-[1] "A" "B" "C" "D"
-
-$reticulation
-     [,1] [,2]
-[1,]    7    9
-
-$reticulation.gamma
-[1] 0.1
-
-attr(,"class")
-[1] "evonet" "phylo"
-
-julia> using RCall
-
-julia> R"library(ape)";
-
-julia> phy
-RCall.RObject{RCall.VecSxp}
+julia> phy = PhyloPlots.rexport(net)
+RObject{VecSxp}
 
     Evolutionary network with 1 reticulation
 
@@ -158,30 +127,47 @@ RCall.RObject{RCall.VecSxp}
 Phylogenetic tree with 4 tips and 5 internal nodes.
 
 Tip labels:
-[1] "A" "B" "C" "D"
+  A, B, C, D
 
 Rooted; no branch lengths.
 
-R> phy
+julia> using RCall
 
-Evolutionary network with 1 reticulation
+julia> R"library(ape)";
+
+julia> phy
+RObject{VecSxp}
+
+    Evolutionary network with 1 reticulation
 
                --- Base tree ---
 Phylogenetic tree with 4 tips and 5 internal nodes.
 
 Tip labels:
-[1] "A" "B" "C" "D"
+  A, B, C, D
+
+Rooted; no branch lengths.
+
+R> phy
+
+    Evolutionary network with 1 reticulation
+
+               --- Base tree ---
+Phylogenetic tree with 4 tips and 5 internal nodes.
+
+Tip labels:
+  A, B, C, D
 
 Rooted; no branch lengths.
 
 R> str(phy)
 List of 5
-$ Nnode             : int 5
-$ edge              : int [1:8, 1:2] 5 5 6 6 7 8 8 9 6 4 ...
-$ tip.label         : chr [1:4] "A" "B" "C" "D"
-$ reticulation      : int [1, 1:2] 7 9
-$ reticulation.gamma: num 0.1
-- attr(*, "class")= chr [1:2] "evonet" "phylo"
+ $ Nnode             : int 5
+ $ edge              : int [1:8, 1:2] 5 5 6 6 7 8 8 9 6 4 ...
+ $ tip.label         : chr [1:4] "A" "B" "C" "D"
+ $ reticulation      : int [1, 1:2] 7 9
+ $ reticulation.gamma: num 0.1
+ - attr(*, "class")= chr [1:2] "evonet" "phylo"
 ```
 """ #"
 function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=true)

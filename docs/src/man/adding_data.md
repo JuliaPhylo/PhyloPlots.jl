@@ -36,13 +36,13 @@ node), and the label that goes on it, like this:
 
 | number | label            |
 |--------|------------------|
-| 1      | "my first edge"  |
-| 2      | "my second edge" |
+| 1      | "edge number 1"  |
+| 2      | "edge # 2" |
 
 After including the DataFrames package, we can define it as so:
 ```@repl
 using DataFrames
-DataFrame(number=[1,2], label=["my first edge","my second edge"])
+DataFrame(number=[1,2], label=["edge number 1","edge # 2"])
 ```
 Using this data frame as input to the `edgelabel` option (`nodelabel` for nodes)
 puts the text on the correct edges:
@@ -51,8 +51,8 @@ R"svg"(figname("edge_labels_example.svg"), width=4, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
 net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
 plot(net, edgelabel=DataFrame(number = [1,2],
-                              label = ["my first edge", "my second edge"]),
-          edgelabelcolor = "orangered");
+                              label = ["edge number 1", "edge # 2"]),
+          edgelabelcolor="orangered", edgecex=[0.9,1.1]);
 R"dev.off()" # hide
 nothing # hide
 ```

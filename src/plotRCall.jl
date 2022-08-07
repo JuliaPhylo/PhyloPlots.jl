@@ -42,9 +42,9 @@ Plot a network using R graphics. Optional arguments are listed below.
 
 ## tip annotations:
 
-- `showtiplabel = true` : if true, taxon labels are shown. You may need to zoom out to see them.
+- `showtiplabel = true` : if true, taxon labels (names) are shown.
 - `tipoffset = 0.0` : to offset tip labels
-- `tipcex=1.0`: character expansion for tip labels
+- `tipcex=1.0`: character expansion for tip and internal node names
 
 ## nodes & edges annotations:
 
@@ -59,6 +59,8 @@ Plot a network using R graphics. Optional arguments are listed below.
 - `nodelabel = DataFrame()` : dataframe with two columns: the first with node numbers,
   the second with labels (like bootstrap values for hybrid relationships)
   to annotate nodes. empty by default.
+- `nodecex=1.0`: character expansion for labels in the `nodelabel` data frame
+- `edgecex=1.0`: character expansion for labels in the `edgelabel` data frame
 
 ## colors:
 
@@ -114,6 +116,7 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
     edgelabel=DataFrame()::DataFrame, nodelabel=DataFrame()::DataFrame,
     xlim=Float64[]::Array{Float64,1}, ylim=Float64[]::Array{Float64,1},
     tipoffset=0.0::Float64, tipcex=1.0::Float64,
+    nodecex=1.0::Float64, edgecex=1.0::Float64,
     style=:fulltree::Symbol, arrowlen=(style==:majortree ? 0 : 0.1)::Real,
     edgenumbercolor = "grey"::String,
     edgelabelcolor = "black"::String,
@@ -174,13 +177,15 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
       R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:num], adj=1)
     end
     if labelnodes
-      R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:lab], adj=1, col=nodelabelcolor)
+      R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:lab], adj=1,
+              col=nodelabelcolor, cex=nodecex)
     end
     labeledges, edf = prepare_edgedataframe(net, edgelabel, style,
                         edge_xB, edge_xE, edge_yB, edge_yE,
                         hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE)
     if labeledges
-      R"text"(edf[!,:x], edf[!,:y], edf[!,:lab], adj=[.5,0], col=edgelabelcolor)
+      R"text"(edf[!,:x], edf[!,:y], edf[!,:lab], adj=[.5,0],
+              col=edgelabelcolor, cex=edgecex)
     end
     if showedgelength
       R"text"(edf[!,:x], edf[!,:y], edf[!,:len], adj=[.5,1.])

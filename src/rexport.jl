@@ -98,7 +98,7 @@ function sexp(net::HybridNetwork)
 end
 
 @doc doc"""
-    rexport(net::HybridNetwork; mainTree=false, useedgelength=true)
+    rexport(net::HybridNetwork; maintree=false, useedgelength=true)
 
 Create an RObject of class `phylo` (and `evonet` depending on the number
 of hybridizations) recognized by the `ape` library in R (S3 object). This
@@ -110,7 +110,7 @@ not exported: [`sexp`](@ref) is the best way to go.
 # Arguments
 
 - useedgelength: if true, export edge lengths from `net`.
-- mainTree: if true, minor hybrid edges are omitted.
+- maintree: if true, minor hybrid edges are omitted.
 
 # Examples
 
@@ -184,11 +184,11 @@ $ reticulation.gamma: num 0.1
 - attr(*, "class")= chr [1:2] "evonet" "phylo"
 ```
 """ #"
-function rexport(net::HybridNetwork; mainTree::Bool=false, useedgelength::Bool=true)
+function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=true)
 # worry about R object created within the function not accessible from outside:
 # can it be garbage collected?
 
-    if mainTree == true && net.numHybrids > 0
+    if maintree && net.numHybrids > 0
         net = majorTree(net)
     end
     PhyloNetworks.resetNodeNumbers!(net)

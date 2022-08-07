@@ -55,10 +55,10 @@ class(phy2r) = c("evonet","phylo")
 @rput net2
 @test convert(Bool, R"isTRUE(all.equal( net2, phy2r))")
 
-# network, h=1, mainTree=true; minor hybrid edge length missing
+# network, h=1, maintree=true; minor hybrid edge length missing
 s = "(((A:4.0,(B)#H1:1.1::0.9):0.5,(C:0.6,#H1):1.0):3.0,D:5.0);";
 stree = "(((A:4.0,B):0.5,C:1.6):3.0,D:5.0);"; # main tree
-phy1 = PhyloPlots.rexport(readTopology(s); mainTree=true);
+phy1 = PhyloPlots.rexport(readTopology(s); maintree=true);
 net2 = readTopology(s);
 tree2 = majorTree(readTopology(s));
 if useape

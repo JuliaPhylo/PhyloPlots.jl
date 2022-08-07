@@ -338,7 +338,7 @@ function prepare_nodedataframe(net::HybridNetwork, nodelabel::DataFrame,
 end
 
 """
-    prepare_edgedataframe(net, edgelabel::DataFrame, mainTree::Bool,
+    prepare_edgedataframe(net, edgelabel::DataFrame, style::Symbol,
         edge_xB, edge_xE, edge_yB, edge_yE,
         minoredge_xB, minoredge_xE, minoredge_yB, minoredge_yE)
 
@@ -353,12 +353,12 @@ Return data frame with columns
 - hyb: is hybrid?
 - min: is minor?
 """
-function prepare_edgedataframe(net::HybridNetwork, edgelabel::DataFrame, mainTree::Bool,
+function prepare_edgedataframe(net::HybridNetwork, edgelabel::DataFrame, style::Symbol,
         edge_xB::Array{Float64,1}, edge_xE::Array{Float64,1},
         edge_yB::Array{Float64,1}, edge_yE::Array{Float64,1},
         minoredge_xB::Array{Float64,1}, minoredge_xE::Array{Float64,1},
         minoredge_yB::Array{Float64,1}, minoredge_yE::Array{Float64,1})
-    nrows = net.numEdges - (mainTree ? length(minoredge_xB) : 0)
+    nrows = net.numEdges
     edf = DataFrame(:len => Vector{String}(undef,nrows),
         :gam => Vector{String}(undef,nrows), :num => Vector{String}(undef,nrows),
         :lab => Vector{String}(undef,nrows), :hyb => Vector{Bool}(undef,nrows),
@@ -386,8 +386,6 @@ function prepare_edgedataframe(net::HybridNetwork, edgelabel::DataFrame, mainTre
     imh=1 # index of minor hybrid edge in filter(ee -> !ee.isMajor, net.edge)
     for i = 1:length(net.edge)
         ee = net.edge[i]
-        # skip the edge if it's minor and we only want the main tree:
-        mainTree && !ee.isMajor && continue
         edf[j,:len] = (ee.length==-1.0 ? "" : @sprintf("%0.3g",ee.length))
         # @sprintf("%c=%0.3g",'γ',ee.length)
         edf[j,:gam] = (ee.gamma==-1.0  ? "" : @sprintf("%0.3g",ee.gamma))
@@ -400,10 +398,9 @@ function prepare_edgedataframe(net::HybridNetwork, edgelabel::DataFrame, mainTre
         end
         edf[j,:hyb] = ee.hybrid
         edf[j,:min] = !ee.isMajor
-        if ee.isMajor
-            edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
-            edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
-        else
+        edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
+        edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
+        if style == :majortree && !ee.isMajor
             edf[j,:y] = (minoredge_yB[imh] + minoredge_yE[imh])/2
             edf[j,:x] = (minoredge_xB[imh] + minoredge_xE[imh])/2
             imh += 1

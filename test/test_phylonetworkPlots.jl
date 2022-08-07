@@ -52,9 +52,9 @@
     x=collect(1.:9), y=collect(10.:18))
   dat = DataFrame(edge=[8,9,4,6,200],bs=["90","95","99","mytips","bogus"]);
   @test_logs (:warn, "Some edge numbers in the edgelabel data frame are not found in the network:\n 200") PhyloPlots.prepare_edgedataframe(
-    net,dat,true,collect(1.:9),collect(10.:18),collect(19.:27),collect(28.:36),[6.5],[8.5],[24.5],[26.5]);
+    net,dat,:fulltree,collect(1.:9),collect(10.:18),collect(19.:27),collect(28.:36),[6.5],[8.5],[24.5],[26.5]);
   dat = DataFrame(edge=[8,9,4,6],bs=[missing,"95","99","mytips"]);
-  @test PhyloPlots.prepare_edgedataframe(net,dat,false,collect(1.:9),collect(11.:19),
+  @test PhyloPlots.prepare_edgedataframe(net,dat,:majortree,collect(1.:9),collect(11.:19),
     collect(21.:29),collect(31.:39),[7.],[9.],[27.],[29.]) == (true, DataFrame(
     len=["2.5","1","0.5","1","1","0.5","0.5","1","0.5"],
     gam=["1","1","0.1","1","1","1","0.9","1","1"],

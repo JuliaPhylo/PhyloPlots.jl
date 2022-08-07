@@ -176,7 +176,7 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
     if labelnodes
       R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:lab], adj=1, col=nodelabelcolor)
     end
-    labeledges, edf = prepare_edgedataframe(net, edgelabel, false, # mainTree=false
+    labeledges, edf = prepare_edgedataframe(net, edgelabel, style,
                         edge_xB, edge_xE, edge_yB, edge_yE,
                         hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE)
     if labeledges

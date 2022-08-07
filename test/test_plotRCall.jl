@@ -1,11 +1,16 @@
 @testset "RCall-based plot Test" begin
   # testing for absence of errors, not for correctness
 
+  # network rooted at a leaf: test for no error in warning message
+  net = readTopology("(A:1,B:1);"); net.root = 2
+  @test_logs (:warn, r"rootonedge!\(network_name, 2\)") plot(net)
   #net = readTopology("(((A,(B)#H1:::0.9),(C,#H1:::0.1)),D);")
   net = readTopology("(((Ag,(#H1:7.159::0.056,((Ak,(E:0.08,#H2:0.0::0.004):0.023):0.078,(M:0.0)#H2:::0.996):2.49):2.214):0.026,(((((Az:0.002,Ag2:0.023):2.11,As:2.027):1.697)#H1:0.0::0.944,Ap):0.187,Ar):0.723):5.943,(P,20):1.863,165);");
   # test deprecated old function
   @test_logs (:warn, r"is deprecated") plot(net, :R, showNodeNumber=true, showGamma=true)
+
   @test_logs plot(net);
+  @test_logs plot(net, edgewidth=Dict(1=>4, 28=>28))
   @test_logs (:warn, "At least one non-missing edge length: plotting any missing length as 1.0") plot(net, useedgelength=true);
   @test_logs plot(net, showtiplabel=false);
   @test_logs plot(net, shownodenumber=true, shownodelabel=true);

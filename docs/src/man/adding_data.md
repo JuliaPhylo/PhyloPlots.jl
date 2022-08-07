@@ -112,7 +112,7 @@ Knowing the coordinates, we can now add more information to the plot through
 `RCall`. For this, I use the R functions `segments` and `text` to add side bars with
 text on them.
 
-```
+```julia
 using RCall # add (install) the RCall package prior to 'using' it
 R"segments"([9, 9, 9], [0.8, 7.8, 9.8], [9, 9, 9], [7.2, 9.2, 10.2])
 R"text"([9.5, 9.5, 9.5], [4, 8.5, 10], ["C", "B", "A"])

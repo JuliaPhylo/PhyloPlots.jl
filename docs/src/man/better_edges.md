@@ -100,3 +100,25 @@ nothing # hide
 
 I also used the `arrowlen=0.1` option to show the arrow tips to show the direction of minor edges,
 which are hidden by default when using the `style=:majortree` option.
+
+## Varying edge widths
+
+We can vary edge widths to show population sizes for example.
+First we need to map each edge number to the desired width for that edge.
+We do this with a dictionary.
+
+```@repl better_edges
+R"svg"(figname("edge_len_example5.svg"), width=6, height=3) # hide
+using RCall # to send any command to R, to modify the plot
+R"par"(mar=[.1,.1,.1,.1]); R"layout"([1 2]);
+plot(net1, showedgenumber=true);
+R"mtext"("edge numbers, used\nas keys in edgewidth", side=1, line=-1);
+log_populationsize = Dict(e.number => log10(1_000) for e in net1.edge); # pop size on log scale
+log_populationsize[9] = log10(100_000); # larger populations on edges 9 and 1
+log_populationsize[1] = log10(100_000);
+log_populationsize
+plot(net1, edgewidth=log_populationsize);
+R"dev.off()"; # hide
+nothing # hide
+```
+![example5](../assets/figures/edge_len_example5.svg)

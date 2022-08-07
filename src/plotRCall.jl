@@ -38,6 +38,8 @@ Plot a network using R graphics. Optional arguments are listed below.
     useful for overlapping or confusing networks.
 - `arrowlen` : the length of the arrow tips in the full tree style. if `style = :fulltree`, then
   `arrowlen = 0.2`. otherwise, `arrowlen = 0`, which makes the arrows appear as segments.
+- `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
+  use a dictionary to map the number of each edge to its desired witdth.
 - `xlim`, `ylim` : array of 2 values, to determine the axes limits
 
 ## tip annotations:
@@ -118,11 +120,17 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
     tipoffset=0.0::Float64, tipcex=1.0::Float64,
     nodecex=1.0::Float64, edgecex=1.0::Float64,
     style=:fulltree::Symbol, arrowlen=(style==:majortree ? 0 : 0.1)::Real,
+    edgewidth = 1,
     edgenumbercolor = "grey", # don't limit the type because R accepts many types
     edgelabelcolor = "black", # and these colors are used as is
     nodelabelcolor = "black",
 )
 
+    if net.node[net.root].leaf
+        @warn """The network is rooted at a leaf: the plot won't look good.
+            Try rooting the network on the edge adjacent to that leaf, with
+            rootonedge!(network_name, $(net.node[net.root].edge[1].number))"""
+    end
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
      xmin, xmax, ymin, ymax) = edgenode_coordinates(net, useedgelength, style==:majortree)
@@ -149,6 +157,17 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
     eCol[ [ e.hybrid  for e in net.edge] ] .= majorhybridedgecolor
     eCol[ [!e.isMajor for e in net.edge] ] .= minorhybridedgecolor
 
+    if isa(edgewidth, Number)
+      edgewidth_vec = edgewidth
+    elseif isa(edgewidth, AbstractDict)
+      ewtype = valtype(edgewidth)
+      ewtype <: Number || error("edgewidth should be numerical")
+      edgewidth_vec = Vector{ewtype}(undef,length(edge_xB))
+      for (ie,ee) in enumerate(net.edge)
+        # fill in edgewidth vector, with default 1 for non-listed edges
+        edgewidth_vec[ie] = (haskey(edgewidth, ee.number) ? edgewidth[ee.number] : one(ewtype))
+      end
+    end
     # this makes the arrows dashed if :fulltree is used
     arrowstyle = style==:majortree ? "solid" : "longdash"
 
@@ -162,7 +181,7 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
          xlim=c($xmin,$xmax), ylim=c($ymin,$ymax),
          axes=FALSE, xlab='', ylab='')
     """
-    R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol)
+    R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol, lwd=edgewidth_vec)
     R"arrows"(hybridedge_xB, hybridedge_yB, hybridedge_xE, hybridedge_yE,
               length=arrowlen, angle=20, col=minorhybridedgecolor, lty=arrowstyle)
     R"segments"(node_x, node_yB, node_x, node_yE, col=edgecolor)

@@ -18,23 +18,25 @@ Then read the topology
 ```@repl getting_started
 net = readTopology("(A,((B,#H1),(C,(D)#H1)));")
 ```
-and call `plot`, using :R for full funtionality:
-
-!!! note "About the two versions of plot()"
-    One is made using Gadfly (`plot(net)`), the other using RCall (`plot(net, :R)`).
-    Since only the RCall version supports the option `style=:fulltree` for the same
-    style used by [icytree](https://icytree.org), we will only use RCall.
-
-For the function's full documentation, see here: [`plot`](@ref)
-
-This will draw the following plot.
+and call `plot`, as shown below.
 
 ```@example getting_started
 R"svg"(figname("gettingstarted.svg"), width=3, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
 net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
-plot(net, :R);
+plot(net);
 R"dev.off()" # hide
 nothing # hide
 ```
 ![example1](../assets/figures/gettingstarted.svg)
+
+For the function's full documentation, see here: [`plot`](@ref)
+
+!!! note "version history"
+    Compared to v0.3, v1 does not support the Gadfly-based plots,
+    and uses small-case-only argument names.
+
+    The v0.3 syntax `plot(net, :R; ...)` still works in v1.0 but is
+    **deprecated**, and will be removed in a future release. For example,
+    you can still use `plot(net, :R; showNodeNumber=true)`,
+    but you should instead start using `plot(net; shownodenumber=true)`.

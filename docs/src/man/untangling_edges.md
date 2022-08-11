@@ -14,14 +14,14 @@ edge:
 To fix this, we can to rotate C and D's edges around their parent node.
 
 First we need to know the number of this parent node. By showing node numbers
-with the `showNodeNumbers = true` option, we can find the number of the node
+with the `shownodenumbers = true` option, we can find the number of the node
 whose child edges we should rotate.
 
 ```@example untangling
 R"svg"(figname("untangling1.svg"), width=3, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
 net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
-plot(net, :R, showNodeNumber=true);
+plot(net, shownodenumber=true);
 R"dev.off()" # hide
 nothing # hide
 ```
@@ -34,7 +34,7 @@ R"svg"(figname("untangling2.svg"), width=3, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
 net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
 rotate!(net, -5)
-plot(net, :R)
+plot(net)
 R"dev.off()" # hide
 nothing # hide
 ```

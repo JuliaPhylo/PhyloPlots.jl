@@ -1,15 +1,13 @@
 
 # Installation
 
-This will assume you have installed Julia and PhyloNetworks. For information on how to
-install them, see
+For information on how to install Julia and PhyloNetworks, see
 [here](https://crsl4.github.io/PhyloNetworks.jl/dev/man/installation/#Installation)
-
 PhyloPlots depends on PhyloNetworks, and has further dependencies
-like [Gadfly](http://gadflyjl.org/stable/) and
+like
 [RCall](https://github.com/JuliaInterop/RCall.jl)
 
-To install in the Julia REPL, enter package mode with `]`, and:
+To install PhyloPlots in the Julia REPL, enter package mode with `]`, and:
 
 ```
 add PhyloPlots

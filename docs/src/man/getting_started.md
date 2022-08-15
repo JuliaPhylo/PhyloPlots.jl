@@ -30,7 +30,7 @@ nothing # hide
 ```
 ![example1](../assets/figures/gettingstarted.svg)
 
-For the function's full documentation, see here: [`plot`](@ref)
+For the function's full documentation, see here: [`plot`](@ref).
 
 !!! note "version history"
     Compared to v0.3, v1 does not support the Gadfly-based plots,

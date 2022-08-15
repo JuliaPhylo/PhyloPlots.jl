@@ -47,7 +47,7 @@ nothing # hide
     For more on this, see the [Adding labels](@ref) section.
 
 If branch lengths represent time, D could represent a fossil, or a virus strain sequenced
-a year before the others. Seeing this visually is the advantage of `useedgelength=true`
+a year before the others. Seeing this visually is the advantage of `useedgelength=true`.
 
 This network happens to be time consistent, because the distance
 along the time (x) axis from node `N` to the hybrid node `H1` is

@@ -9,8 +9,7 @@
 
 PhyloPlots has utilities to plot tree and network objects
 from [PhyloNetworks](https://github.com/crsl4/PhyloNetworks.jl)
-using plotting back-ends like [Gadfly](http://gadflyjl.org/stable/),
-and through [R](https://www.r-project.org)
+through [R](https://www.r-project.org)
 via [RCall](https://github.com/JuliaInterop/RCall.jl).
 
 ## examples

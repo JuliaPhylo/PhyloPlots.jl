@@ -101,8 +101,11 @@ res[1:2]
 ```
 
 Looking at `xmin` and `xmax` returned by default, we can see that the x
-range is about `(0.3, 9)`. To give us extra space to work with, we can
-set `xlim` to `(1,10)`, forcing the range to be wider.
+range is about `(0.3, 9)`.
+To give us extra space to work with, we can
+set `xlim` to `(0.3,10)`, forcing the range to be wider on the right, for annotations.
+We can also see that in this case there is some extra white space on the left,
+so that we can increase `xmin` a little bit, finally settling on `xlim=(1,10)`.
 
 ```julia
 plot(net, xlim=(1, 10));

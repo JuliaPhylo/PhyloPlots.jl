@@ -5,8 +5,8 @@
 plot phylogenetic trees and networks.
 
 [PhyloNetworks](https://github.com/crsl4/PhyloNetworks.jl)
-objects can be displayed via [Gadfly](http://gadflyjl.org/stable/),
-and through [R](https://www.r-project.org)
+objects can be displayed
+through [R](https://www.r-project.org)
 via [RCall](https://github.com/JuliaInterop/RCall.jl).
 
 ## manual outline

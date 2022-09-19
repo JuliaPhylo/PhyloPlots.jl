@@ -277,7 +277,7 @@ function check_nodedataframe(net::HybridNetwork, nodelabel::DataFrame)
         labelnodes = false
     end
     if labelnodes # remove rows with no node number, check if at least one row remains
-        filter!(row->!ismissing(row[1]), nodelabel)
+        nodelabel = filter(row->!ismissing(row[1]), nodelabel) # creates a copy: don't modify the user's df
         labelnodes = size(nodelabel,1)>0
     end
     if labelnodes
@@ -371,7 +371,7 @@ function prepare_edgedataframe(net::HybridNetwork, edgelabel::DataFrame, style::
         labeledges = false
     end
     if labeledges # remove rows with no edge number and check if at least one remains
-        filter!(row->!ismissing(row[1]), edgelabel)
+        edgelabel = filter(row->!ismissing(row[1]), edgelabel) # creates a copy: don't modify the user's df
         labeledges = size(edgelabel,1)>0
     end
     if labeledges

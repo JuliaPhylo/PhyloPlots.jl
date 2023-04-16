@@ -9,6 +9,12 @@ on:
       - master
     tags: '*'
 
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
@@ -26,7 +32,7 @@ jobs:
           - x64
     steps:
       - uses: actions/checkout@v2
-      - uses: r-lib/actions/setup-r@v1
+      - uses: r-lib/actions/setup-r@v2
       - name: set R lib path to be found by julia RCall
         if: matrix.os == 'ubuntu-latest'
         run: echo "LD_LIBRARY_PATH=$(R RHOME)/lib" >> $GITHUB_ENV
@@ -47,7 +53,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2
         with:
           file: lcov.info
   docs:
@@ -55,12 +61,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: r-lib/actions/setup-r@v1
+      - uses: r-lib/actions/setup-r@v2
       - run: echo "LD_LIBRARY_PATH=$(R RHOME)/lib" >> $GITHUB_ENV
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1'
-      - name: install dependencie
+      - name: install dependencies
         run: |
           julia --project=docs -e '
             using Pkg

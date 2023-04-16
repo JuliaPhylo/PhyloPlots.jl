@@ -4,7 +4,6 @@ module PhyloPlots
 
 # standard libraries
 using DataFrames: _broadcast_unalias_helper, LatexTableFormat
-using PhyloNetworks: getMinorParent, getParent, getChildren, getMajorParentEdge, getChild, Edge, getMinorParentEdge
 using Markdown
 using Printf: @printf, @sprintf
 

@@ -75,8 +75,9 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
     while !isempty(cladewise_queue)
         cur_edge = pop!(cladewise_queue); # deliberate choice over shift! for cladewise order
         # increment spacing and add to node_y if leaf
-        if getChild(cur_edge).leaf
-            ni = findfirst(x->x===getChild(cur_edge), net.node)
+        cur_child = getchild(cur_edge)
+        if cur_child.leaf
+            ni = findfirst(x->x===cur_child, net.node)
             node_y[ni]  = nexty
             node_yB[ni] = nexty
             node_yE[ni] = nexty
@@ -92,8 +93,8 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
 
         # push children edges if this is a major edge:
         if cur_edge.isMajor
-            for e in getChild(cur_edge).edge
-                if getParent(e) === getChild(cur_edge)# don't go backwards
+            for e in cur_child.edge
+                if getparent(e) === cur_child # don't go backwards
                     push!(cladewise_queue, e)
                 end
             end
@@ -109,11 +110,11 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild=useSimpleHybridLines # only use this var if using simple hybrid lines
         for e in nn.edge
-            if nn == PhyloNetworks.getParent(e) # if e = child of node
+            if nn == getparent(e) # if e = child of node
                 if useSimpleHybridLines
                     # old simple hybrid lines
                     if e.isMajor || nomajorchild
-                        cc = PhyloNetworks.getChild(e)
+                        cc = getchild(e)
                         yy = node_y[findfirst(x -> x===cc, net.node)]
                         yy!==nothing || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
                     end
@@ -128,7 +129,7 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
                 else
                     # new pretty hybrid lines
                     if e.isMajor
-                        cc = PhyloNetworks.getChild(e)
+                        cc = getchild(e)
                         child_y = node_y[findfirst(x -> x===cc, net.node)]
                         child_y!==nothing || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
                     else
@@ -183,7 +184,7 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
             for e in net.nodes_changed[i].edge # loop over children only
                 if net.nodes_changed[i] == (e.isChild1 ? e.node[2] : e.node[1])
                     node_age[ni] = max(node_age[ni], 1 +
-                     node_age[findfirst(x -> x=== PhyloNetworks.getChild(e), net.node)])
+                     node_age[findfirst(x -> x=== getchild(e), net.node)])
                 end
             end
         end
@@ -211,7 +212,7 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
         end
         ei !== nothing || error("oops, could not find major parent edge of node number $ni.")
         edge_yB[ei] = node_y[ni]
-        pni = findfirst(x -> x===PhyloNetworks.getParent(net.edge[ei]), net.node) # parent node index
+        pni = findfirst(x -> x===getparent(net.edge[ei]), net.node) # parent node index
         edge_xB[ei] = node_x[pni]
         if elenCalculate
             elen[ei] = node_age[pni] - node_age[ni]
@@ -230,8 +231,8 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
     for i=1:net.numEdges
         if !net.edge[i].isMajor # minor hybrid edges
             # indices of child and parent nodes
-            cni = findfirst(x -> x===PhyloNetworks.getChild( net.edge[i]), net.node)
-            pni = findfirst(x -> x===PhyloNetworks.getParent(net.edge[i]), net.node)
+            cni = findfirst(x -> x===getchild( net.edge[i]), net.node)
+            pni = findfirst(x -> x===getparent(net.edge[i]), net.node)
 
             edge_xB[i] = node_x[pni]
             edge_xE[i] = useSimpleHybridLines ? edge_xB[i] : (useedgelength ? edge_xB[i] + elen[i] : node_x[cni])

@@ -14,7 +14,7 @@ edge:
 To fix this, we can to rotate C and D's edges around their parent node.
 
 First we need to know the number of this parent node. By showing node numbers
-with the `shownodenumbers = true` option, we can find the number of the node
+with the `shownodenumber = true` option, we can find the number of the node
 whose child edges we should rotate.
 
 ```@example untangling

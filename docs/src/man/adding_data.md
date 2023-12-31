@@ -15,7 +15,7 @@ In this section, we look over ways of adding extra information or data to a plot
     with notes on how to do the same for nodes in parentheses.
 
 To add labels on edges (or nodes), we need to know their numbers. We can use the
-`showedgenumbers = true` option for this. (Use `shownodenumbers = true` to see node numbers).
+`showedgenumber = true` option for this. (Use `shownodenumber = true` to see node numbers).
 
 ```@example adding_data
 R"svg"(figname("adding_data1.svg"), width=6, height=3) # hide

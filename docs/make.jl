@@ -1,4 +1,4 @@
-using Documenter, DocumenterMarkdown
+using Documenter
 
 using Pkg
 Pkg.add(PackageSpec(name="PhyloNetworks", rev="master"))

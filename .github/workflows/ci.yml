@@ -17,28 +17,34 @@ concurrency:
 
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    name: Julia ${{ matrix.julia-version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        version:
+        julia-version:
           - '1' # will expand to the latest stable 1.x release of Julia.
         os:
           - ubuntu-latest
           - macos-latest
           - windows-latest
+        R-version:
+          - 'release'
         arch:
           - x64
     steps:
-      - uses: actions/checkout@v2
-      - uses: r-lib/actions/setup-r@v2
+      - uses: actions/checkout@v4
+      - name: Install R
+        if: matrix.os == 'macOS-latest'
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.R-version }}
       - name: set R lib path to be found by julia RCall
         if: matrix.os == 'ubuntu-latest'
         run: echo "LD_LIBRARY_PATH=$(R RHOME)/lib" >> $GITHUB_ENV
       - uses: julia-actions/setup-julia@v1
         with:
-          version: ${{ matrix.version }}
+          version: ${{ matrix.julia-version }}
           arch: ${{ matrix.arch }}
       - uses: actions/cache@v1
         env:
@@ -53,7 +59,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3
         with:
           file: lcov.info
   docs:

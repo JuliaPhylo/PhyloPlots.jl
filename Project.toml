@@ -1,7 +1,7 @@
 name = "PhyloPlots"
 uuid = "c0d5b6db-e3fc-52bc-a87d-1d050989ed3b"
 license = "MIT"
-version = "1.0.0"
+version = "1.0.1"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"

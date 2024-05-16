@@ -23,21 +23,18 @@ jobs:
       fail-fast: false
       matrix:
         julia-version:
-          - '1' # will expand to the latest stable 1.x release of Julia.
+          - '1'
         os:
           - ubuntu-latest
           - macos-latest
           - windows-latest
         R-version:
           - 'release'
-        arch:
-          - x64
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
       - name: Install R
         uses: r-lib/actions/setup-r@v2

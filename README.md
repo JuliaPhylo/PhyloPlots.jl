@@ -3,7 +3,10 @@
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://cecileane.github.io/PhyloPlots.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://cecileane.github.io/PhyloPlots.jl/dev)
 [![Build status](https://github.com/cecileane/PhyloPlots.jl/workflows/CI/badge.svg?branch=master)](https://github.com/cecileane/PhyloPlots.jl/actions/workflows/ci.yml)
-[![codecov.io](http://codecov.io/github/cecileane/PhyloPlots.jl/coverage.svg?branch=master)](http://codecov.io/github/cecileane/PhyloPlots.jl?branch=master)
+[![Coverage](https://codecov.io/gh/cecileane/PhyloPlots.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/cecileane/PhyloPlots.jl)
+[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+[![PkgEval](https://JuliaCI.github.io/NanosoldierReports/pkgeval_badges/P/PhyloPlots.svg)](https://JuliaCI.github.io/NanosoldierReports/pkgeval_badges/report.html)
 
 ## overview
 

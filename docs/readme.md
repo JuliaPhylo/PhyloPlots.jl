@@ -25,7 +25,7 @@ it will:
 - built with [Documenter](https://juliadocs.github.io/Documenter.jl), see
   its [doc](https://juliadocs.github.io/Documenter.jl/stable/man/syntax/)
   for more details on its md syntax.
-- deployed [here](https://cecileane.github.io/PhyloPlots.jl/)
+- deployed [here](https://juliaphylo.github.io/PhyloPlots.jl/)
   (go to `dev/` or `stable/`)
   using github and files committed to the `gh-pages` branch.
 

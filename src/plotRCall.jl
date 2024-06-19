@@ -103,7 +103,7 @@ as it calls `directEdges!` and `preorder!`.
 
 If hybrid edges cross tree and major edges, you may choose to rotate some tree
 edges to eliminate crossing edges, using `rotate!`
-(in [`PhyloNetworks`](http://crsl4.github.io/PhyloNetworks.jl/latest/lib/public/#PhyloNetworks.rotate!)).
+(in [`PhyloNetworks`](http://juliaphylo.github.io/PhyloNetworks.jl/latest/lib/public/#PhyloNetworks.rotate!)).
 
 **Alternative**: a tree or network can be exported with [`sexp`](@ref)
 and then displayed with R's "plot" and all its options.

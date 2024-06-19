@@ -10,9 +10,6 @@ Used by the `$object` syntax and by `@rput` to use a Julia object in R:
 see the examples below. Makes it easy to plot a Julia tree or network
 using plotting facilities in R.
 
-
-code inspired from [Phylo.jl](https://github.com/richardreeve/Phylo.jl/blob/master/src/rcall.jl)
-
 # Examples
 
 ```julia-repl

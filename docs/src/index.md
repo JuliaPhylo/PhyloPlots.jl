@@ -1,10 +1,10 @@
 # PhyloPlots.jl
 
-[PhyloPlots](https://github.com/cecileane/PhyloPlots.jl) is a
+[PhyloPlots](https://github.com/juliaphylo/PhyloPlots.jl) is a
 [Julia](http://julialang.org) package to
 plot phylogenetic trees and networks.
 
-[PhyloNetworks](https://github.com/crsl4/PhyloNetworks.jl)
+[PhyloNetworks](https://github.com/juliaphylo/PhyloNetworks.jl)
 objects can be displayed
 through [R](https://www.r-project.org)
 via [RCall](https://github.com/JuliaInterop/RCall.jl).

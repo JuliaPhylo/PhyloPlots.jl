@@ -29,6 +29,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/cecileane/PhyloPlots.jl.git",
+    repo = "github.com/JuliaPhylo/PhyloPlots.jl.git",
     push_preview = true,
 )

@@ -1,7 +1,5 @@
-plot(mod::PhyloNetworks.TraitSubstitutionModel) = error("plot not defined for $(typeof(mod)).")
-
 """
-    plot(model::TwoBinaryTraitSubstitutionModel)
+    plot(model::PhyloTraits.TwoBinaryTraitSubstitutionModel)
 
 Display substitution rates for a trait evolution model for two
 possibly dependent binary traits; using `R` via `RCall`.
@@ -24,7 +22,7 @@ Substitution model for 2 binary traits, with rate matrix:
 julia> plot(m);
 ```
 """
-function plot(object::PhyloNetworks.TwoBinaryTraitSubstitutionModel)
+function plot(object::PhyloTraits.TwoBinaryTraitSubstitutionModel)
     R"""
     signif<-3
     plot.new()

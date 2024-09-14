@@ -12,6 +12,7 @@ using DataFrames
 using RCall
 import RCall.sexp
 using PhyloNetworks
+import PhyloTraits
 
 export plot
 export sexp

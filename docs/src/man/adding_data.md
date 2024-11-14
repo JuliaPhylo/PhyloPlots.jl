@@ -20,7 +20,7 @@ To add labels on edges (or nodes), we need to know their numbers. We can use the
 ```@example adding_data
 R"svg"(figname("adding_data1.svg"), width=6, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]); R"layout"([1 2]); # hide
-net = readTopology("(A,((B,#H1),((C)#H1, D)));") # hide
+net = readnewick("(A,((B,#H1),((C)#H1, D)));") # hide
 plot(net, showedgenumber=true);
 plot(net, showedgenumber=true, edgenumbercolor="red4");
 R"dev.off()" # hide
@@ -49,7 +49,7 @@ puts the text on the correct edges:
 ```@example adding_data
 R"svg"(figname("edge_labels_example.svg"), width=4, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
-net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
+net = readnewick("(A,((B,#H1),(C,(D)#H1)));") # hide
 plot(net, edgelabel=DataFrame(number = [1,2],
                               label = ["edge number 1", "edge # 2"]),
           edgelabelcolor="orangered", edgecex=[0.9,1.1]);
@@ -79,7 +79,7 @@ Here's example code that adds bars to denote clades in the margin:
 ```@example adding_data
 R"svg"(figname("side_bars.svg"), width=4, height=4) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
-net = readTopology("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");
+net = readnewick("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");
 plot(net, xlim=(1,10))
 using RCall # to send any R command, to make further plot modifications
 R"segments"([9, 9, 9], [0.8, 7.8, 9.8], [9, 9, 9], [7.2, 9.2, 10.2])

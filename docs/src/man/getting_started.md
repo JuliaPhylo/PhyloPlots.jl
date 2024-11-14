@@ -16,14 +16,14 @@ using PhyloPlots
 ```
 Then read the topology
 ```@repl getting_started
-net = readTopology("(A,((B,#H1),(C,(D)#H1)));")
+net = readnewick("(A,((B,#H1),(C,(D)#H1)));")
 ```
 and call `plot`, as shown below.
 
 ```@example getting_started
 R"svg"(figname("gettingstarted.svg"), width=3, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
-net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
+net = readnewick("(A,((B,#H1),(C,(D)#H1)));") # hide
 plot(net);
 R"dev.off()" # hide
 nothing # hide

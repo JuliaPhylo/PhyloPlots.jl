@@ -9,8 +9,8 @@ useape = false; # these extra tests would require the installation of ape by the
 
 # on a tree with some edge lengths missing
 s = "(A,(B:1.0,(C:1.0,D:1.0):1.0):1.0);";
-tree1 = PhyloPlots.rexport(readTopology(s)); # for testing rexport
-net2 = readTopology(s); # for testing sexp on clean network
+tree1 = PhyloPlots.rexport(readnewick(s)); # for testing rexport
+net2 = readnewick(s); # for testing sexp on clean network
 if useape
 ## check for correct unrooted topology and for identical lengths
 ## of (unrooted) internal edges, but requires t
@@ -34,8 +34,8 @@ class(tree2r) = "phylo"
 
 # network, h=1, missing gamma values
 s = "(((A:4.0,(B:1.0)#H1:1.1):0.5,(C:0.6,#H1:1.0):1.0):3.0,D:5.0);";
-phy1 = PhyloPlots.rexport(readTopology(s));
-net2 = readTopology(s);
+phy1 = PhyloPlots.rexport(readnewick(s));
+net2 = readnewick(s);
 if useape # needs ape version > 4.1 with read.evonet (not in 4.1)
     R"phyr = read.evonet(text = $s)"
     @test convert(Bool, R"dist.topo($phy1, phyr, method='score') == 0")
@@ -58,9 +58,9 @@ class(phy2r) = c("evonet","phylo")
 # network, h=1, maintree=true; minor hybrid edge length missing
 s = "(((A:4.0,(B)#H1:1.1::0.9):0.5,(C:0.6,#H1):1.0):3.0,D:5.0);";
 stree = "(((A:4.0,B):0.5,C:1.6):3.0,D:5.0);"; # main tree
-phy1 = PhyloPlots.rexport(readTopology(s); maintree=true);
-net2 = readTopology(s);
-tree2 = majorTree(readTopology(s));
+phy1 = PhyloPlots.rexport(readnewick(s); maintree=true);
+net2 = readnewick(s);
+tree2 = majorTree(readnewick(s));
 if useape
     R"tree2r = read.tree(text = $stree)";
     @test convert(Bool, R"dist.topo($phy1, tree2r, method='score') == 0")
@@ -86,7 +86,7 @@ class(phy2r) = c("evonet","phylo")
 
 # on a network, h=1, with useedgelength=false
 s = "(((A:1.0,(B:.5)#H1:.2::0.9):.8,(C:1.5,#H1:.01::0.1):2):.6,D:5.0);";
-phy1 = PhyloPlots.rexport(readTopology(s), useedgelength=false);
+phy1 = PhyloPlots.rexport(readnewick(s), useedgelength=false);
 if useape # needs ape version > 4.1 with read.evonet (not in 4.1), also dist.topo for networks
     R"phyr = read.evonet(text = $s)"
     @test convert(Bool, R"dist.topo($phy1, phyr) == 0")
@@ -104,8 +104,8 @@ class(phy1r) = c("evonet","phylo")
 # on a network with h=2 hybridizations
 s = "(((Ag,(#H1:7.159::0.056,((Ak,(E:0.08,#H2:0.0::0.004):0.023):0.078,(M:0.0)#H2:::0.996):2.49):2.214):0.026,
       (((((Az:0.002,Ag2:0.023):2.11,As:2.027):1.697)#H1:0.0::0.944,Ap):0.187,Ar):0.723):5.943,(P,20):1.863,165);";
-phy1 = PhyloPlots.rexport(readTopology(s));
-net2 = readTopology(s);
+phy1 = PhyloPlots.rexport(readnewick(s));
+net2 = readnewick(s);
 R"""
 phy1r = list(Nnode=14L, edge=matrix(c(13,13,13,14,14,15,15,16,16,17,17,18,18,19,20,20,21,21,22,23,24,25,25,26,26,
              15,14,12,10,11,18,16,17,9,24,8,1,19,20,21,23,2,22,3,4,25,26,7,5,6), 25,2),

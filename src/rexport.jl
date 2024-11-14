@@ -15,7 +15,7 @@ using plotting facilities in R.
 ```julia-repl
 julia> using RCall
 julia> using PhyloNetworks
-julia> net = readTopology("(((A:.2,(B:.1)#H1:.1::0.9):.1,(C:.11,#H1:.01::0.1):.19):.1,D:.4);");
+julia> net = readnewick("(((A:.2,(B:.1)#H1:.1::0.9):.1,(C:.11,#H1:.01::0.1):.19):.1,D:.4);");
 R> library(ape); # type $ to switch from julia to R
 R> $net
 
@@ -113,7 +113,7 @@ not exported: [`sexp`](@ref) is the best way to go.
 # Examples
 
 ```julia-repl
-julia> net = readTopology("(((A,(B)#H1:::0.9),(C,#H1:::0.1)),D);");
+julia> net = readnewick("(((A,(B)#H1:::0.9),(C,#H1:::0.1)),D);");
 
 julia> phy = PhyloPlots.rexport(net)
 RObject{VecSxp}

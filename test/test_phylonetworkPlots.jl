@@ -1,6 +1,6 @@
 @testset "Test setup for plotting PhyloNetworks objects" begin
 
-  net = readTopology("(A:2.5,((B:1,#H1:0.5::0.1):1,(C:1,(D:0.5)#H1:0.5::0.9):1):0.5);")
+  net = readnewick("(A:2.5,((B:1,#H1:0.5::0.1):1,(C:1,(D:0.5)#H1:0.5::0.9):1):0.5);")
   # in this order:
   # edge_xB, edge_xE, edge_yB, edge_yE,
   # node_x, node_y, node_yB, node_yE,
@@ -67,7 +67,7 @@
   # example with level-2 network, non-tree child:
   # one hybrid node ends up as a leaf in the major tree.
   # no major child edge to follow to set coordinates
-  net = readTopology("((((B)#H1:::0.2)#H2,((D,C,#H2:::0.8)S1,(#H1,A)S2)S3)S4);")
+  net = readnewick("((((B)#H1:::0.2)#H2,((D,C,#H2:::0.8)S1,(#H1,A)S2)S3)S4);")
   @test_logs plot(net, shownodenumber=true, showgamma=true);
   @test PhyloPlots.edgenode_coordinates(net, false, false) == (
     [5.0, 4.0, 1.0, 3.0, 3.0, 3.0, 2.0, 4.0, 4.0, 2.0, 1.0],
@@ -80,7 +80,7 @@
     [5.0, 5.0, 4.0, 2.0, 3.0, 4.0, 6.0, 6.0, 5.5, 4.25],
     [5.0, 4.0], [5.0, 4.0], [4.0, 1.0], [5.0, 4.0],
     1.0, 6.0, 1.0, 6.0)
-  net = readTopology("((((B)#H1:::0.2)#H2,((D,C,#H2)S1,(#H1,A)S2)S3)S4);")
+  net = readnewick("((((B)#H1:::0.2)#H2,((D,C,#H2)S1,(#H1,A)S2)S3)S4);")
   @test_logs plot(net, shownodenumber=true, showgamma=true);
   @test PhyloPlots.edgenode_coordinates(net, false, false) == (
     [5.0, 4.0, 1.0, 3.0, 3.0, 3.0, 2.0, 4.0, 4.0, 2.0, 1.0],

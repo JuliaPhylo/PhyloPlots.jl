@@ -43,7 +43,11 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 12. `minoredge_yE`: ... end of the diagonal segment of each minor hybrid edge.
 13-16. `xmin`, `xmax`, `ymin`, `ymax`: ranges for the x and y axes.
 """
-function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimpleHybridLines::Bool)
+function edgenode_coordinates(
+    net::HybridNetwork,
+    useedgelength::Bool,
+    useSimpleHybridLines::Bool
+)
     try
         directEdges!(net)   # to update ischild1
     catch e
@@ -270,7 +274,10 @@ Check data frame for node annotations:
 - remove rows with no node numbers
 - warning if some node numbers in the data are not in the network.
 """
-function check_nodedataframe(net::HybridNetwork, nodelabel::DataFrame)
+function check_nodedataframe(
+    net::HybridNetwork,
+    nodelabel::DataFrame
+)
     labelnodes = size(nodelabel,1)>0
     if (labelnodes && (size(nodelabel,2)<2 ||
             !(nonmissingtype(eltype(nodelabel[!,1])) <: Integer)))
@@ -309,9 +316,15 @@ Columns of output data frame:
 - lab: node label
 - lea: is leaf?
 """
-function prepare_nodedataframe(net::HybridNetwork, nodelabel::DataFrame,
-        shownodenumber::Bool, shownodename::Bool, labelnodes::Bool,
-        node_x::Array{Float64,1}, node_y::Array{Float64,1})
+function prepare_nodedataframe(
+    net::HybridNetwork,
+    nodelabel::AbstractDataFrame,
+    shownodenumber::Bool,
+    shownodename::Bool,
+    labelnodes::Bool,
+    node_x::Array{Float64,1},
+    node_y::Array{Float64,1}
+)
     nrows = (shownodenumber || shownodename || labelnodes ? net.numnodes : net.numtaxa)
     ndf = DataFrame(:name => Vector{String}(undef,nrows),
         :num => Vector{String}(undef,nrows), :lab => Vector{String}(undef,nrows),
@@ -354,11 +367,19 @@ Return data frame with columns
 - hyb: is hybrid?
 - min: is minor?
 """
-function prepare_edgedataframe(net::HybridNetwork, edgelabel::DataFrame, style::Symbol,
-        edge_xB::Array{Float64,1}, edge_xE::Array{Float64,1},
-        edge_yB::Array{Float64,1}, edge_yE::Array{Float64,1},
-        minoredge_xB::Array{Float64,1}, minoredge_xE::Array{Float64,1},
-        minoredge_yB::Array{Float64,1}, minoredge_yE::Array{Float64,1})
+function prepare_edgedataframe(
+    net::HybridNetwork,
+    edgelabel::AbstractDataFrame,
+    style::Symbol,
+    edge_xB::Array{Float64,1},
+    edge_xE::Array{Float64,1},
+    edge_yB::Array{Float64,1},
+    edge_yE::Array{Float64,1},
+    minoredge_xB::Array{Float64,1},
+    minoredge_xE::Array{Float64,1},
+    minoredge_yB::Array{Float64,1},
+    minoredge_yE::Array{Float64,1}
+)
     nrows = net.numedges
     edf = DataFrame(:len => Vector{String}(undef,nrows),
         :gam => Vector{String}(undef,nrows), :num => Vector{String}(undef,nrows),

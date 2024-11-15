@@ -1,26 +1,3 @@
-@deprecate plot(net::HybridNetwork, ::Symbol; useEdgeLength=false::Bool,
-  mainTree=false::Bool, showTipLabel=true::Bool, showNodeNumber=false::Bool,
-  showEdgeLength=false::Bool, showGamma=false::Bool,
-  edgeColor="black"::String,
-  majorHybridEdgeColor="deepskyblue4"::String,
-  minorHybridEdgeColor="deepskyblue"::String,
-  showEdgeNumber=false::Bool, showIntNodeLabel=false::Bool,
-  edgeLabel=DataFrame()::DataFrame, nodeLabel=DataFrame()::DataFrame,
-  xlim=Float64[]::Array{Float64,1}, ylim=Float64[]::Array{Float64,1},
-  tipOffset=0.0::Float64, tipcex=1.0::Float64,
-  style=:fulltree::Symbol, arrowlen=(style==:majortree ? 0 : 0.1)::Real
-) plot(net::HybridNetwork; useedgelength=useEdgeLength,
-  showtiplabel=showTipLabel, shownodenumber=showNodeNumber,
-  showedgelength=showEdgeLength, showgamma=showGamma,
-  edgecolor=edgeColor,
-  majorhybridedgecolor=majorHybridEdgeColor,
-  minorhybridedgecolor=minorHybridEdgeColor,
-  showedgenumber=showEdgeNumber, shownodelabel=showIntNodeLabel,
-  edgelabel=edgeLabel, nodelabel=nodeLabel,
-  xlim=xlim, ylim=ylim,
-  tipoffset=tipOffset, tipcex=tipcex,
-  style=style, arrowlen=arrowlen)
-
 """
     plot(net::HybridNetwork)
 
@@ -108,24 +85,33 @@ edges to eliminate crossing edges, using `rotate!`
 **Alternative**: a tree or network can be exported with [`sexp`](@ref)
 and then displayed with R's "plot" and all its options.
 """
-function plot(net::HybridNetwork; useedgelength=false::Bool,
-    showtiplabel=true::Bool, shownodenumber=false::Bool,
-    showedgelength=false::Bool, showgamma=false::Bool,
-    edgecolor="black"::String,
-    majorhybridedgecolor="deepskyblue4"::String,
-    minorhybridedgecolor="deepskyblue"::String,
-    showedgenumber=false::Bool, shownodelabel=false::Bool,
-    edgelabel=DataFrame()::DataFrame, nodelabel=DataFrame()::DataFrame,
-    xlim=Float64[]::Array{Float64,1}, ylim=Float64[]::Array{Float64,1},
-    tipoffset=0.0::Float64, tipcex=1.0::Float64,
-    nodecex=1.0::Float64, edgecex=1.0::Float64,
-    style=:fulltree::Symbol, arrowlen=(style==:majortree ? 0 : 0.1)::Real,
+function plot(
+    net::HybridNetwork;
+    useedgelength::Bool=false,
+    showtiplabel::Bool=true,
+    shownodenumber::Bool=false,
+    showedgelength::Bool=false,
+    showgamma::Bool=false,
+    edgecolor::AbstractString="black",
+    majorhybridedgecolor::AbstractString="deepskyblue4",
+    minorhybridedgecolor::AbstractString="deepskyblue",
+    showedgenumber::Bool=false,
+    shownodelabel::Bool=false,
+    edgelabel::AbstractDataFrame=DataFrame(),
+    nodelabel::AbstractDataFrame=DataFrame(),
+    xlim::Array{<:Real,1}=Float64[],
+    ylim::Array{<:Real,1}=Float64[],
+    tipoffset::Real=0.0,
+    tipcex::Real=1.0,
+    nodecex::Real=1.0,
+    edgecex::Real=1.0,
+    style::Symbol=:fulltree,
+    arrowlen::Real=(style==:majortree ? 0 : 0.1),
     edgewidth = 1,
     edgenumbercolor = "grey", # don't limit the type because R accepts many types
     edgelabelcolor = "black", # and these colors are used as is
     nodelabelcolor = "black",
 )
-
     if getroot(net).leaf
         @warn """The network is rooted at a leaf: the plot won't look good.
             Try rooting the network on the edge adjacent to that leaf, with

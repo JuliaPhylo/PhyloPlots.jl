@@ -126,10 +126,10 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
     nodelabelcolor = "black",
 )
 
-    if net.node[net.root].leaf
+    if getroot(net).leaf
         @warn """The network is rooted at a leaf: the plot won't look good.
             Try rooting the network on the edge adjacent to that leaf, with
-            rootonedge!(network_name, $(net.node[net.root].edge[1].number))"""
+            rootonedge!(network_name, $(getroot(net).edge[1].number))"""
     end
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
@@ -155,7 +155,7 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
     leaves = [n.leaf for n in net.node]
     eCol = fill(edgecolor, length(net.edge))
     eCol[ [ e.hybrid  for e in net.edge] ] .= majorhybridedgecolor
-    eCol[ [!e.isMajor for e in net.edge] ] .= minorhybridedgecolor
+    eCol[ [!e.ismajor for e in net.edge] ] .= minorhybridedgecolor
 
     if isa(edgewidth, Number)
       edgewidth_vec = edgewidth
@@ -210,7 +210,7 @@ function plot(net::HybridNetwork; useedgelength=false::Bool,
     if showedgelength
       R"text"(edf[!,:x], edf[!,:y], edf[!,:len], adj=[.5,1.])
     end
-    if showgamma && net.numHybrids>0
+    if showgamma && net.numhybrids>0
       im = edf[!,:hyb] .& edf[!,:min]
       iM = edf[!,:hyb] .& .!edf[!,:min]
       R"text"(edf[im,:x], edf[im,:y], edf[im,:gam],

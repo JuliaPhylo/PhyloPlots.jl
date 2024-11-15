@@ -73,7 +73,7 @@ function sexp(net::HybridNetwork)
     if any(.!ismissing.(edgeLength))
         phy[Symbol("edge.length")] = edgeLength
     end
-    if net.numHybrids > 0
+    if net.numhybrids > 0
         reticulation = PhyloNetworks.minorreticulationmatrix(net)
         reticulationGamma = PhyloNetworks.minorreticulationgamma(net)
         reticulationLength = PhyloNetworks.minorreticulationlength(net)
@@ -86,7 +86,7 @@ function sexp(net::HybridNetwork)
         end
     end
     sobj = RCall.protect(sexp(phy)) # RObject
-    if net.numHybrids == 0
+    if net.numhybrids == 0
         setclass!(sobj, sexp("phylo"))
     else
         setclass!(sobj, sexp(["evonet", "phylo"]))
@@ -171,7 +171,7 @@ function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=t
 # worry about R object created within the function not accessible from outside:
 # can it be garbage collected?
 
-    if maintree && net.numHybrids > 0
+    if maintree && net.numhybrids > 0
         net = majorTree(net)
     end
     PhyloNetworks.resetNodeNumbers!(net)
@@ -192,7 +192,7 @@ function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=t
             """
         end
     end
-    if net.numHybrids > 0
+    if net.numhybrids > 0
         reticulation = PhyloNetworks.minorreticulationmatrix(net)
         reticulationGamma = PhyloNetworks.minorreticulationgamma(net)
         R"""
@@ -210,7 +210,7 @@ function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=t
                 """
             end
         end
-    elseif net.numHybrids == 0
+    elseif net.numhybrids == 0
         R"""
         class(phy) = "phylo"
         """

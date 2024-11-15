@@ -2,7 +2,7 @@
   # testing for absence of errors, not for correctness
 
   # network rooted at a leaf: test for no error in warning message
-  net = readnewick("(A:1,B:1);"); net.root = 2
+  net = readnewick("(A:1,B:1);"); net.rooti = 2
   @test_logs (:warn, r"rootonedge!\(network_name, 2\)") plot(net)
   #net = readnewick("(((A,(B)#H1:::0.9),(C,#H1:::0.1)),D);")
   net = readnewick("(((Ag,(#H1:7.159::0.056,((Ak,(E:0.08,#H2:0.0::0.004):0.023):0.078,(M:0.0)#H2:::0.996):2.49):2.214):0.026,(((((Az:0.002,Ag2:0.023):2.11,As:2.027):1.697)#H1:0.0::0.944,Ap):0.187,Ar):0.723):5.943,(P,20):1.863,165);");

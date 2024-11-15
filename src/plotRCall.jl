@@ -13,8 +13,9 @@ Plot a network using R graphics. Optional arguments are listed below.
   * `:fulltree` will draw minor edges as their own branches in the tree,
     in the same style used by [icytree](https://icytree.org). This is
     useful for overlapping or confusing networks.
-- `arrowlen` : the length of the arrow tips in the full tree style. if `style = :fulltree`, then
-  `arrowlen = 0.2`. otherwise, `arrowlen = 0`, which makes the arrows appear as segments.
+- `arrowlen` : the length of the arrow tips in the full tree style.
+  The default is 0.1 if `style = :fulltree`,
+  and 0 if `style = :majortree` (makeing the arrows appear as segments).
 - `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
   use a dictionary to map the number of each edge to its desired witdth.
 - `xlim`, `ylim` : array of 2 values, to determine the axes limits
@@ -22,8 +23,8 @@ Plot a network using R graphics. Optional arguments are listed below.
 ## tip annotations:
 
 - `showtiplabel = true` : if true, taxon labels (names) are shown.
-- `tipoffset = 0.0` : to offset tip labels
-- `tipcex=1.0`: character expansion for tip and internal node names
+- `tipoffset = 0` : to offset tip labels
+- `tipcex = 1`: character expansion for tip and internal node names
 
 ## nodes & edges annotations:
 
@@ -38,8 +39,8 @@ Plot a network using R graphics. Optional arguments are listed below.
 - `nodelabel = DataFrame()` : dataframe with two columns: the first with node numbers,
   the second with labels (like bootstrap values for hybrid relationships)
   to annotate nodes. empty by default.
-- `nodecex=1.0`: character expansion for labels in the `nodelabel` data frame
-- `edgecex=1.0`: character expansion for labels in the `edgelabel` data frame
+- `nodecex = 1`: character expansion for labels in the `nodelabel` data frame
+- `edgecex = 1`: character expansion for labels in the `edgelabel` data frame
 
 ## colors:
 
@@ -99,12 +100,12 @@ function plot(
     shownodelabel::Bool=false,
     edgelabel::AbstractDataFrame=DataFrame(),
     nodelabel::AbstractDataFrame=DataFrame(),
-    xlim::Array{<:Real,1}=Float64[],
-    ylim::Array{<:Real,1}=Float64[],
-    tipoffset::Real=0.0,
-    tipcex::Real=1.0,
-    nodecex::Real=1.0,
-    edgecex::Real=1.0,
+    xlim = nothing,
+    ylim = nothing,
+    tipoffset = 0,
+    tipcex = 1,
+    nodecex = 1,
+    edgecex = 1,
     style::Symbol=:fulltree,
     arrowlen::Real=(style==:majortree ? 0 : 0.1),
     edgewidth = 1,
@@ -132,10 +133,14 @@ function plot(
         ymax += expfacy
     end
     xmax += tipoffset
-    if length(xlim)==2
+    if !isnothing(xlim)
+        length(xlim) == 2 ||
+          error("xlim needs to contain 2 values: lower and upper limits. defaults: [$xmin,$xmax]")
         xmin=xlim[1]; xmax=xlim[2]
     end
-    if length(ylim)==2
+    if !isnothing(ylim)
+        length(ylim) == 2 ||
+          error("ylim needs to contain 2 values: lower and upper limits. defaults: [$ymin,$ymax]")
         ymin=ylim[1]; ymax=ylim[2]
     end
     leaves = [n.leaf for n in net.node]

@@ -77,7 +77,7 @@ with RCall:
 14. `edf` : edge data frame
 
 Note that `plot` actually modifies some (minor) attributes of the network,
-as it calls `directEdges!` and `preorder!`.
+as it calls `PhyloNetworks.directedges!` and `PhyloNetworks.preorder!`.
 
 If hybrid edges cross tree and major edges, you may choose to rotate some tree
 edges to eliminate crossing edges, using `rotate!`
@@ -178,7 +178,7 @@ function plot(
     R"segments"(node_x, node_yB, node_x, node_yE, col=edgecolor)
     if showtiplabel
       R"text"(node_x[leaves] .+ tipoffset, node_y[leaves],
-              tipLabels(net), adj=0, font=3, cex=tipcex)
+              tiplabels(net), adj=0, font=3, cex=tipcex)
     end
     if shownodelabel
       R"text"(ndf[.!ndf[!,:lea],:x], ndf[.!ndf[!,:lea],:y],

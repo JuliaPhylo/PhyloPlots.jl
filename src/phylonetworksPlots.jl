@@ -7,7 +7,7 @@
 Calculate coordinates for plotting later with Gadfly or RCall.
 
 Actually modifies some (minor) attributes of the network,
-as it calls `directEdges!` and `preorder!`.
+as it calls `directedges!` and `preorder!`.
 
 output: tuple with the following elements, in which the order of
 nodes corresponds to the order in `net.node`, and the order of
@@ -49,7 +49,7 @@ function edgenode_coordinates(
     useSimpleHybridLines::Bool
 )
     try
-        directEdges!(net)   # to update ischild1
+        directedges!(net)   # to update ischild1
     catch e
         if isa(e, PhyloNetworks.RootMismatch)
             e = PhyloNetworks.RootMismatch( e.msg * "\nPlease change the root, perhaps using rootatnode! or rootatedge!")

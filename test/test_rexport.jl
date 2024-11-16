@@ -60,7 +60,7 @@ s = "(((A:4.0,(B)#H1:1.1::0.9):0.5,(C:0.6,#H1):1.0):3.0,D:5.0);";
 stree = "(((A:4.0,B):0.5,C:1.6):3.0,D:5.0);"; # main tree
 phy1 = PhyloPlots.rexport(readnewick(s); maintree=true);
 net2 = readnewick(s);
-tree2 = majorTree(readnewick(s));
+tree2 = majortree(readnewick(s));
 if useape
     R"tree2r = read.tree(text = $stree)";
     @test convert(Bool, R"dist.topo($phy1, tree2r, method='score') == 0")

@@ -172,7 +172,7 @@ function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=t
 # can it be garbage collected?
 
     if maintree && net.numhybrids > 0
-        net = majorTree(net)
+        net = majortree(net)
     end
     PhyloNetworks.resetNodeNumbers!(net)
     ntips = length(net.leaf)

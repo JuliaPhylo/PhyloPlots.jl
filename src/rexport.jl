@@ -58,7 +58,7 @@ R> plot(net)
 ```
 """ #"
 function sexp(net::HybridNetwork)
-    PhyloNetworks.resetNodeNumbers!(net)
+    PhyloNetworks.resetnodenumbers!(net)
     ntips = length(net.leaf)
     totalnodes = length(net.node)
     Nnode = totalnodes - ntips
@@ -174,7 +174,7 @@ function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=t
     if maintree && net.numhybrids > 0
         net = majortree(net)
     end
-    PhyloNetworks.resetNodeNumbers!(net)
+    PhyloNetworks.resetnodenumbers!(net)
     ntips = length(net.leaf)
     totalnodes = length(net.node)
     Nnode = totalnodes - ntips

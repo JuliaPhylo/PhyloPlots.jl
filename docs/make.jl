@@ -1,7 +1,7 @@
 using Documenter
 
 using Pkg
-Pkg.add(PackageSpec(name="PhyloNetworks", rev="dev"))
+Pkg.add(PackageSpec(name="PhyloNetworks", rev="master"))
 
 using PhyloNetworks
 using PhyloPlots

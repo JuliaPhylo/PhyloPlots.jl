@@ -17,9 +17,11 @@ via [RCall](https://github.com/JuliaInterop/RCall.jl).
 
 ## examples
 
-in PhyloPlots' documentation [manual](https://juliaphylo.github.io/PhyloPlots.jl/stable/man/getting_started/), and  
-in [PhyloNetworks](http://juliaphylo.github.io/PhyloNetworks.jl/latest/)'s documentation, see
-- basic examples
-  [here](http://juliaphylo.github.io/PhyloNetworks.jl/latest/man/snaq_plot/#Network-Visualization-1)
-- examples to annotate edges
-  [here](http://juliaphylo.github.io/PhyloNetworks.jl/latest/man/bootstrap/#support-for-tree-edges)
+- in PhyloPlots' documentation [manual](https://juliaphylo.github.io/PhyloPlots.jl/stable/man/getting_started/)
+- in [PhyloNetworks](http://juliaphylo.github.io/PhyloNetworks.jl/latest/)'s documentation, see
+  * basic examples
+    [here](https://juliaphylo.github.io/PhyloNetworks.jl/dev/man/net_plot/#Network-Visualization)
+  * examples to annotate edges
+    [here](https://juliaphylo.github.io/PhyloNetworks.jl/dev/man/network_support/#support-for-tree-edges)
+- visualization with data in this
+  [tutorial](https://cecileane.github.io/networkPCM-workshop/topic6-visualization.html)

@@ -56,9 +56,9 @@ with RCall:
 
 ```
 (xmin, xmax, ymin, ymax,
- node_x, node_y, node_yB, node_yE,
- edge_xB, edge_xE, edge_yB, edge_yE,
- ndf, edf)
+ node_x,    node_y,    node_y_lo, node_y_hi,
+ edge_x_lo, edge_x_hi, edge_y_lo, edge_y_hi,
+ node_data, edge_data)
 ```
 
 1. `:xmin` : minimum x value of the plot

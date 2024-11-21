@@ -36,6 +36,11 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
       - uses: julia-actions/cache@v2
+      - name: install qpdf on macos
+        if: matrix.os == 'macos-latest'
+        run: brew install qpdf
+        # as of 2024-11-21: qpdf is needed by `--as-cran` for setup-r@v2
+        # its automatic installation during setup-r fails sometimes (randomly?)
       - name: Install R
         uses: r-lib/actions/setup-r@v2
         with:

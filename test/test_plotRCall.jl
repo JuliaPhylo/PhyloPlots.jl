@@ -26,7 +26,10 @@
 
   # coverage for the nomajorchild
   net2 = readnewick("((((B)#H1)#H2,((D,C,#H2)S1,(#H1:::.8,A)S2)S3)S4);")
-  @test_logs plot(net2, style=:majortree);
+  res = (@test_logs plot(net2, style=:majortree))
+  @test keys(res) == (:xmin, :xmax, :ymin, :ymax, :node_x, :node_y,
+    :node_y_lo, :node_y_hi, :edge_x_lo, :edge_x_hi, :edge_y_lo, :edge_y_hi,
+    :node_data, :edge_data)
 
   # plot based on RCall and ape:
   tre = readnewick("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");

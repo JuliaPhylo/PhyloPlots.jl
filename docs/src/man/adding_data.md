@@ -40,7 +40,7 @@ node), and the label that goes on it, like this:
 | 2      | "edge # 2" |
 
 After including the DataFrames package, we can define it as so:
-```@repl
+```@repl adding_data
 using DataFrames
 DataFrame(number=[1,2], label=["edge number 1","edge # 2"])
 ```
@@ -63,12 +63,12 @@ nothing # hide
 We can use the return values of [`plot`](@ref) to get information on the coordinates of
 different elements of the plot. Using this, we can add any other information we want.
 
-The [`plot`](@ref) function returns the following tuple:
+The [`plot`](@ref) function returns the following named tuple:
 ```
-(xmin, xmax, ymin, ymax,
- node_x, node_y, node_yB, node_yE,
- edge_xB, edge_xE, edge_yB, edge_yE,
- nodedataframe, edgedataframe)
+(:xmin, :xmax, :ymin, :ymax,
+ :node_x,    :node_y,    :node_y_lo, :node_y_hi,
+ :edge_x_lo, :edge_x_hi, :edge_y_lo, :edge_y_hi,
+ :node_data, :edge_data)
 ```
 See the documentation for descriptions of these elements: [`plot`](@ref)
 
@@ -79,7 +79,7 @@ Here's example code that adds bars to denote clades in the margin:
 ```@example adding_data
 R"svg"(figname("side_bars.svg"), width=4, height=4) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
-net = readnewick("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");
+net = readnewick("(((((((t1,t2),t3),t4),t5),(t6,t7)),(t8,t9)),t10);");
 plot(net, xlim=(1,10))
 using RCall # to send any R command, to make further plot modifications
 R"segments"([9, 9, 9], [0.8, 7.8, 9.8], [9, 9, 9], [7.2, 9.2, 10.2])
@@ -97,7 +97,7 @@ because they contain the default range of the x axis; `xmin` and `xmax`.
 
 ```@example adding_data
 res = plot(net);
-res[1:2]
+res[[:xmin,:xmax]]
 ```
 
 Looking at `xmin` and `xmax` returned by default, we can see that the x
@@ -119,4 +119,18 @@ text on them.
 using RCall # add (install) the RCall package prior to 'using' it
 R"segments"([9, 9, 9], [0.8, 7.8, 9.8], [9, 9, 9], [7.2, 9.2, 10.2])
 R"text"([9.5, 9.5, 9.5], [4, 8.5, 10], ["C", "B", "A"])
+```
+
+# Beyond
+
+To go beyond, we can access data on the node & edges to use them as we wish.
+We can access the coordinates of points & segments and more data like this:
+
+```@repl adding_data
+res[:node_x] # x coordinate. similarly try res[:node_y]
+hcat(res[:node_y_lo], res[:node_y_hi])
+DataFrame(edge_x_lo=res[:edge_x_lo], edge_x_hi=res[:edge_x_hi],
+          edge_y_lo=res[:edge_y_lo], edge_y_hi=res[:edge_y_hi])
+res[:node_data]
+res[:edge_data]
 ```

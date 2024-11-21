@@ -51,7 +51,7 @@ Plot a network using R graphics. Optional arguments are listed below.
 - `edgelabelcolor = "black"`: color for labels in the `edgelabel` data frame
 - `nodelabelcolor = "black"`: color for labels in the `nodelabel` data frame
 
-Output the following tuple, that can be used for downstream plot annotations
+Output the following named tuple, that can be used for downstream plot annotations
 with RCall:
 
 ```
@@ -61,27 +61,27 @@ with RCall:
  ndf, edf)
 ```
 
-1. `xmin` : minimum x value of the plot
-2. `xmax` : maximum x value of the plot
-3. `ymin` : minimum y value of the plot
-4. `ymax` : maximum y value of the plot
-5. `node_x` : x values of the nodes in net.node in their respective order
-6. `node_y` : y values of the nodes
-7. `node_yB` : y value of the beginning of the verticle bar
-8. `node_yE` : y value of the end of the verticle bar
-9. `edge_xB` : x value of the beginning of the edges in net.edge in their respective order
-10. `edge_xE` : x value of the end of the edges
-11. `edge_yB` : y value of the beginning of the edges
-12. `edge_yE` : y value of the end of the edges
-13. `ndf` : node data frame: see section [Adding labels](@ref) for more
-14. `edf` : edge data frame
+1. `:xmin` : minimum x value of the plot
+2. `:xmax` : maximum x value of the plot
+3. `:ymin` : minimum y value of the plot
+4. `:ymax` : maximum y value of the plot
+5. `:node_x` : x values of the nodes in net.node in their respective order
+6. `:node_y` : y values of the nodes
+7. `:node_y_lo` : y value of the beginning of the vertical bar
+8. `:node_y_hi` : y value of the end of the vertical bar
+9. `:edge_x_lo` : x value of the beginning of the edges in `net.edge` in their respective order
+10. `:edge_x_hi` : x value of the end of the edges
+11. `:edge_y_lo` : y value of the beginning of the edges
+12. `:edge_y_hi` : y value of the end of the edges
+13. `:node_data` : node data frame: see section [Adding labels](@ref) for more
+14. `:edge_data` : edge data frame
 
 Note that `plot` actually modifies some (minor) attributes of the network,
 as it calls `PhyloNetworks.directedges!` and `PhyloNetworks.preorder!`.
 
 If hybrid edges cross tree and major edges, you may choose to rotate some tree
-edges to eliminate crossing edges, using `rotate!`
-(in [`PhyloNetworks`](http://juliaphylo.github.io/PhyloNetworks.jl/latest/lib/public/#PhyloNetworks.rotate!)).
+edges to eliminate crossing edges, using
+[`PhyloNetworks.rotate!`](https://juliaphylo.github.io/PhyloNetworks.jl/dev/lib/public/#PhyloNetworks.rotate!-Tuple%7BHybridNetwork,%20Integer%7D).
 
 **Alternative**: a tree or network can be exported with [`sexp`](@ref)
 and then displayed with R's "plot" and all its options.
@@ -212,6 +212,10 @@ function plot(
     if showedgenumber
       R"text"(edf[!,:x], edf[!,:y], edf[!,:num], adj=[.5,0], col=edgenumbercolor)
     end
-    return (xmin, xmax, ymin, ymax, node_x, node_y, node_yB, node_yE,
-      edge_xB, edge_xE, edge_yB, edge_yE, ndf, edf)
+    return (xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+      node_x=node_x, node_y=node_y,
+      node_y_lo=node_yB, node_y_hi=node_yE,
+      edge_x_lo=edge_xB, edge_x_hi=edge_xE,
+      edge_y_lo=edge_yB, edge_y_hi=edge_yE,
+      node_data=ndf, edge_data=edf)
 end

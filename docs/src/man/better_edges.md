@@ -15,7 +15,7 @@ but by switching it to `:majortree`, we can draw minor hybrid edges as diagonal 
 ```@example better_edges
 R"svg"(figname("style_example.svg"), width=3, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
-net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
+net = readnewick("(A,((B,#H1),(C,(D)#H1)));") # hide
 plot(net, style=:majortree);
 R"dev.off()" # hide
 nothing # hide
@@ -31,7 +31,7 @@ lines. For this, we'll use a network that has branch lengths:
 R"svg"(figname("edge_len_example.svg"), width=6, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
 R"layout"([1 2]) # hide
-net = readTopology("(A:3.3,((B:1.5,#H1:0.5):1.5,((C:1)#H1:1.8,D:1.1):.2):0.3);")
+net = readnewick("(A:3.3,((B:1.5,#H1:0.5):1.5,((C:1)#H1:1.8,D:1.1):.2):0.3);")
 df = DataFrame(number=[-3,3], label=["N","H1"]); # hide
 plot(net, useedgelength=true, ylim = [-1, 5.5], nodelabel = df); # hide
 R"text"([3], [0], ["useedgelength=true"]) # hide
@@ -73,8 +73,8 @@ Time-inconsistent networks like these ones below might cause confusion:
 R"svg"(figname("edge_len_example2.svg"), width=6, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
 R"layout"([1 2]) # hide
-net1 = readTopology("(A:3.3,((B:1.5,#H1:1.2):1.5,((C:1.8)#H1:1,D:1.1):.2):0.3);");
-net2 = readTopology("(A:3.3,((B:1.5,#H1:0.2):1.5,((C:1)#H1:1.8,D:1.1):.2):0.3);");
+net1 = readnewick("(A:3.3,((B:1.5,#H1:1.2):1.5,((C:1.8)#H1:1,D:1.1):.2):0.3);");
+net2 = readnewick("(A:3.3,((B:1.5,#H1:0.2):1.5,((C:1)#H1:1.8,D:1.1):.2):0.3);");
 plot(net1, useedgelength=true); # hide
 plot(net2, useedgelength=true); # hide
 R"dev.off()" # hide

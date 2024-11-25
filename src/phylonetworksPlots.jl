@@ -7,7 +7,7 @@
 Calculate coordinates for plotting later with Gadfly or RCall.
 
 Actually modifies some (minor) attributes of the network,
-as it calls `directEdges!` and `preorder!`.
+as it calls `directedges!` and `preorder!`.
 
 output: tuple with the following elements, in which the order of
 nodes corresponds to the order in `net.node`, and the order of
@@ -38,39 +38,43 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
    the same as that of the mid-point, given by `node_x`.
 9. `minoredge_xB`: x coordinate for the Beginning and ...
 10. `minoredge_xE`: ... End of the diagonal segment of each minor hybrid edge,
-   in the same order as in `filter(e -> !e.isMajor, net.edge)`.
+   in the same order as in `filter(e -> !e.ismajor, net.edge)`.
 11. `minoredge_yB`: y coordinate for the beginning and ...
 12. `minoredge_yE`: ... end of the diagonal segment of each minor hybrid edge.
 13-16. `xmin`, `xmax`, `ymin`, `ymax`: ranges for the x and y axes.
 """
-function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimpleHybridLines::Bool)
+function edgenode_coordinates(
+    net::HybridNetwork,
+    useedgelength::Bool,
+    useSimpleHybridLines::Bool
+)
     try
-        directEdges!(net)   # to update isChild1
+        directedges!(net)   # to update ischild1
     catch e
         if isa(e, PhyloNetworks.RootMismatch)
             e = PhyloNetworks.RootMismatch( e.msg * "\nPlease change the root, perhaps using rootatnode! or rootatedge!")
         end
         rethrow(e)
     end
-    preorder!(net)       # to update net.nodes_changed: true pre-ordering
+    preorder!(net)       # to update net.vec_node: true pre-ordering
 
     # determine y for each node = y of its parent edge: post-order traversal
     # also [yB,yE] for each internal node: range of y's of all children nodes
-    # y max is the numTaxa + number of minor edges
+    # y max is the numtaxa + number of minor edges
     ymin = 1.0;
-    ymax = net.numTaxa
+    ymax = net.numtaxa
     if !useSimpleHybridLines
-        ymax += sum(!e.isMajor for e in net.edge)
+        ymax += sum(!e.ismajor for e in net.edge)
     end
 
-    node_y  = zeros(Float64, net.numNodes) # order: in net.nodes, *!not in nodes_changed!*
-    node_yB = zeros(Float64,net.numNodes) # min (B=begin) and max (E=end)
-    node_yE = zeros(Float64,net.numNodes) #   of at children's nodes
-    edge_yB = zeros(Float64,net.numEdges) # yE of edge = y of child node
+    node_y  = zeros(Float64, net.numnodes) # order: in net.nodes, *!not in vec_node!*
+    node_yB = zeros(Float64,net.numnodes) # min (B=begin) and max (E=end)
+    node_yE = zeros(Float64,net.numnodes) #   of at children's nodes
+    edge_yB = zeros(Float64,net.numedges) # yE of edge = y of child node
     # set node_y of leaves: follow cladewise order
     # also sets edge_yB of minor hybrid edges
     nexty = ymax # first tips at the top, last at bottom
-    cladewise_queue = copy(net.node[net.root].edge) # the child edges of root
+    cladewise_queue = copy(getroot(net).edge) # the child edges of root
     # print("queued the root's children's indices: "); @show queue
     while !isempty(cladewise_queue)
         cur_edge = pop!(cladewise_queue); # deliberate choice over shift! for cladewise order
@@ -86,13 +90,13 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
 
         # only for new hybrid lines:
         # increment spacing and add to edge_yB if parent edge is minor
-        if !cur_edge.isMajor && !useSimpleHybridLines
+        if !cur_edge.ismajor && !useSimpleHybridLines
             edge_yB[findfirst(x->x===cur_edge, net.edge)] = nexty
             nexty -= 1
         end
 
         # push children edges if this is a major edge:
-        if cur_edge.isMajor
+        if cur_edge.ismajor
             for e in cur_child.edge
                 if getparent(e) === cur_child # don't go backwards
                     push!(cladewise_queue, e)
@@ -103,7 +107,7 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
 
     # set node_y of internal nodes: follow post-order
     for i=length(net.node):-1:1
-        nn = net.nodes_changed[i]
+        nn = net.vec_node[i]
         !nn.leaf || continue # previous loop took care of leaves
         ni = findfirst(x -> x===nn, net.node)
         node_yB[ni]=ymax; node_yE[ni]=ymin;
@@ -113,12 +117,12 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
             if nn == getparent(e) # if e = child of node
                 if useSimpleHybridLines
                     # old simple hybrid lines
-                    if e.isMajor || nomajorchild
+                    if e.ismajor || nomajorchild
                         cc = getchild(e)
                         yy = node_y[findfirst(x -> x===cc, net.node)]
                         yy!==nothing || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
                     end
-                    if e.isMajor
+                    if e.ismajor
                         nomajorchild = false # we found a child edge that is a major edge
                         node_yB[ni] = min(node_yB[ni], yy)
                         node_yE[ni] = max(node_yE[ni], yy)
@@ -128,7 +132,7 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
                     end
                 else
                     # new pretty hybrid lines
-                    if e.isMajor
+                    if e.ismajor
                         cc = getchild(e)
                         child_y = node_y[findfirst(x -> x===cc, net.node)]
                         child_y!==nothing || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
@@ -176,13 +180,13 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
         # setting elen such that the age of each node = 1 + age of oldest child
         # (including minor hybrid edges): need true post-ordering.
         # calculating node ages first, elen will be calculated later.
-        elen     = zeros(Float64,net.numEdges)
-        node_age = zeros(Float64,net.numNodes)
+        elen     = zeros(Float64,net.numedges)
+        node_age = zeros(Float64,net.numnodes)
         for i=length(net.node):-1:1 # post-order traversal
-            if net.nodes_changed[i].leaf continue; end
-            ni = findfirst(x -> x===net.nodes_changed[i], net.node)
-            for e in net.nodes_changed[i].edge # loop over children only
-                if net.nodes_changed[i] == (e.isChild1 ? e.node[2] : e.node[1])
+            if net.vec_node[i].leaf continue; end
+            ni = findfirst(x -> x===net.vec_node[i], net.node)
+            for e in net.vec_node[i].edge # loop over children only
+                if net.vec_node[i] == (e.ischild1 ? e.node[2] : e.node[1])
                     node_age[ni] = max(node_age[ni], 1 +
                      node_age[findfirst(x -> x=== getchild(e), net.node)])
                 end
@@ -197,15 +201,15 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
     # determine xB,xE for each edge: pre-order traversal, uses branch lengths
     # then x and yB,yE for each node: x=xE of parent edge
     xmin = 1.0; xmax=xmin
-    node_x  = zeros(Float64,net.numNodes) # order: in net.nodes, *!not in nodes_changed!*
-    edge_xB = zeros(Float64,net.numEdges) # min (B=begin) and max (E=end)
-    edge_xE = zeros(Float64,net.numEdges) # xE-xB = edge length
-    node_x[net.root] = xmin # root node: x=xmin=0
+    node_x  = zeros(Float64,net.numnodes) # order: in net.nodes, *!not in vec_node!*
+    edge_xB = zeros(Float64,net.numedges) # min (B=begin) and max (E=end)
+    edge_xE = zeros(Float64,net.numedges) # xE-xB = edge length
+    node_x[net.rooti] = xmin # root node: x=xmin=0
     for i=2:length(net.node)              # true pre-order, skipping the root (i=1)
-        ni = findfirst(x -> x===net.nodes_changed[i], net.node)
+        ni = findfirst(x -> x===net.vec_node[i], net.node)
         ei = nothing # index of major parent edge of current node
-        for e in net.nodes_changed[i].edge
-            if e.isMajor && net.nodes_changed[i] == e.node[e.isChild1 ? 1 : 2] # major parent edge
+        for e in net.vec_node[i].edge
+            if e.ismajor && net.vec_node[i] == e.node[e.ischild1 ? 1 : 2] # major parent edge
                 ei = findfirst(x -> x===e, net.edge)
                 break
             end
@@ -228,8 +232,8 @@ function edgenode_coordinates(net::HybridNetwork, useedgelength::Bool, useSimple
     minoredge_yB = Float64[]
     minoredge_yE = Float64[]
 
-    for i=1:net.numEdges
-        if !net.edge[i].isMajor # minor hybrid edges
+    for i=1:net.numedges
+        if !net.edge[i].ismajor # minor hybrid edges
             # indices of child and parent nodes
             cni = findfirst(x -> x===getchild( net.edge[i]), net.node)
             pni = findfirst(x -> x===getparent(net.edge[i]), net.node)
@@ -270,7 +274,10 @@ Check data frame for node annotations:
 - remove rows with no node numbers
 - warning if some node numbers in the data are not in the network.
 """
-function check_nodedataframe(net::HybridNetwork, nodelabel::DataFrame)
+function check_nodedataframe(
+    net::HybridNetwork,
+    nodelabel::DataFrame
+)
     labelnodes = size(nodelabel,1)>0
     if (labelnodes && (size(nodelabel,2)<2 ||
             !(nonmissingtype(eltype(nodelabel[!,1])) <: Integer)))
@@ -309,16 +316,22 @@ Columns of output data frame:
 - lab: node label
 - lea: is leaf?
 """
-function prepare_nodedataframe(net::HybridNetwork, nodelabel::DataFrame,
-        shownodenumber::Bool, shownodename::Bool, labelnodes::Bool,
-        node_x::Array{Float64,1}, node_y::Array{Float64,1})
-    nrows = (shownodenumber || shownodename || labelnodes ? net.numNodes : net.numTaxa)
+function prepare_nodedataframe(
+    net::HybridNetwork,
+    nodelabel::AbstractDataFrame,
+    shownodenumber::Bool,
+    shownodename::Bool,
+    labelnodes::Bool,
+    node_x::Array{Float64,1},
+    node_y::Array{Float64,1}
+)
+    nrows = (shownodenumber || shownodename || labelnodes ? net.numnodes : net.numtaxa)
     ndf = DataFrame(:name => Vector{String}(undef,nrows),
         :num => Vector{String}(undef,nrows), :lab => Vector{String}(undef,nrows),
         :lea => Vector{Bool}(  undef,nrows), :x => Vector{Float64}( undef,nrows),
         :y => Vector{Float64}( undef,nrows), copycols=false)
     j=1
-    for i=1:net.numNodes
+    for i=1:net.numnodes
     if net.node[i].leaf  || shownodenumber || shownodename || labelnodes
         ndf[j,:name] = net.node[i].name
         ndf[j,:num] = string(net.node[i].number)
@@ -354,12 +367,20 @@ Return data frame with columns
 - hyb: is hybrid?
 - min: is minor?
 """
-function prepare_edgedataframe(net::HybridNetwork, edgelabel::DataFrame, style::Symbol,
-        edge_xB::Array{Float64,1}, edge_xE::Array{Float64,1},
-        edge_yB::Array{Float64,1}, edge_yE::Array{Float64,1},
-        minoredge_xB::Array{Float64,1}, minoredge_xE::Array{Float64,1},
-        minoredge_yB::Array{Float64,1}, minoredge_yE::Array{Float64,1})
-    nrows = net.numEdges
+function prepare_edgedataframe(
+    net::HybridNetwork,
+    edgelabel::AbstractDataFrame,
+    style::Symbol,
+    edge_xB::Array{Float64,1},
+    edge_xE::Array{Float64,1},
+    edge_yB::Array{Float64,1},
+    edge_yE::Array{Float64,1},
+    minoredge_xB::Array{Float64,1},
+    minoredge_xE::Array{Float64,1},
+    minoredge_yB::Array{Float64,1},
+    minoredge_yE::Array{Float64,1}
+)
+    nrows = net.numedges
     edf = DataFrame(:len => Vector{String}(undef,nrows),
         :gam => Vector{String}(undef,nrows), :num => Vector{String}(undef,nrows),
         :lab => Vector{String}(undef,nrows), :hyb => Vector{Bool}(undef,nrows),
@@ -384,7 +405,7 @@ function prepare_edgedataframe(net::HybridNetwork, edgelabel::DataFrame, style::
       end
     end
     j=1   # index of row in edf
-    imh=1 # index of minor hybrid edge in filter(ee -> !ee.isMajor, net.edge)
+    imh=1 # index of minor hybrid edge in filter(ee -> !ee.ismajor, net.edge)
     for i = 1:length(net.edge)
         ee = net.edge[i]
         edf[j,:len] = (ee.length==-1.0 ? "" : @sprintf("%0.3g",ee.length))
@@ -398,10 +419,10 @@ function prepare_edgedataframe(net::HybridNetwork, edgelabel::DataFrame, style::
                 @sprintf("%0.3g",edgelabel[je,2]) : string(edgelabel[je,2])))
         end
         edf[j,:hyb] = ee.hybrid
-        edf[j,:min] = !ee.isMajor
+        edf[j,:min] = !ee.ismajor
         edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
         edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
-        if style == :majortree && !ee.isMajor
+        if style == :majortree && !ee.ismajor
             edf[j,:y] = (minoredge_yB[imh] + minoredge_yE[imh])/2
             edf[j,:x] = (minoredge_xB[imh] + minoredge_xE[imh])/2
             imh += 1

@@ -20,7 +20,7 @@ whose child edges we should rotate.
 ```@example untangling
 R"svg"(figname("untangling1.svg"), width=3, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
-net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
+net = readnewick("(A,((B,#H1),(C,(D)#H1)));") # hide
 plot(net, shownodenumber=true);
 R"dev.off()" # hide
 nothing # hide
@@ -32,7 +32,7 @@ As we can see, rotating edges around node `-5` will make for a prettier network.
 ```@example untangling
 R"svg"(figname("untangling2.svg"), width=3, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
-net = readTopology("(A,((B,#H1),(C,(D)#H1)));") # hide
+net = readnewick("(A,((B,#H1),(C,(D)#H1)));") # hide
 rotate!(net, -5)
 plot(net)
 R"dev.off()" # hide

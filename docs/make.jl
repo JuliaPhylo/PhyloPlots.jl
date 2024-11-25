@@ -3,9 +3,16 @@ using Documenter
 using Pkg
 Pkg.add(PackageSpec(name="PhyloNetworks", rev="master"))
 
+using DocumenterInterLinks
+links = InterLinks(
+    "PhyloNetworks" => "https://juliaphylo.github.io/PhyloNetworks.jl/stable/objects.inv"
+)
 using PhyloNetworks
 using PhyloPlots
-DocMeta.setdocmeta!(PhyloPlots, :DocTestSetup, :(using PhyloPlots); recursive=true)
+# default loading of interlinked packages in all docstring examples
+DocMeta.setdocmeta!(PhyloPlots, :DocTestSetup,
+    :(using PhyloNetworks, PhyloPlots);
+    recursive=true)
 
 makedocs(
     sitename = "PhyloPlots.jl",

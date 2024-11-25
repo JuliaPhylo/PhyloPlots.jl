@@ -18,7 +18,6 @@ export sexp
 
 include("phylonetworksPlots.jl")
 include("plotRCall.jl")
-include("substitutionmodels.jl")
 include("rexport.jl")
 
 end # of module

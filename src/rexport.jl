@@ -15,7 +15,7 @@ using plotting facilities in R.
 ```julia-repl
 julia> using RCall
 julia> using PhyloNetworks
-julia> net = readTopology("(((A:.2,(B:.1)#H1:.1::0.9):.1,(C:.11,#H1:.01::0.1):.19):.1,D:.4);");
+julia> net = readnewick("(((A:.2,(B:.1)#H1:.1::0.9):.1,(C:.11,#H1:.01::0.1):.19):.1,D:.4);");
 R> library(ape); # type $ to switch from julia to R
 R> $net
 
@@ -58,7 +58,7 @@ R> plot(net)
 ```
 """ #"
 function sexp(net::HybridNetwork)
-    PhyloNetworks.resetNodeNumbers!(net)
+    PhyloNetworks.resetnodenumbers!(net)
     ntips = length(net.leaf)
     totalnodes = length(net.node)
     Nnode = totalnodes - ntips
@@ -73,7 +73,7 @@ function sexp(net::HybridNetwork)
     if any(.!ismissing.(edgeLength))
         phy[Symbol("edge.length")] = edgeLength
     end
-    if net.numHybrids > 0
+    if net.numhybrids > 0
         reticulation = PhyloNetworks.minorreticulationmatrix(net)
         reticulationGamma = PhyloNetworks.minorreticulationgamma(net)
         reticulationLength = PhyloNetworks.minorreticulationlength(net)
@@ -86,7 +86,7 @@ function sexp(net::HybridNetwork)
         end
     end
     sobj = RCall.protect(sexp(phy)) # RObject
-    if net.numHybrids == 0
+    if net.numhybrids == 0
         setclass!(sobj, sexp("phylo"))
     else
         setclass!(sobj, sexp(["evonet", "phylo"]))
@@ -113,7 +113,7 @@ not exported: [`sexp`](@ref) is the best way to go.
 # Examples
 
 ```julia-repl
-julia> net = readTopology("(((A,(B)#H1:::0.9),(C,#H1:::0.1)),D);");
+julia> net = readnewick("(((A,(B)#H1:::0.9),(C,#H1:::0.1)),D);");
 
 julia> phy = PhyloPlots.rexport(net)
 RObject{VecSxp}
@@ -171,10 +171,10 @@ function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=t
 # worry about R object created within the function not accessible from outside:
 # can it be garbage collected?
 
-    if maintree && net.numHybrids > 0
-        net = majorTree(net)
+    if maintree && net.numhybrids > 0
+        net = majortree(net)
     end
-    PhyloNetworks.resetNodeNumbers!(net)
+    PhyloNetworks.resetnodenumbers!(net)
     ntips = length(net.leaf)
     totalnodes = length(net.node)
     Nnode = totalnodes - ntips
@@ -192,7 +192,7 @@ function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=t
             """
         end
     end
-    if net.numHybrids > 0
+    if net.numhybrids > 0
         reticulation = PhyloNetworks.minorreticulationmatrix(net)
         reticulationGamma = PhyloNetworks.minorreticulationgamma(net)
         R"""
@@ -210,7 +210,7 @@ function rexport(net::HybridNetwork; maintree::Bool=false, useedgelength::Bool=t
                 """
             end
         end
-    elseif net.numHybrids == 0
+    elseif net.numhybrids == 0
         R"""
         class(phy) = "phylo"
         """

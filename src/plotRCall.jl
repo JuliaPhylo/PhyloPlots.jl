@@ -1,7 +1,7 @@
 """
     plot(net::HybridNetwork)
 
-Plot a network using R graphics. Optional arguments are listed below.
+Plot a network as a rightwards phylogram using R graphics. Optional arguments are listed below.
 
 ## lines forming the network:
 
@@ -67,7 +67,7 @@ with RCall:
 4. `:ymax`: maximum y value of the plot
 5. `:node_x`: x values of the nodes in net.node in their respective order
 6. `:node_y`: y values of the nodes
-7. `:node_y_lo`: y value of the beginning of the vertical bar
+7. `:node_y_lo`: y value of the beginning of the vertical bar representing the clade at each node
 8. `:node_y_hi`: y value of the end of the vertical bar
 9. `:edge_x_lo`: x value of the beginning of the edges in `net.edge` in their respective order
 10. `:edge_x_hi`: x value of the end of the edges

@@ -1,7 +1,8 @@
 """
     plot(net::HybridNetwork)
 
-Plot a network as a rightwards phylogram using R graphics. Optional arguments are listed below.
+Plot a network with edges going from left to right and taxa (leaves) placed on
+the right, using R graphics. Optional arguments are listed below.
 
 ## lines forming the network:
 

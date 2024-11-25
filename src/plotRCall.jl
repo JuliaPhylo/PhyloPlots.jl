@@ -15,16 +15,16 @@ Plot a network using R graphics. Optional arguments are listed below.
     useful for overlapping or confusing networks.
 - `arrowlen`: the length of the arrow tips in the full tree style.
   The default is 0.1 if `style = :fulltree`,
-  and 0 if `style = :majortree` (makeing the arrows appear as segments).
+  and 0 if `style = :majortree` (making the arrows appear as segments).
 - `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
-  use a dictionary to map the number of each edge to its desired witdth.
-- `xlim`, `ylim`: array of 2 values, to determine the axes limits
+  use a dictionary to map the number of each edge to its desired width.
+- `xlim`, `ylim`: array of 2 values, to determine the axes limits.
 
 ## tip annotations:
 
 - `showtiplabel = true`: if true, taxon labels (names) are shown.
-- `tipoffset = 0`: to offset tip labels
-- `tipcex = 1`: character expansion for tip and internal node names
+- `tipoffset = 0`: to offset tip labels.
+- `tipcex = 1`: character expansion for tip and internal node names.
 
 ## nodes & edges annotations:
 
@@ -32,24 +32,24 @@ Plot a network using R graphics. Optional arguments are listed below.
   Useful for hybrid nodes, which do have tags like 'H1'.
 - `shownodenumber = false`: if true, nodes are labelled with the number used internally.
 - `showedgenumber = false`: if true, edges are labelled with the number used internally.
-- `showedgelength = false`: if true, edges are labelled with their length (above)
-- `showgamma = false`: if true, hybrid edges are labelled with their heritability (below)
+- `showedgelength = false`: if true, edges are labelled with their length (above).
+- `showgamma = false`: if true, hybrid edges are labelled with their heritability (below).
 - `edgelabel = DataFrame()`: dataframe with two columns: the first with edge numbers,
   the second with labels (like bootstrap values) to annotate edges. empty by default.
 - `nodelabel = DataFrame()`: dataframe with two columns: the first with node numbers,
   the second with labels (like bootstrap values for hybrid relationships)
   to annotate nodes. empty by default.
-- `nodecex = 1`: character expansion for labels in the `nodelabel` data frame
-- `edgecex = 1`: character expansion for labels in the `edgelabel` data frame
+- `nodecex = 1`: character expansion for labels in the `nodelabel` data frame.
+- `edgecex = 1`: character expansion for labels in the `edgelabel` data frame.
 
 ## colors:
 
 - `edgecolor = "black"`: color for tree edges.
-- `majorhybridedgecolor = "deepskyblue4"`: color for major hybrid edges
-- `minorhybridedgecolor = "deepskyblue"`: color for minor hybrid edges
-- `edgenumbercolor = "grey"`: color for edge numbers
-- `edgelabelcolor = "black"`: color for labels in the `edgelabel` data frame
-- `nodelabelcolor = "black"`: color for labels in the `nodelabel` data frame
+- `majorhybridedgecolor = "deepskyblue4"`: color for major hybrid edges.
+- `minorhybridedgecolor = "deepskyblue"`: color for minor hybrid edges.
+- `edgenumbercolor = "grey"`: color for edge numbers.
+- `edgelabelcolor = "black"`: color for labels in the `edgelabel` data frame.
+- `nodelabelcolor = "black"`: color for labels in the `nodelabel` data frame.
 
 Output the following named tuple, that can be used for downstream plot annotations
 with RCall:

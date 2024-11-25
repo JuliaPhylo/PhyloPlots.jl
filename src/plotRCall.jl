@@ -5,38 +5,38 @@ Plot a network using R graphics. Optional arguments are listed below.
 
 ## lines forming the network:
 
-- `useedgelength = false` : if true, the tree edges and major hybrid edges are
+- `useedgelength = false`: if true, the tree edges and major hybrid edges are
   drawn proportionally to their length. Minor hybrid edges are not, however.
   Note that edge lengths in coalescent units may scale very poorly with time.
-- `style = :fulltree` : symbol indicating the style of the diagram
+- `style = :fulltree`: symbol indicating the style of the diagram
   * `:majortree` will simply draw minor edges onto the major tree.
   * `:fulltree` will draw minor edges as their own branches in the tree,
     in the same style used by [icytree](https://icytree.org). This is
     useful for overlapping or confusing networks.
-- `arrowlen` : the length of the arrow tips in the full tree style.
+- `arrowlen`: the length of the arrow tips in the full tree style.
   The default is 0.1 if `style = :fulltree`,
   and 0 if `style = :majortree` (makeing the arrows appear as segments).
 - `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
   use a dictionary to map the number of each edge to its desired witdth.
-- `xlim`, `ylim` : array of 2 values, to determine the axes limits
+- `xlim`, `ylim`: array of 2 values, to determine the axes limits
 
 ## tip annotations:
 
-- `showtiplabel = true` : if true, taxon labels (names) are shown.
-- `tipoffset = 0` : to offset tip labels
+- `showtiplabel = true`: if true, taxon labels (names) are shown.
+- `tipoffset = 0`: to offset tip labels
 - `tipcex = 1`: character expansion for tip and internal node names
 
 ## nodes & edges annotations:
 
-- `shownodelabel = false` : if true, internal nodes are labelled with their names.
+- `shownodelabel = false`: if true, internal nodes are labelled with their names.
   Useful for hybrid nodes, which do have tags like 'H1'.
-- `shownodenumber = false` : if true, nodes are labelled with the number used internally.
-- `showedgenumber = false` : if true, edges are labelled with the number used internally.
-- `showedgelength = false` : if true, edges are labelled with their length (above)
-- `showgamma = false` : if true, hybrid edges are labelled with their heritability (below)
-- `edgelabel = DataFrame()` : dataframe with two columns: the first with edge numbers,
+- `shownodenumber = false`: if true, nodes are labelled with the number used internally.
+- `showedgenumber = false`: if true, edges are labelled with the number used internally.
+- `showedgelength = false`: if true, edges are labelled with their length (above)
+- `showgamma = false`: if true, hybrid edges are labelled with their heritability (below)
+- `edgelabel = DataFrame()`: dataframe with two columns: the first with edge numbers,
   the second with labels (like bootstrap values) to annotate edges. empty by default.
-- `nodelabel = DataFrame()` : dataframe with two columns: the first with node numbers,
+- `nodelabel = DataFrame()`: dataframe with two columns: the first with node numbers,
   the second with labels (like bootstrap values for hybrid relationships)
   to annotate nodes. empty by default.
 - `nodecex = 1`: character expansion for labels in the `nodelabel` data frame
@@ -44,9 +44,9 @@ Plot a network using R graphics. Optional arguments are listed below.
 
 ## colors:
 
-- `edgecolor = "black"` : color for tree edges.
-- `majorhybridedgecolor = "deepskyblue4"` : color for major hybrid edges
-- `minorhybridedgecolor = "deepskyblue"` : color for minor hybrid edges
+- `edgecolor = "black"`: color for tree edges.
+- `majorhybridedgecolor = "deepskyblue4"`: color for major hybrid edges
+- `minorhybridedgecolor = "deepskyblue"`: color for minor hybrid edges
 - `edgenumbercolor = "grey"`: color for edge numbers
 - `edgelabelcolor = "black"`: color for labels in the `edgelabel` data frame
 - `nodelabelcolor = "black"`: color for labels in the `nodelabel` data frame
@@ -61,20 +61,20 @@ with RCall:
  node_data, edge_data)
 ```
 
-1. `:xmin` : minimum x value of the plot
-2. `:xmax` : maximum x value of the plot
-3. `:ymin` : minimum y value of the plot
-4. `:ymax` : maximum y value of the plot
-5. `:node_x` : x values of the nodes in net.node in their respective order
-6. `:node_y` : y values of the nodes
-7. `:node_y_lo` : y value of the beginning of the vertical bar
-8. `:node_y_hi` : y value of the end of the vertical bar
-9. `:edge_x_lo` : x value of the beginning of the edges in `net.edge` in their respective order
-10. `:edge_x_hi` : x value of the end of the edges
-11. `:edge_y_lo` : y value of the beginning of the edges
-12. `:edge_y_hi` : y value of the end of the edges
-13. `:node_data` : node data frame: see section [Adding labels](@ref) for more
-14. `:edge_data` : edge data frame
+1. `:xmin`: minimum x value of the plot
+2. `:xmax`: maximum x value of the plot
+3. `:ymin`: minimum y value of the plot
+4. `:ymax`: maximum y value of the plot
+5. `:node_x`: x values of the nodes in net.node in their respective order
+6. `:node_y`: y values of the nodes
+7. `:node_y_lo`: y value of the beginning of the vertical bar
+8. `:node_y_hi`: y value of the end of the vertical bar
+9. `:edge_x_lo`: x value of the beginning of the edges in `net.edge` in their respective order
+10. `:edge_x_hi`: x value of the end of the edges
+11. `:edge_y_lo`: y value of the beginning of the edges
+12. `:edge_y_hi`: y value of the end of the edges
+13. `:node_data`: node data frame: see section [Adding labels](@ref) for more
+14. `:edge_data`: edge data frame
 
 Note that `plot` actually modifies some (minor) attributes of the network,
 as it calls `PhyloNetworks.directedges!` and `PhyloNetworks.preorder!`.

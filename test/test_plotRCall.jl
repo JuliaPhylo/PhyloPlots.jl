@@ -1,4 +1,4 @@
-@testset "RCall-based plot Test" begin
+@testset "RCall-based plots" begin
   # testing for absence of errors, not for correctness
 
   # network rooted at a leaf: test for no error in warning message

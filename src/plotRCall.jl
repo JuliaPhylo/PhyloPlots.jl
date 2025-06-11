@@ -1,5 +1,5 @@
 """
-    plot(net::HybridNetwork)
+    plot(net::HybridNetwork; ...)
 
 Plot a network with edges going from left to right and taxa (leaves) placed on
 the right, using R graphics. Optional arguments are listed below.
@@ -78,7 +78,8 @@ with RCall:
 14. `:edge_data`: edge data frame
 
 Note that `plot` actually modifies some (minor) attributes of the network,
-as it calls `PhyloNetworks.directedges!` and `PhyloNetworks.preorder!`.
+as it calls `PhyloNetworks.directedges!` and `PhyloNetworks.preorder!`
+(unless with option `preorder = false`, which is not recommended).
 
 If hybrid edges cross tree and major edges, you may choose to rotate some tree
 edges to eliminate crossing edges, using
@@ -113,6 +114,7 @@ function plot(
     edgenumbercolor = "grey", # don't limit the type because R accepts many types
     edgelabelcolor = "black", # and these colors are used as is
     nodelabelcolor = "black",
+    preorder::Bool=true,
 )
     if getroot(net).leaf
         @warn """The network is rooted at a leaf: the plot won't look good.
@@ -121,7 +123,8 @@ function plot(
     end
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
-     xmin, xmax, ymin, ymax) = edgenode_coordinates(net, useedgelength, style==:majortree)
+     xmin, xmax, ymin, ymax) = edgenode_coordinates(
+        net, useedgelength, style==:majortree, preorder)
     labelnodes, nodelabel = check_nodedataframe(net, nodelabel)
     ndf = prepare_nodedataframe(net, nodelabel, shownodenumber,
             shownodelabel, labelnodes, node_x, node_y)
@@ -151,13 +154,19 @@ function plot(
 
     if isa(edgewidth, Number)
       edgewidth_vec = edgewidth
+      hybridedgewidth_vec = edgewidth
     elseif isa(edgewidth, AbstractDict)
       ewtype = valtype(edgewidth)
       ewtype <: Number || error("edgewidth should be numerical")
       edgewidth_vec = Vector{ewtype}(undef,length(edge_xB))
+      hybridedgewidth_vec = Vector{ewtype}()
       for (ie,ee) in enumerate(net.edge)
         # fill in edgewidth vector, with default 1 for non-listed edges
-        edgewidth_vec[ie] = (haskey(edgewidth, ee.number) ? edgewidth[ee.number] : one(ewtype))
+        ew = (haskey(edgewidth, ee.number) ? edgewidth[ee.number] : one(ewtype))
+        edgewidth_vec[ie] = ew
+        if !ee.ismajor
+          push!(hybridedgewidth_vec, ew)
+        end
       end
     end
     # this makes the arrows dashed if :fulltree is used
@@ -175,7 +184,8 @@ function plot(
     """
     R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol, lwd=edgewidth_vec)
     R"arrows"(hybridedge_xB, hybridedge_yB, hybridedge_xE, hybridedge_yE,
-              length=arrowlen, angle=20, col=minorhybridedgecolor, lty=arrowstyle)
+              length=arrowlen, angle=20, col=minorhybridedgecolor, lty=arrowstyle,
+              lwd=hybridedgewidth_vec)
     R"segments"(node_x, node_yB, node_x, node_yE, col=edgecolor)
     if showtiplabel
       R"text"(node_x[leaves] .+ tipoffset, node_y[leaves],

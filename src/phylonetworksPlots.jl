@@ -1,13 +1,16 @@
-# auxiliary functions:
-# calculate plotting coordinates of nodes & edges for PhyloNetworks objects
-
 """
-    edgenode_coordinates(net, useedgelength::Bool, useSimpleHybridLines::Bool)
+    edgenode_coordinates(
+        net::HybridNetwork,
+        useedgelength::Bool,
+        usedirecthybridline::Bool,
+        preorder::Bool=true
+    )
 
-Calculate coordinates for plotting later with Gadfly or RCall.
+Calculate coordinates of edges segments and node midpoints & segments,
+that can be used later for plotting.
 
-Actually modifies some (minor) attributes of the network,
-as it calls `directedges!` and `preorder!`.
+Actually modifies some (minor) attributes of the network, as it calls
+`directedges!` and `preorder!`, unless with argument `preorder=false`.
 
 output: tuple with the following elements, in which the order of
 nodes corresponds to the order in `net.node`, and the order of
@@ -18,7 +21,7 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 3. `edge_yB`: y coordinate for edges, Begin ...
 4. `edge_yE`: ... and End.
    Each major edge is drawn as a single horizontal line. Minor hybrid edges are
-   drawn as: a single diagonal segment if `useSimpleHybridLines` is true,
+   drawn as: a single diagonal segment if `usedirecthybridline` is true,
    or as 2 connected segments otherwise: one horizontal (whose length on the
    x axis can be used to represent the edge length), and the other diagonal to
    connect the horizontal segment to the child node.
@@ -46,24 +49,27 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 function edgenode_coordinates(
     net::HybridNetwork,
     useedgelength::Bool,
-    useSimpleHybridLines::Bool
+    usedirecthybridline::Bool,
+    preorder::Bool=true,
 )
-    try
+    if preorder
+      try
         directedges!(net)   # to update ischild1
-    catch e
+      catch e
         if isa(e, PhyloNetworks.RootMismatch)
             e = PhyloNetworks.RootMismatch( e.msg * "\nPlease change the root, perhaps using rootatnode! or rootatedge!")
         end
         rethrow(e)
+      end
+      preorder!(net)       # to update net.vec_node: true pre-ordering
     end
-    preorder!(net)       # to update net.vec_node: true pre-ordering
 
     # determine y for each node = y of its parent edge: post-order traversal
     # also [yB,yE] for each internal node: range of y's of all children nodes
     # y max is the numtaxa + number of minor edges
     ymin = 1.0;
     ymax = net.numtaxa
-    if !useSimpleHybridLines
+    if !usedirecthybridline
         ymax += sum(!e.ismajor for e in net.edge)
     end
 
@@ -90,7 +96,7 @@ function edgenode_coordinates(
 
         # only for new hybrid lines:
         # increment spacing and add to edge_yB if parent edge is minor
-        if !cur_edge.ismajor && !useSimpleHybridLines
+        if !cur_edge.ismajor && !usedirecthybridline
             edge_yB[findfirst(x->x===cur_edge, net.edge)] = nexty
             nexty -= 1
         end
@@ -112,11 +118,10 @@ function edgenode_coordinates(
         ni = findfirst(x -> x===nn, net.node)
         node_yB[ni]=ymax; node_yE[ni]=ymin;
         minor_yB  = ymax; minor_yE  = ymin;
-        nomajorchild=useSimpleHybridLines # only use this var if using simple hybrid lines
+        nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
         for e in nn.edge
             if nn == getparent(e) # if e = child of node
-                if useSimpleHybridLines
-                    # old simple hybrid lines
+                if usedirecthybridline # unbroken one-segment hybrid lines
                     if e.ismajor || nomajorchild
                         cc = getchild(e)
                         yy = node_y[findfirst(x -> x===cc, net.node)]
@@ -239,9 +244,9 @@ function edgenode_coordinates(
             pni = findfirst(x -> x===getparent(net.edge[i]), net.node)
 
             edge_xB[i] = node_x[pni]
-            edge_xE[i] = useSimpleHybridLines ? edge_xB[i] : (useedgelength ? edge_xB[i] + elen[i] : node_x[cni])
+            edge_xE[i] = usedirecthybridline ? edge_xB[i] : (useedgelength ? edge_xB[i] + elen[i] : node_x[cni])
 
-            if useSimpleHybridLines
+            if usedirecthybridline
                 edge_yB[i] = node_y[pni]
             end
             edge_yE[i] = edge_yB[i]

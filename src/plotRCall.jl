@@ -40,14 +40,21 @@ the right, using R graphics. Optional arguments are listed below.
 - `nodelabel = DataFrame()`: dataframe with two columns: the first with node numbers,
   the second with labels (like bootstrap values for hybrid relationships)
   to annotate nodes. empty by default.
-- `nodecex = 1`: character expansion for labels in the `nodelabel` data frame.
-- `edgecex = 1`: character expansion for labels in the `edgelabel` data frame.
+- `nodecex = 1` and `edgecex = 1`: character expansion for labels in the
+  `nodelabel` and `edgelabel` data frames.
+- `nodelabeladj = 1` and `edgelabeladj = [.5,0]`: position adjustment to place
+   the labels from `edgelabel` and `nodelabel` data frames.
 
 ## colors:
 
-- `edgecolor = "black"`: color for tree edges.
-- `majorhybridedgecolor = "deepskyblue4"`: color for major hybrid edges.
-- `minorhybridedgecolor = "deepskyblue"`: color for minor hybrid edges.
+- `edgecolor = "black"`: color for tree edges if a single color is given. To
+   vary edge colors, use a dictionary to map the number of each edge to its
+   desired color. In that case, unmapped edges are given the `defaultedgecolor`.
+- `majorhybridedgecolor = "deepskyblue4"`: color for major hybrid edges.  
+  `minorhybridedgecolor = "deepskyblue"`: color for minor hybrid edges.  
+   Both are ignored if `edgecolor` is a dictionary.
+- `defaultedgecolor`: default is "black" if `edgecolor` is a dictionary, or
+  `edgecolor` otherwise. Used to draw the segments representing each node.
 - `edgenumbercolor = "grey"`: color for edge numbers.
 - `edgelabelcolor = "black"`: color for labels in the `edgelabel` data frame.
 - `nodelabelcolor = "black"`: color for labels in the `nodelabel` data frame.
@@ -95,9 +102,10 @@ function plot(
     shownodenumber::Bool=false,
     showedgelength::Bool=false,
     showgamma::Bool=false,
-    edgecolor::AbstractString="black",
+    edgecolor = "black",
     majorhybridedgecolor::AbstractString="deepskyblue4",
     minorhybridedgecolor::AbstractString="deepskyblue",
+    defaultedgecolor = nothing,
     showedgenumber::Bool=false,
     shownodelabel::Bool=false,
     edgelabel::AbstractDataFrame=DataFrame(),
@@ -114,6 +122,8 @@ function plot(
     edgenumbercolor = "grey", # don't limit the type because R accepts many types
     edgelabelcolor = "black", # and these colors are used as is
     nodelabelcolor = "black",
+    edgelabeladj = [.5,0],
+    nodelabeladj = 1,
     preorder::Bool=true,
 )
     if getroot(net).leaf
@@ -148,9 +158,28 @@ function plot(
         ymin=ylim[1]; ymax=ylim[2]
     end
     leaves = [n.leaf for n in net.node]
-    eCol = fill(edgecolor, length(net.edge))
-    eCol[ [ e.hybrid  for e in net.edge] ] .= majorhybridedgecolor
-    eCol[ [!e.ismajor for e in net.edge] ] .= minorhybridedgecolor
+    if isa(edgecolor, AbstractDict) # then ignore {maj|min}orhybridedgecolor
+      ectype = valtype(edgecolor)
+      defaultedgecolor = (isnothing(defaultedgecolor) ?
+        ectype("black") : ectype(defaultedgecolor) )
+      eCol = Vector{ectype}(undef,length(net.edge))
+      hybmincol_vec = Vector{ectype}()
+      for (ie,ee) in enumerate(net.edge)
+        ec = get(edgecolor, ee.number, defaultedgecolor)
+        eCol[ie] = ec
+        if !ee.ismajor
+          push!(hybmincol_vec, ec)
+        end
+      end
+    else
+      if isnothing(defaultedgecolor)
+        defaultedgecolor = edgecolor
+      end
+      eCol = fill(edgecolor, length(net.edge))
+      eCol[ [ e.hybrid  for e in net.edge] ] .= majorhybridedgecolor
+      eCol[ [!e.ismajor for e in net.edge] ] .= minorhybridedgecolor
+      hybmincol_vec = minorhybridedgecolor
+    end
 
     if isa(edgewidth, Number)
       edgewidth_vec = edgewidth
@@ -184,9 +213,9 @@ function plot(
     """
     R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol, lwd=edgewidth_vec)
     R"arrows"(hybridedge_xB, hybridedge_yB, hybridedge_xE, hybridedge_yE,
-              length=arrowlen, angle=20, col=minorhybridedgecolor, lty=arrowstyle,
+              length=arrowlen, angle=20, col=hybmincol_vec, lty=arrowstyle,
               lwd=hybridedgewidth_vec)
-    R"segments"(node_x, node_yB, node_x, node_yE, col=edgecolor)
+    R"segments"(node_x, node_yB, node_x, node_yE, col=defaultedgecolor)
     if showtiplabel
       R"text"(node_x[leaves] .+ tipoffset, node_y[leaves],
               tiplabels(net), adj=0, font=3, cex=tipcex)
@@ -199,14 +228,14 @@ function plot(
       R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:num], adj=1)
     end
     if labelnodes
-      R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:lab], adj=1,
+      R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:lab], adj=nodelabeladj,
               col=nodelabelcolor, cex=nodecex)
     end
     labeledges, edf = prepare_edgedataframe(net, edgelabel, style,
                         edge_xB, edge_xE, edge_yB, edge_yE,
                         hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE)
     if labeledges
-      R"text"(edf[!,:x], edf[!,:y], edf[!,:lab], adj=[.5,0],
+      R"text"(edf[!,:x], edf[!,:y], edf[!,:lab], adj=edgelabeladj,
               col=edgelabelcolor, cex=edgecex)
     end
     if showedgelength

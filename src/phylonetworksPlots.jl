@@ -332,7 +332,7 @@ function prepare_nodedataframe(
 )
     nrows = (shownodenumber || shownodename || labelnodes ? net.numnodes : net.numtaxa)
     ndf = DataFrame(:name => Vector{String}(undef,nrows),
-        :num => Vector{String}(undef,nrows), :lab => Vector{String}(undef,nrows),
+        :num => Vector{String}(undef,nrows), :lab => fill(""::String,nrows),
         :lea => Vector{Bool}(  undef,nrows), :x => Vector{Float64}( undef,nrows),
         :y => Vector{Float64}( undef,nrows), copycols=false)
     j=1
@@ -346,7 +346,7 @@ function prepare_nodedataframe(
             (nonmissingtype(eltype(nodelabel[!,2])) <: AbstractFloat ?
               @sprintf("%0.3g",nodelabel[jn,2]) : string(nodelabel[jn,2])))
         end
-        ndf[j,:lea] = net.node[i].leaf # use this later to remove H? labels
+        ndf[j,:lea] = net.node[i].leaf
         ndf[j,:y] = node_y[i]
         ndf[j,:x] = node_x[i]
         j += 1
@@ -388,7 +388,7 @@ function prepare_edgedataframe(
     nrows = net.numedges
     edf = DataFrame(:len => Vector{String}(undef,nrows),
         :gam => Vector{String}(undef,nrows), :num => Vector{String}(undef,nrows),
-        :lab => Vector{String}(undef,nrows), :hyb => Vector{Bool}(undef,nrows),
+        :lab => fill(""::String,nrows),      :hyb => Vector{Bool}(undef,nrows),
         :min => Vector{Bool}(  undef,nrows), :x => Vector{Float64}(undef,nrows),
         :y  => Vector{Float64}(undef,nrows), copycols=false)
     labeledges = size(edgelabel,1)>0

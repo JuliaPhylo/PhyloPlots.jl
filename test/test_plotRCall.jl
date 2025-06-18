@@ -41,7 +41,11 @@
   @test res[:arrow_x_hi] == [5,4]
   @test res[:arrow_y_lo] == [2.9,1.5]
   @test res[:arrow_y_hi] == [3,  2.9]
-  res = (@test_logs plot(net2, preorder=false))
+  @test res[:node_data].lab[[1,3]] == ["",""]
+  @test res[:edge_data][[2,5],2:4] == DataFrame(
+      gam=["0.2","1"], num=["2","5"], lab=["",""])
+  res = (@test_logs plot(net2, preorder=false,
+    edgelabel=DataFrame(num=[2,6], annotate=[85.0001,90])))
   @test res[:node_y_lo] == [5,5,1,2,3,2,6,5,3,  1]
   @test res[:node_y_hi] == [5,5,1,2,3,4,6,6,5.5,4.25]
   @test res[:edge_x_lo] == [5,4,1,3,3,3,2,4,4,2,1]
@@ -52,4 +56,7 @@
   @test res[:arrow_x_hi] == res[:arrow_x_lo] # bc :fulltree style
   @test res[:arrow_y_lo] == [1,4]
   @test res[:arrow_y_hi] == [5,1]
+  @test res[:node_data].lab[[1,3]] == ["",""]
+  @test res[:edge_data][[2,5],2:4] == DataFrame(
+      gam=["0.2","1"], num=["2","5"], lab=["85",""])
 end

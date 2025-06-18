@@ -30,7 +30,7 @@ the right, using R graphics. Optional arguments are listed below.
 ## nodes & edges annotations:
 
 - `shownodelabel = false`: if true, internal nodes are labelled with their names.
-  Useful for hybrid nodes, which do have tags like 'H1'.
+  Useful for hybrid nodes, which have labels such as "H1".
 - `shownodenumber = false`: if true, nodes are labelled with the number used internally.
 - `showedgenumber = false`: if true, edges are labelled with the number used internally.
 - `showedgelength = false`: if true, edges are labelled with their length (above).
@@ -59,13 +59,14 @@ the right, using R graphics. Optional arguments are listed below.
 - `edgelabelcolor = "black"`: color for labels in the `edgelabel` data frame.
 - `nodelabelcolor = "black"`: color for labels in the `nodelabel` data frame.
 
-Output the following named tuple, that can be used for downstream plot annotations
+Output the following named tuple, that can be used for downstream annotations
 with RCall:
 
 ```
 (xmin, xmax, ymin, ymax,
- node_x,    node_y,    node_y_lo, node_y_hi,
- edge_x_lo, edge_x_hi, edge_y_lo, edge_y_hi,
+ node_x,     node_y,     node_y_lo, node_y_hi,
+ edge_x_lo,  edge_x_hi,  edge_y_lo,  edge_y_hi,
+ arrow_x_lo, arrow_x_hi, arrow_y_lo, arrow_y_hi,
  node_data, edge_data)
 ```
 
@@ -75,14 +76,25 @@ with RCall:
 4. `:ymax`: maximum y value of the plot
 5. `:node_x`: x values of the nodes in net.node in their respective order
 6. `:node_y`: y values of the nodes
-7. `:node_y_lo`: y value of the beginning of the vertical bar representing the clade at each node
+7. `:node_y_lo`: y value of the beginning of the vertical bar representing the
+    clade at each node
 8. `:node_y_hi`: y value of the end of the vertical bar
-9. `:edge_x_lo`: x value of the beginning of the edges in `net.edge` in their respective order
+9. `:edge_x_lo`: x value of the beginning of the edges in `net.edge` in their
+    respective order. An edge (or branch) in the network is represented by 2
+    segments if it is a minor edge under the `:fulltree` style.
+    `:edge_*` give the coordinates of the first (horizontal) segment for these
+    minor edges, and the coordinates of the unique (horizontal) segment for
+    major edges (tree of major hybrid edges).
 10. `:edge_x_hi`: x value of the end of the edges
 11. `:edge_y_lo`: y value of the beginning of the edges
 12. `:edge_y_hi`: y value of the end of the edges
-13. `:node_data`: node data frame: see section [Adding labels](@ref) for more
-14. `:edge_data`: edge data frame
+13. `:arrow_x_lo`: x value for the beginning of the arrows, for minor hybrid
+     edges, listed in the same order as in `filter(e -> !e.ismajor, net.edge)`.
+14. `:arrow_x_hi`: same, but for the end of arrows
+15. `:arrow_y_lo`: y values for the beginning of arrows
+16. `:arrow_y_hi`: same, but for the end of arrows
+17. `:node_data`: node data frame: see section [Adding labels](@ref) for more
+18. `:edge_data`: edge data frame
 
 Note that `plot` actually modifies some (minor) attributes of the network,
 as it calls `PhyloNetworks.directedges!` and `PhyloNetworks.preorder!`
@@ -257,5 +269,7 @@ function plot(
       node_y_lo=node_yB, node_y_hi=node_yE,
       edge_x_lo=edge_xB, edge_x_hi=edge_xE,
       edge_y_lo=edge_yB, edge_y_hi=edge_yE,
+      arrow_x_lo=hybridedge_xB, arrow_x_hi=hybridedge_xE,
+      arrow_y_lo=hybridedge_yB, arrow_y_hi=hybridedge_yE,
       node_data=ndf, edge_data=edf)
 end

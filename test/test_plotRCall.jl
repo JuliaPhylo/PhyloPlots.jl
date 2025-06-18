@@ -29,9 +29,27 @@
   res = (@test_logs plot(net2, style=:majortree))
   @test keys(res) == (:xmin, :xmax, :ymin, :ymax, :node_x, :node_y,
     :node_y_lo, :node_y_hi, :edge_x_lo, :edge_x_hi, :edge_y_lo, :edge_y_hi,
+    :arrow_x_lo, :arrow_x_hi, :arrow_y_lo, :arrow_y_hi,
     :node_data, :edge_data)
-
-  # plot based on RCall and ape:
-  tre = readnewick("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");
-  # fixit: plot(tre, :ape)
+  @test res[:node_y_lo] == [3,3,2.9,1,2,1,4,3,1.5,2.5]
+  @test res[:node_y_hi] == [3,3,2.9,1,2,2,4,4,3.5,2.9]
+  @test res[:edge_x_lo] == [5,4,  1,  3,3,3,  2,  4,4,2,  1]
+  @test res[:edge_x_hi] == [6,4,  4,  6,6,3,  3,  5,6,4,  2]
+  @test res[:edge_y_lo] == [3,2.9,2.9,1,2,1.5,1.5,3,4,3.5,2.5]
+  @test res[:edge_y_hi] == res[:edge_y_lo]
+  @test res[:arrow_x_lo] == [4,3]
+  @test res[:arrow_x_hi] == [5,4]
+  @test res[:arrow_y_lo] == [2.9,1.5]
+  @test res[:arrow_y_hi] == [3,  2.9]
+  res = (@test_logs plot(net2, preorder=false))
+  @test res[:node_y_lo] == [5,5,1,2,3,2,6,5,3,  1]
+  @test res[:node_y_hi] == [5,5,1,2,3,4,6,6,5.5,4.25]
+  @test res[:edge_x_lo] == [5,4,1,3,3,3,2,4,4,2,1]
+  @test res[:edge_x_hi] == [6,5,4,6,6,4,3,5,6,4,2]
+  @test res[:edge_y_lo] == [5,1,1,2,3,4,3,5,6,5.5,4.25]
+  @test res[:edge_y_hi] == res[:edge_y_lo]
+  @test res[:arrow_x_lo] == [5,4]
+  @test res[:arrow_x_hi] == res[:arrow_x_lo] # bc :fulltree style
+  @test res[:arrow_y_lo] == [1,4]
+  @test res[:arrow_y_hi] == [5,1]
 end

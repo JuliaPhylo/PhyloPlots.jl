@@ -171,13 +171,11 @@ function plot(
     end
     leaves = [n.leaf for n in net.node]
     if isa(edgecolor, AbstractDict) # then ignore {maj|min}orhybridedgecolor
-      ectype = valtype(edgecolor)
-      defaultedgecolor = (isnothing(defaultedgecolor) ?
-        ectype("black") : ectype(defaultedgecolor) )
-      eCol = Vector{ectype}(undef,length(net.edge))
-      hybmincol_vec = Vector{ectype}()
+      defaultedgecolor = (isnothing(defaultedgecolor) ? "black" : string(defaultedgecolor) )
+      eCol = Vector{String}(undef,length(net.edge))
+      hybmincol_vec = Vector{String}()
       for (ie,ee) in enumerate(net.edge)
-        ec = get(edgecolor, ee.number, defaultedgecolor)
+        ec = string(get(edgecolor, ee.number, defaultedgecolor))
         eCol[ie] = ec
         if !ee.ismajor
           push!(hybmincol_vec, ec)

@@ -26,7 +26,9 @@
 
   # coverage for the nomajorchild
   net2 = readnewick("((((B)#H1)#H2,((D,C,#H2)S1,(#H1:::.8,A)S2)S3)S4);")
-  res = (@test_logs plot(net2, style=:majortree))
+  ecd = Dict(1 => SubString("grey50"), 2 => 2, 3 => "violet") # color 2 = red in R
+  res = (@test_logs plot(net2, style=:majortree, edgecolor=ecd,
+    defaultedgecolor="turquoise"))
   @test keys(res) == (:xmin, :xmax, :ymin, :ymax, :node_x, :node_y,
     :node_y_lo, :node_y_hi, :edge_x_lo, :edge_x_hi, :edge_y_lo, :edge_y_hi,
     :arrow_x_lo, :arrow_x_hi, :arrow_y_lo, :arrow_y_hi,

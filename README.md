@@ -7,6 +7,7 @@
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![PkgEval](https://JuliaCI.github.io/NanosoldierReports/pkgeval_badges/P/PhyloPlots.svg)](https://JuliaCI.github.io/NanosoldierReports/pkgeval_badges/report.html)
+[![Downloads](https://img.shields.io/badge/dynamic/json?url=http://juliapkgstats.com/api/v1/monthly_downloads/PhyloPlots&query=total_requests&suffix=/month&label=Downloads)](https://juliapkgstats.com/pkg/PhyloPlots)
 
 ## overview
 

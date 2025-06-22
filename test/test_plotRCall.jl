@@ -12,7 +12,7 @@
   @test_logs (:warn, "At least one non-missing edge length: plotting any missing length as 1.0") plot(net, useedgelength=true);
   @test_logs plot(net, showtiplabel=false);
   @test_logs plot(net, shownodenumber=true, shownodelabel=true);
-  @test_logs plot(net, tipoffset=1, showgamma=true);
+  @test_logs plot(net, tipoffset=1, showgamma=true, minorlinetype=3); # 3=dotted
   @test_logs plot(net, showedgelength=true, showedgenumber=true);
   @test_logs plot(net, edgecolor="tomato4", minorhybridedgecolor="skyblue",
           majorhybridedgecolor="tan");

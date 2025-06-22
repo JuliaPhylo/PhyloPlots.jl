@@ -17,6 +17,9 @@ the right, using R graphics. Optional arguments are listed below.
 - `arrowlen`: the length of the arrow tips in the full tree style.
   The default is 0.1 if `style = :fulltree`,
   and 0 if `style = :majortree` (making the arrows appear as segments).
+- `minorlinetype`: type of lines used for minor edges, represented by arrows.
+  Default is "solid" under the major-tree style, and "longdash" under the
+  full tree style.
 - `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
   use a dictionary to map the number of each edge to its desired width.
 - `xlim`, `ylim`: array of 2 values, to determine the axes limits.
@@ -130,6 +133,7 @@ function plot(
     edgecex = 1,
     style::Symbol=:fulltree,
     arrowlen::Real=(style==:majortree ? 0 : 0.1),
+    minorlinetype = nothing,
     edgewidth = 1,
     edgenumbercolor = "grey", # don't limit the type because R accepts many types
     edgelabelcolor = "black", # and these colors are used as is
@@ -209,7 +213,9 @@ function plot(
       end
     end
     # this makes the arrows dashed if :fulltree is used
-    arrowstyle = style==:majortree ? "solid" : "longdash"
+    if isnothing(minorlinetype)
+        minorlinetype = (style==:majortree ? "solid" : "longdash")
+    end
 
     if !(style in [:fulltree, :majortree])
       @warn "Style $style is unknown. Defaulted to :fulltree."
@@ -223,7 +229,7 @@ function plot(
     """
     R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol, lwd=edgewidth_vec)
     R"arrows"(hybridedge_xB, hybridedge_yB, hybridedge_xE, hybridedge_yE,
-              length=arrowlen, angle=20, col=hybmincol_vec, lty=arrowstyle,
+              length=arrowlen, angle=20, col=hybmincol_vec, lty=minorlinetype,
               lwd=hybridedgewidth_vec)
     R"segments"(node_x, node_yB, node_x, node_yE, col=defaultedgecolor)
     if showtiplabel

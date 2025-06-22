@@ -52,7 +52,7 @@ R"par"(mar=[.1,.1,.1,.1]) # hide
 net = readnewick("(A,((B,#H1),(C,(D)#H1)));") # hide
 plot(net, edgelabel=DataFrame(number = [1,2],
                               label = ["edge number 1", "edge # 2"]),
-          edgelabelcolor="orangered", edgecex=[0.9,1.1]);
+     edgelabelcolor="orangered", edgecex=[0.9,1.1], edgelabeladj=[.5,-.3]);
 R"dev.off()" # hide
 nothing # hide
 ```

@@ -113,12 +113,40 @@ using RCall # to send any command to R, to modify the plot
 R"par"(mar=[.1,.1,.1,.1]); R"layout"([1 2]);
 plot(net1, showedgenumber=true);
 R"mtext"("edge numbers, used\nas keys in edgewidth", side=1, line=-1);
-log_populationsize = Dict(e.number => log10(1_000) for e in net1.edge); # pop size on log scale
-log_populationsize[9] = log10(100_000); # larger populations on edges 9 and 1
-log_populationsize[1] = log10(100_000);
+# below: population sizes on the log scale
+log_populationsize = Dict(e.number => log10(1_000) for e in net1.edge);
+log_populationsize[9] = log10(100_000); # larger populations on edge 9
+log_populationsize[1] = log10(100_000); #                and on edge 1
 log_populationsize
 plot(net1, edgewidth=log_populationsize);
 R"dev.off()"; # hide
 nothing # hide
 ```
 ![example5](../assets/figures/edge_len_example5.svg)
+
+## Customization
+
+Check out the list of [`plot`](@ref) options.
+
+In the example below,
+we first highlight in orange the edges on the 2 paths from the root to C.
+Then we change the type of the minor edge (to hide it).
+
+```@repl better_edges
+ecols = Dict(i => "black" for i in 1:9); # make all black
+for i in [9,8,6,5, 4,3] # except for edges ancestral to C
+  ecols[i] = "orangered"
+end
+ecols
+```
+```@example better_edges
+R"svg"(figname("edge_len_example6.svg"), width=6, height=3) # hide
+R"par"(mar=[.1,.1,.1,.1]); R"layout"([1 2]); # hide
+plot(net1, edgecolor=ecols, defaultedgecolor="grey80", minorlinetype="solid");
+plot(net1, style=:majortree, majorhybridedgecolor="red",
+     minorlinetype="blank"); # make minor edges (arrows) of type 'blank'
+R"mtext"("minor hybrid edge is\nhidden: 'blank' type", side=1, line=-1); # hide
+R"dev.off()"; # hide
+nothing # hide
+```
+![example6](../assets/figures/edge_len_example6.svg)

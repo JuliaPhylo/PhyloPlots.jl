@@ -1,5 +1,5 @@
 """
-    plot(net::HybridNetwork)
+    plot(net::HybridNetwork; ...)
 
 Plot a network with edges going from left to right and taxa (leaves) placed on
 the right, using R graphics. Optional arguments are listed below.
@@ -17,6 +17,9 @@ the right, using R graphics. Optional arguments are listed below.
 - `arrowlen`: the length of the arrow tips in the full tree style.
   The default is 0.1 if `style = :fulltree`,
   and 0 if `style = :majortree` (making the arrows appear as segments).
+- `minorlinetype`: type of lines used for minor edges, represented by arrows.
+  Default is "solid" under the major-tree style, and "longdash" under the
+  full tree style.
 - `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
   use a dictionary to map the number of each edge to its desired width.
 - `xlim`, `ylim`: array of 2 values, to determine the axes limits.
@@ -30,7 +33,7 @@ the right, using R graphics. Optional arguments are listed below.
 ## nodes & edges annotations:
 
 - `shownodelabel = false`: if true, internal nodes are labelled with their names.
-  Useful for hybrid nodes, which do have tags like 'H1'.
+  Useful for hybrid nodes, which have labels such as "H1".
 - `shownodenumber = false`: if true, nodes are labelled with the number used internally.
 - `showedgenumber = false`: if true, edges are labelled with the number used internally.
 - `showedgelength = false`: if true, edges are labelled with their length (above).
@@ -40,25 +43,33 @@ the right, using R graphics. Optional arguments are listed below.
 - `nodelabel = DataFrame()`: dataframe with two columns: the first with node numbers,
   the second with labels (like bootstrap values for hybrid relationships)
   to annotate nodes. empty by default.
-- `nodecex = 1`: character expansion for labels in the `nodelabel` data frame.
-- `edgecex = 1`: character expansion for labels in the `edgelabel` data frame.
+- `nodecex = 1` and `edgecex = 1`: character expansion for labels in the
+  `nodelabel` and `edgelabel` data frames.
+- `nodelabeladj = 1` and `edgelabeladj = [.5,0]`: position adjustment to place
+   the labels from `edgelabel` and `nodelabel` data frames.
 
 ## colors:
 
-- `edgecolor = "black"`: color for tree edges.
-- `majorhybridedgecolor = "deepskyblue4"`: color for major hybrid edges.
-- `minorhybridedgecolor = "deepskyblue"`: color for minor hybrid edges.
+- `edgecolor = "black"`: color for tree edges if a single color is given. To
+   vary edge colors, use a dictionary to map the number of each edge to its
+   desired color. In that case, unmapped edges are given the `defaultedgecolor`.
+- `majorhybridedgecolor = "deepskyblue4"`: color for major hybrid edges.  
+  `minorhybridedgecolor = "deepskyblue"`: color for minor hybrid edges.  
+   Both are ignored if `edgecolor` is a dictionary.
+- `defaultedgecolor`: default is "black" if `edgecolor` is a dictionary, or
+  `edgecolor` otherwise. Used to draw the segments representing each node.
 - `edgenumbercolor = "grey"`: color for edge numbers.
 - `edgelabelcolor = "black"`: color for labels in the `edgelabel` data frame.
 - `nodelabelcolor = "black"`: color for labels in the `nodelabel` data frame.
 
-Output the following named tuple, that can be used for downstream plot annotations
+Output the following named tuple, that can be used for downstream annotations
 with RCall:
 
 ```
 (xmin, xmax, ymin, ymax,
- node_x,    node_y,    node_y_lo, node_y_hi,
- edge_x_lo, edge_x_hi, edge_y_lo, edge_y_hi,
+ node_x,     node_y,     node_y_lo, node_y_hi,
+ edge_x_lo,  edge_x_hi,  edge_y_lo,  edge_y_hi,
+ arrow_x_lo, arrow_x_hi, arrow_y_lo, arrow_y_hi,
  node_data, edge_data)
 ```
 
@@ -68,17 +79,29 @@ with RCall:
 4. `:ymax`: maximum y value of the plot
 5. `:node_x`: x values of the nodes in net.node in their respective order
 6. `:node_y`: y values of the nodes
-7. `:node_y_lo`: y value of the beginning of the vertical bar representing the clade at each node
+7. `:node_y_lo`: y value of the beginning of the vertical bar representing the
+    clade at each node
 8. `:node_y_hi`: y value of the end of the vertical bar
-9. `:edge_x_lo`: x value of the beginning of the edges in `net.edge` in their respective order
+9. `:edge_x_lo`: x value of the beginning of the edges in `net.edge` in their
+    respective order. An edge (or branch) in the network is represented by 2
+    segments if it is a minor edge under the `:fulltree` style.
+    `:edge_*` give the coordinates of the first (horizontal) segment for these
+    minor edges, and the coordinates of the unique (horizontal) segment for
+    major edges (tree of major hybrid edges).
 10. `:edge_x_hi`: x value of the end of the edges
 11. `:edge_y_lo`: y value of the beginning of the edges
 12. `:edge_y_hi`: y value of the end of the edges
-13. `:node_data`: node data frame: see section [Adding labels](@ref) for more
-14. `:edge_data`: edge data frame
+13. `:arrow_x_lo`: x value for the beginning of the arrows, for minor hybrid
+     edges, listed in the same order as in `filter(e -> !e.ismajor, net.edge)`.
+14. `:arrow_x_hi`: same, but for the end of arrows
+15. `:arrow_y_lo`: y values for the beginning of arrows
+16. `:arrow_y_hi`: same, but for the end of arrows
+17. `:node_data`: node data frame: see section [Adding labels](@ref) for more
+18. `:edge_data`: edge data frame
 
 Note that `plot` actually modifies some (minor) attributes of the network,
-as it calls `PhyloNetworks.directedges!` and `PhyloNetworks.preorder!`.
+as it calls `PhyloNetworks.directedges!` and `PhyloNetworks.preorder!`
+(unless with option `preorder = false`, which is not recommended).
 
 If hybrid edges cross tree and major edges, you may choose to rotate some tree
 edges to eliminate crossing edges, using
@@ -94,9 +117,10 @@ function plot(
     shownodenumber::Bool=false,
     showedgelength::Bool=false,
     showgamma::Bool=false,
-    edgecolor::AbstractString="black",
+    edgecolor = "black",
     majorhybridedgecolor::AbstractString="deepskyblue4",
     minorhybridedgecolor::AbstractString="deepskyblue",
+    defaultedgecolor = nothing,
     showedgenumber::Bool=false,
     shownodelabel::Bool=false,
     edgelabel::AbstractDataFrame=DataFrame(),
@@ -109,10 +133,14 @@ function plot(
     edgecex = 1,
     style::Symbol=:fulltree,
     arrowlen::Real=(style==:majortree ? 0 : 0.1),
+    minorlinetype = nothing,
     edgewidth = 1,
     edgenumbercolor = "grey", # don't limit the type because R accepts many types
     edgelabelcolor = "black", # and these colors are used as is
     nodelabelcolor = "black",
+    edgelabeladj = [.5,0],
+    nodelabeladj = 1,
+    preorder::Bool=true,
 )
     if getroot(net).leaf
         @warn """The network is rooted at a leaf: the plot won't look good.
@@ -121,7 +149,8 @@ function plot(
     end
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
-     xmin, xmax, ymin, ymax) = edgenode_coordinates(net, useedgelength, style==:majortree)
+     xmin, xmax, ymin, ymax) = edgenode_coordinates(
+        net, useedgelength, style==:majortree, preorder)
     labelnodes, nodelabel = check_nodedataframe(net, nodelabel)
     ndf = prepare_nodedataframe(net, nodelabel, shownodenumber,
             shownodelabel, labelnodes, node_x, node_y)
@@ -145,23 +174,48 @@ function plot(
         ymin=ylim[1]; ymax=ylim[2]
     end
     leaves = [n.leaf for n in net.node]
-    eCol = fill(edgecolor, length(net.edge))
-    eCol[ [ e.hybrid  for e in net.edge] ] .= majorhybridedgecolor
-    eCol[ [!e.ismajor for e in net.edge] ] .= minorhybridedgecolor
+    if isa(edgecolor, AbstractDict) # then ignore {maj|min}orhybridedgecolor
+      defaultedgecolor = (isnothing(defaultedgecolor) ? "black" : string(defaultedgecolor) )
+      eCol = Vector{String}(undef,length(net.edge))
+      hybmincol_vec = Vector{String}()
+      for (ie,ee) in enumerate(net.edge)
+        ec = string(get(edgecolor, ee.number, defaultedgecolor))
+        eCol[ie] = ec
+        if !ee.ismajor
+          push!(hybmincol_vec, ec)
+        end
+      end
+    else
+      if isnothing(defaultedgecolor)
+        defaultedgecolor = edgecolor
+      end
+      eCol = fill(edgecolor, length(net.edge))
+      eCol[ [ e.hybrid  for e in net.edge] ] .= majorhybridedgecolor
+      eCol[ [!e.ismajor for e in net.edge] ] .= minorhybridedgecolor
+      hybmincol_vec = minorhybridedgecolor
+    end
 
     if isa(edgewidth, Number)
       edgewidth_vec = edgewidth
+      hybridedgewidth_vec = edgewidth
     elseif isa(edgewidth, AbstractDict)
       ewtype = valtype(edgewidth)
       ewtype <: Number || error("edgewidth should be numerical")
       edgewidth_vec = Vector{ewtype}(undef,length(edge_xB))
+      hybridedgewidth_vec = Vector{ewtype}()
       for (ie,ee) in enumerate(net.edge)
         # fill in edgewidth vector, with default 1 for non-listed edges
-        edgewidth_vec[ie] = (haskey(edgewidth, ee.number) ? edgewidth[ee.number] : one(ewtype))
+        ew = (haskey(edgewidth, ee.number) ? edgewidth[ee.number] : one(ewtype))
+        edgewidth_vec[ie] = ew
+        if !ee.ismajor
+          push!(hybridedgewidth_vec, ew)
+        end
       end
     end
     # this makes the arrows dashed if :fulltree is used
-    arrowstyle = style==:majortree ? "solid" : "longdash"
+    if isnothing(minorlinetype)
+        minorlinetype = (style==:majortree ? "solid" : "longdash")
+    end
 
     if !(style in [:fulltree, :majortree])
       @warn "Style $style is unknown. Defaulted to :fulltree."
@@ -175,8 +229,9 @@ function plot(
     """
     R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol, lwd=edgewidth_vec)
     R"arrows"(hybridedge_xB, hybridedge_yB, hybridedge_xE, hybridedge_yE,
-              length=arrowlen, angle=20, col=minorhybridedgecolor, lty=arrowstyle)
-    R"segments"(node_x, node_yB, node_x, node_yE, col=edgecolor)
+              length=arrowlen, angle=20, col=hybmincol_vec, lty=minorlinetype,
+              lwd=hybridedgewidth_vec)
+    R"segments"(node_x, node_yB, node_x, node_yE, col=defaultedgecolor)
     if showtiplabel
       R"text"(node_x[leaves] .+ tipoffset, node_y[leaves],
               tiplabels(net), adj=0, font=3, cex=tipcex)
@@ -189,14 +244,14 @@ function plot(
       R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:num], adj=1)
     end
     if labelnodes
-      R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:lab], adj=1,
+      R"text"(ndf[!,:x], ndf[!,:y], ndf[!,:lab], adj=nodelabeladj,
               col=nodelabelcolor, cex=nodecex)
     end
     labeledges, edf = prepare_edgedataframe(net, edgelabel, style,
                         edge_xB, edge_xE, edge_yB, edge_yE,
                         hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE)
     if labeledges
-      R"text"(edf[!,:x], edf[!,:y], edf[!,:lab], adj=[.5,0],
+      R"text"(edf[!,:x], edf[!,:y], edf[!,:lab], adj=edgelabeladj,
               col=edgelabelcolor, cex=edgecex)
     end
     if showedgelength
@@ -218,5 +273,7 @@ function plot(
       node_y_lo=node_yB, node_y_hi=node_yE,
       edge_x_lo=edge_xB, edge_x_hi=edge_xE,
       edge_y_lo=edge_yB, edge_y_hi=edge_yE,
+      arrow_x_lo=hybridedge_xB, arrow_x_hi=hybridedge_xE,
+      arrow_y_lo=hybridedge_yB, arrow_y_hi=hybridedge_yE,
       node_data=ndf, edge_data=edf)
 end

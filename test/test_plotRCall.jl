@@ -1,4 +1,4 @@
-@testset "RCall-based plot Test" begin
+@testset "RCall-based plots" begin
   # testing for absence of errors, not for correctness
 
   # network rooted at a leaf: test for no error in warning message
@@ -12,7 +12,7 @@
   @test_logs (:warn, "At least one non-missing edge length: plotting any missing length as 1.0") plot(net, useedgelength=true);
   @test_logs plot(net, showtiplabel=false);
   @test_logs plot(net, shownodenumber=true, shownodelabel=true);
-  @test_logs plot(net, tipoffset=1, showgamma=true);
+  @test_logs plot(net, tipoffset=1, showgamma=true, minorlinetype=3); # 3=dotted
   @test_logs plot(net, showedgelength=true, showedgenumber=true);
   @test_logs plot(net, edgecolor="tomato4", minorhybridedgecolor="skyblue",
           majorhybridedgecolor="tan");
@@ -26,12 +26,39 @@
 
   # coverage for the nomajorchild
   net2 = readnewick("((((B)#H1)#H2,((D,C,#H2)S1,(#H1:::.8,A)S2)S3)S4);")
-  res = (@test_logs plot(net2, style=:majortree))
+  ecd = Dict(1 => SubString("grey50"), 2 => 2, 3 => "violet") # color 2 = red in R
+  res = (@test_logs plot(net2, style=:majortree, edgecolor=ecd,
+    defaultedgecolor="turquoise"))
   @test keys(res) == (:xmin, :xmax, :ymin, :ymax, :node_x, :node_y,
     :node_y_lo, :node_y_hi, :edge_x_lo, :edge_x_hi, :edge_y_lo, :edge_y_hi,
+    :arrow_x_lo, :arrow_x_hi, :arrow_y_lo, :arrow_y_hi,
     :node_data, :edge_data)
-
-  # plot based on RCall and ape:
-  tre = readnewick("(((((((1,2),3),4),5),(6,7)),(8,9)),10);");
-  # fixit: plot(tre, :ape)
+  @test res[:node_y_lo] == [3,3,2.9,1,2,1,4,3,1.5,2.5]
+  @test res[:node_y_hi] == [3,3,2.9,1,2,2,4,4,3.5,2.9]
+  @test res[:edge_x_lo] == [5,4,  1,  3,3,3,  2,  4,4,2,  1]
+  @test res[:edge_x_hi] == [6,4,  4,  6,6,3,  3,  5,6,4,  2]
+  @test res[:edge_y_lo] == [3,2.9,2.9,1,2,1.5,1.5,3,4,3.5,2.5]
+  @test res[:edge_y_hi] == res[:edge_y_lo]
+  @test res[:arrow_x_lo] == [4,3]
+  @test res[:arrow_x_hi] == [5,4]
+  @test res[:arrow_y_lo] == [2.9,1.5]
+  @test res[:arrow_y_hi] == [3,  2.9]
+  @test res[:node_data].lab[[1,3]] == ["",""]
+  @test res[:edge_data][[2,5],2:4] == DataFrame(
+      gam=["0.2","1"], num=["2","5"], lab=["",""])
+  res = (@test_logs plot(net2, preorder=false,
+    edgelabel=DataFrame(num=[2,6], annotate=[85.0001,90])))
+  @test res[:node_y_lo] == [5,5,1,2,3,2,6,5,3,  1]
+  @test res[:node_y_hi] == [5,5,1,2,3,4,6,6,5.5,4.25]
+  @test res[:edge_x_lo] == [5,4,1,3,3,3,2,4,4,2,1]
+  @test res[:edge_x_hi] == [6,5,4,6,6,4,3,5,6,4,2]
+  @test res[:edge_y_lo] == [5,1,1,2,3,4,3,5,6,5.5,4.25]
+  @test res[:edge_y_hi] == res[:edge_y_lo]
+  @test res[:arrow_x_lo] == [5,4]
+  @test res[:arrow_x_hi] == res[:arrow_x_lo] # bc :fulltree style
+  @test res[:arrow_y_lo] == [1,4]
+  @test res[:arrow_y_hi] == [5,1]
+  @test res[:node_data].lab[[1,3]] == ["",""]
+  @test res[:edge_data][[2,5],2:4] == DataFrame(
+      gam=["0.2","1"], num=["2","5"], lab=["85",""])
 end

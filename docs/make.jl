@@ -38,4 +38,5 @@ makedocs(
 deploydocs(
     repo = "github.com/JuliaPhylo/PhyloPlots.jl.git",
     push_preview = true,
+    devbranch = "master",
 )

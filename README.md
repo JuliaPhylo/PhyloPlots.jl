@@ -25,4 +25,4 @@ via [RCall](https://github.com/JuliaInterop/RCall.jl).
   * examples to annotate edges
     [here](https://juliaphylo.github.io/PhyloNetworks.jl/dev/man/network_support/#support-for-tree-edges)
 - visualization with data in this
-  [tutorial](https://cecileane.github.io/networkPCM-workshop/topic6-visualization.html)
+  [tutorial](https://juliaphylo.github.io/networkPCM-tutorial/topic9-visualization.html)

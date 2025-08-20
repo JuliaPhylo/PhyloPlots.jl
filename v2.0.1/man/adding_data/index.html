@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>adding data · PhyloPlots.jl</title><meta name="title" content="adding data · PhyloPlots.jl"/><meta property="og:title" content="adding data · PhyloPlots.jl"/><meta property="twitter:title" content="adding data · PhyloPlots.jl"/><meta name="description" content="Documentation for PhyloPlots.jl."/><meta property="og:description" content="Documentation for PhyloPlots.jl."/><meta property="twitter:description" content="Documentation for PhyloPlots.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="PhyloPlots.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">PhyloPlots.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">home</a></li><li><span class="tocitem">manual</span><ul><li><a class="tocitem" href="../installation/">installation</a></li><li><a class="tocitem" href="../getting_started/">getting started</a></li><li><a class="tocitem" href="../untangling_edges/">untangling edges</a></li><li><a class="tocitem" href="../better_edges/">better edges</a></li><li class="is-active"><a class="tocitem" href>adding data</a><ul class="internal"><li><a class="tocitem" href="#Adding-labels"><span>Adding labels</span></a></li><li><a class="tocitem" href="#Adding-other-annotations-using-R"><span>Adding other annotations using R</span></a></li><li><a class="tocitem" href="#Side-clade-bars-example"><span>Side clade bars example</span></a></li><li class="toplevel"><a class="tocitem" href="#Beyond"><span>Beyond</span></a></li></ul></li></ul></li><li><span class="tocitem">library</span><ul><li><a class="tocitem" href="../../lib/public/">public</a></li><li><a class="tocitem" href="../../lib/internals/">internals</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">manual</a></li><li class="is-active"><a href>adding data</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>adding data</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaPhylo/PhyloPlots.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaPhylo/PhyloPlots.jl/blob/master/docs/src/man/adding_data.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Adding-data"><a class="docs-heading-anchor" href="#Adding-data">Adding data</a><a id="Adding-data-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-data" title="Permalink"></a></h1><p>In this section, we look over ways of adding extra information or data to a plot.</p><h2 id="Adding-labels"><a class="docs-heading-anchor" href="#Adding-labels">Adding labels</a><a id="Adding-labels-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-labels" title="Permalink"></a></h2><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>For demonstration purposes, we walk through the process of adding labels to edges, with notes on how to do the same for nodes in parentheses.</p></div></div><p>To add labels on edges (or nodes), we need to know their numbers. We can use the <code>showedgenumber = true</code> option for this. (Use <code>shownodenumber = true</code> to see node numbers).</p><pre><code class="language-julia hljs">plot(net, showedgenumber=true);
+plot(net, showedgenumber=true, edgenumbercolor=&quot;red4&quot;);</code></pre><p><img src="../../assets/figures/adding_data1.svg" alt="example1"/></p><p>Edge numbers are shown in grey by default (to avoid mistaking them for edge lengths), but their color can be adjusted as shown above.</p><p>We then need to define a DataFrame with two columns of information: the number of the edge (or node), and the label that goes on it, like this:</p><table><tr><th style="text-align: right">number</th><th style="text-align: right">label</th></tr><tr><td style="text-align: right">1</td><td style="text-align: right">&quot;edge number 1&quot;</td></tr><tr><td style="text-align: right">2</td><td style="text-align: right">&quot;edge # 2&quot;</td></tr></table><p>After including the DataFrames package, we can define it as so:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; DataFrame(number=[1,2], label=[&quot;edge number 1&quot;,&quot;edge # 2&quot;])</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">2×2 DataFrame
+ Row │ number  label
+     │<span class="sgr90"> Int64   String
+─────┼───────────────────────
+   1 │      1  edge number 1
+   2 │      2  edge # 2</span></span></code></pre><p>Using this data frame as input to the <code>edgelabel</code> option (<code>nodelabel</code> for nodes) puts the text on the correct edges:</p><pre><code class="language-julia hljs">plot(net, edgelabel=DataFrame(number = [1,2],
+                              label = [&quot;edge number 1&quot;, &quot;edge # 2&quot;]),
+          edgelabelcolor=&quot;orangered&quot;, edgecex=[0.9,1.1]);</code></pre><p><img src="../../assets/figures/edge_labels_example.svg" alt="example2"/></p><h2 id="Adding-other-annotations-using-R"><a class="docs-heading-anchor" href="#Adding-other-annotations-using-R">Adding other annotations using R</a><a id="Adding-other-annotations-using-R-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-other-annotations-using-R" title="Permalink"></a></h2><p>We can use the return values of <a href="../../lib/public/#PhyloPlots.plot-Tuple{HybridNetwork}"><code>plot</code></a> to get information on the coordinates of different elements of the plot. Using this, we can add any other information we want.</p><p>The <a href="../../lib/public/#PhyloPlots.plot-Tuple{HybridNetwork}"><code>plot</code></a> function returns the following named tuple:</p><pre><code class="nohighlight hljs">(:xmin, :xmax, :ymin, :ymax,
+ :node_x,    :node_y,    :node_y_lo, :node_y_hi,
+ :edge_x_lo, :edge_x_hi, :edge_y_lo, :edge_y_hi,
+ :node_data, :edge_data)</code></pre><p>See the documentation for descriptions of these elements: <a href="../../lib/public/#PhyloPlots.plot-Tuple{HybridNetwork}"><code>plot</code></a></p><h2 id="Side-clade-bars-example"><a class="docs-heading-anchor" href="#Side-clade-bars-example">Side clade bars example</a><a id="Side-clade-bars-example-1"></a><a class="docs-heading-anchor-permalink" href="#Side-clade-bars-example" title="Permalink"></a></h2><p>Here&#39;s example code that adds bars to denote clades in the margin:</p><pre><code class="language-julia hljs">net = readnewick(&quot;(((((((t1,t2),t3),t4),t5),(t6,t7)),(t8,t9)),t10);&quot;);
+plot(net, xlim=(1,10))
+using RCall # to send any R command, to make further plot modifications
+R&quot;segments&quot;([9, 9, 9], [0.8, 7.8, 9.8], [9, 9, 9], [7.2, 9.2, 10.2])
+R&quot;text&quot;([9.5, 9.5, 9.5], [4, 8.5, 10], [&quot;C&quot;, &quot;B&quot;, &quot;A&quot;])</code></pre><p><img src="../../assets/figures/side_bars.svg" alt="example3"/></p><p>Let&#39;s break this down step by step. First, we read the topology, and plot the graph normally. <code>plot</code> actually returns a value, from which we can get useful information. Below, we store the plot output in <code>res</code>, then check its first two values because they contain the default range of the x axis; <code>xmin</code> and <code>xmax</code>.</p><pre><code class="language-julia hljs">res = plot(net);
+res[[:xmin,:xmax]]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(xmin = 0.29999999999999993, xmax = 8.77)</code></pre><p>Looking at <code>xmin</code> and <code>xmax</code> returned by default, we can see that the x range is about <code>(0.3, 9)</code>. To give us extra space to work with, we can set <code>xlim</code> to <code>(0.3,10)</code>, forcing the range to be wider on the right, for annotations. We can also see that in this case there is some extra white space on the left, so that we can increase <code>xmin</code> a little bit, finally settling on <code>xlim=(1,10)</code>.</p><pre><code class="language-julia hljs">plot(net, xlim=(1, 10));</code></pre><p>Knowing the coordinates, we can now add more information to the plot through <code>RCall</code>. For this, I use the R functions <code>segments</code> and <code>text</code> to add side bars with text on them.</p><pre><code class="language-julia hljs">using RCall # add (install) the RCall package prior to &#39;using&#39; it
+R&quot;segments&quot;([9, 9, 9], [0.8, 7.8, 9.8], [9, 9, 9], [7.2, 9.2, 10.2])
+R&quot;text&quot;([9.5, 9.5, 9.5], [4, 8.5, 10], [&quot;C&quot;, &quot;B&quot;, &quot;A&quot;])</code></pre><h1 id="Beyond"><a class="docs-heading-anchor" href="#Beyond">Beyond</a><a id="Beyond-1"></a><a class="docs-heading-anchor-permalink" href="#Beyond" title="Permalink"></a></h1><p>To go beyond, we can access data on the node &amp; edges to use them as we wish. We can access the coordinates of points &amp; segments and more data like this:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; res[:node_x] # x coordinate. similarly try res[:node_y]</code><code class="nohighlight hljs ansi" style="display:block;">19-element Vector{Float64}:
+ 8.0
+ 8.0
+ 7.0
+ 8.0
+ 6.0
+ 8.0
+ 5.0
+ 8.0
+ 4.0
+ 8.0
+ 8.0
+ 7.0
+ 3.0
+ 8.0
+ 8.0
+ 7.0
+ 2.0
+ 8.0
+ 1.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; hcat(res[:node_y_lo], res[:node_y_hi])</code><code class="nohighlight hljs ansi" style="display:block;">19×2 Matrix{Float64}:
+  1.0       1.0
+  2.0       2.0
+  1.0       2.0
+  3.0       3.0
+  1.5       3.0
+  4.0       4.0
+  2.25      4.0
+  5.0       5.0
+  3.125     5.0
+  6.0       6.0
+  7.0       7.0
+  6.0       7.0
+  4.0625    6.5
+  8.0       8.0
+  9.0       9.0
+  8.0       9.0
+  5.28125   8.5
+ 10.0      10.0
+  6.89062  10.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; DataFrame(edge_x_lo=res[:edge_x_lo], edge_x_hi=res[:edge_x_hi],
+                 edge_y_lo=res[:edge_y_lo], edge_y_hi=res[:edge_y_hi])</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">18×4 DataFrame
+ Row │ edge_x_lo  edge_x_hi  edge_y_lo  edge_y_hi
+     │<span class="sgr90"> Float64    Float64    Float64    Float64
+─────┼────────────────────────────────────────────
+   1 │       7.0        8.0    1.0        1.0
+   2 │       7.0        8.0    2.0        2.0
+   3 │       6.0        7.0    1.5        1.5
+   4 │       6.0        8.0    3.0        3.0
+   5 │       5.0        6.0    2.25       2.25
+   6 │       5.0        8.0    4.0        4.0
+   7 │       4.0        5.0    3.125      3.125
+   8 │       4.0        8.0    5.0        5.0
+  ⋮  │     ⋮          ⋮          ⋮          ⋮
+  12 │       3.0        7.0    6.5        6.5
+  13 │       2.0        3.0    5.28125    5.28125
+  14 │       7.0        8.0    8.0        8.0
+  15 │       7.0        8.0    9.0        9.0
+  16 │       2.0        7.0    8.5        8.5
+  17 │       1.0        2.0    6.89062    6.89062
+  18 │       1.0        8.0   10.0       10.0
+</span><span class="sgr36">                                    3 rows omitted</span></span></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; res[:node_data]</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">10×6 DataFrame
+ Row │ name    num     lab     lea   x        y
+     │<span class="sgr90"> String  String  String  Bool  Float64  Float64
+─────┼────────────────────────────────────────────────
+   1 │ t1      1       #undef  true      8.0      1.0
+   2 │ t2      2       #undef  true      8.0      2.0
+   3 │ t3      3       #undef  true      8.0      3.0
+   4 │ t4      4       #undef  true      8.0      4.0
+   5 │ t5      5       #undef  true      8.0      5.0
+   6 │ t6      6       #undef  true      8.0      6.0
+   7 │ t7      7       #undef  true      8.0      7.0
+   8 │ t8      8       #undef  true      8.0      8.0
+   9 │ t9      9       #undef  true      8.0      9.0
+  10 │ t10     10      #undef  true      8.0     10.0</span></span></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; res[:edge_data]</code><code class="nohighlight hljs ansi" style="display:block;"><span class="sgr1">18×8 DataFrame
+ Row │ len     gam     num     lab     hyb    min    x        y
+     │<span class="sgr90"> String  String  String  String  Bool   Bool   Float64  Float64
+─────┼─────────────────────────────────────────────────────────────────
+   1 │         1       1       #undef  false  false      7.5   1.0
+   2 │         1       2       #undef  false  false      7.5   2.0
+   3 │         1       3       #undef  false  false      6.5   1.5
+   4 │         1       4       #undef  false  false      7.0   3.0
+   5 │         1       5       #undef  false  false      5.5   2.25
+   6 │         1       6       #undef  false  false      6.5   4.0
+   7 │         1       7       #undef  false  false      4.5   3.125
+   8 │         1       8       #undef  false  false      6.0   5.0
+  ⋮  │   ⋮       ⋮       ⋮       ⋮       ⋮      ⋮       ⋮        ⋮
+  12 │         1       12      #undef  false  false      5.0   6.5
+  13 │         1       13      #undef  false  false      2.5   5.28125
+  14 │         1       14      #undef  false  false      7.5   8.0
+  15 │         1       15      #undef  false  false      7.5   9.0
+  16 │         1       16      #undef  false  false      4.5   8.5
+  17 │         1       17      #undef  false  false      1.5   6.89062
+  18 │         1       18      #undef  false  false      4.5  10.0
+</span><span class="sgr36">                                                         3 rows omitted</span></span></code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../better_edges/">« better edges</a><a class="docs-footer-nextpage" href="../../lib/public/">public »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Tuesday 10 December 2024 22:13">Tuesday 10 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

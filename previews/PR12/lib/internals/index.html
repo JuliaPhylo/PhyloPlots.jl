@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>internals · PhyloPlots.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="PhyloPlots.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">PhyloPlots.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">home</a></li><li><span class="tocitem">library</span><ul><li><a class="tocitem" href="../public/">public</a></li><li class="is-active"><a class="tocitem" href>internals</a><ul class="internal"><li><a class="tocitem" href="#index"><span>index</span></a></li><li><a class="tocitem" href="#functions"><span>functions</span></a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">library</a></li><li class="is-active"><a href>internals</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>internals</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/cecileane/PhyloPlots.jl/blob/master/docs/src/lib/internals.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="internal-documentation"><a class="docs-heading-anchor" href="#internal-documentation">internal documentation</a><a id="internal-documentation-1"></a><a class="docs-heading-anchor-permalink" href="#internal-documentation" title="Permalink"></a></h1><p>Documentation for <code>PhyloPlots</code>&#39;s internal functions. Those functions are not exported, but can still be used (like: <code>PhyloPlots.foo()</code> for a function named <code>foo()</code>).</p><h2 id="index"><a class="docs-heading-anchor" href="#index">index</a><a id="index-1"></a><a class="docs-heading-anchor-permalink" href="#index" title="Permalink"></a></h2><ul><li><a href="#PhyloPlots.checkNodeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame}"><code>PhyloPlots.checkNodeDataFrame</code></a></li><li><a href="#PhyloPlots.getEdgeNodeCoordinates-Tuple{PhyloNetworks.HybridNetwork, Bool}"><code>PhyloPlots.getEdgeNodeCoordinates</code></a></li><li><a href="#PhyloPlots.prepareEdgeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame, Bool, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}"><code>PhyloPlots.prepareEdgeDataFrame</code></a></li><li><a href="#PhyloPlots.prepareNodeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame, Bool, Bool, Bool, Vector{Float64}, Vector{Float64}}"><code>PhyloPlots.prepareNodeDataFrame</code></a></li><li><a href="#PhyloPlots.rexport-Tuple{PhyloNetworks.HybridNetwork}"><code>PhyloPlots.rexport</code></a></li></ul><h2 id="functions"><a class="docs-heading-anchor" href="#functions">functions</a><a id="functions-1"></a><a class="docs-heading-anchor-permalink" href="#functions" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="PhyloPlots.checkNodeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame}" href="#PhyloPlots.checkNodeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame}"><code>PhyloPlots.checkNodeDataFrame</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">checkNodeDataFrame(net, nodeLabel)</code></pre><p>Check data frame for node annotations:</p><ul><li>check that the data has at least 2 columns (if it has any)</li><li>check that the first column has integers (to serve as node numbers)</li><li>remove rows with no node numbers</li><li>warning if some node numbers in the data are not in the network.</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cecileane/PhyloPlots.jl/blob/3a73ae9b36d5066f7ef4915a3df8baabc9dc03f3/src/phylonetworksPlots.jl#L164-L172">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="PhyloPlots.getEdgeNodeCoordinates-Tuple{PhyloNetworks.HybridNetwork, Bool}" href="#PhyloPlots.getEdgeNodeCoordinates-Tuple{PhyloNetworks.HybridNetwork, Bool}"><code>PhyloPlots.getEdgeNodeCoordinates</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">getEdgeNodeCoordinates(net, useEdgeLength)</code></pre><p>Calculate coordinates for plotting later with Gadfly or RCall.</p><p>Actually modifies some (minor) attributes of the network, as it calls <code>directEdges!</code>, <code>preorder!</code> and <code>cladewiseorder!</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cecileane/PhyloPlots.jl/blob/3a73ae9b36d5066f7ef4915a3df8baabc9dc03f3/src/phylonetworksPlots.jl#L4-L11">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="PhyloPlots.prepareEdgeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame, Bool, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}" href="#PhyloPlots.prepareEdgeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame, Bool, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}"><code>PhyloPlots.prepareEdgeDataFrame</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">prepareEdgeDataFrame(net, edgeLabel::DataFrame, mainTree::Bool,
+    edge_xB, edge_xE, edge_yB, edge_yE)</code></pre><p>Check data frame for edge annotation. <code>edge_*</code>: Float64 vectors giving the coordinates for the beginning and end of edges. Return data frame with columns</p><ul><li>x, y: coordinates on the plots</li><li>len: node name</li><li>gam: gamma (inheritance value)</li><li>num: node number</li><li>lab: node label</li><li>hyb: is hybrid?</li><li>min: is minor?</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cecileane/PhyloPlots.jl/blob/3a73ae9b36d5066f7ef4915a3df8baabc9dc03f3/src/phylonetworksPlots.jl#L239-L253">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="PhyloPlots.prepareNodeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame, Bool, Bool, Bool, Vector{Float64}, Vector{Float64}}" href="#PhyloPlots.prepareNodeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame, Bool, Bool, Bool, Vector{Float64}, Vector{Float64}}"><code>PhyloPlots.prepareNodeDataFrame</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">prepareNodeDataFrame(net, nodeLabel::DataFrame,
+    showNodeNumber::Bool, showIntNodeLabel::Bool, labelnodes::Bool,
+    node_x, node_y)</code></pre><p>Make data frame for node annotation. <code>node_*</code> should be Float64 vectors. <code>nodeLabel</code> should have columns as required by <a href="#PhyloPlots.checkNodeDataFrame-Tuple{PhyloNetworks.HybridNetwork, DataFrames.DataFrame}"><code>checkNodeDataFrame</code></a></p><p>Columns of output data frame:</p><ul><li>x, y: coordinates on the plots (from <code>node_*</code>)</li><li>name: node name</li><li>num: node number</li><li>lab: node label</li><li>lea: is leaf?</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cecileane/PhyloPlots.jl/blob/3a73ae9b36d5066f7ef4915a3df8baabc9dc03f3/src/phylonetworksPlots.jl#L195-L209">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="PhyloPlots.rexport-Tuple{PhyloNetworks.HybridNetwork}" href="#PhyloPlots.rexport-Tuple{PhyloNetworks.HybridNetwork}"><code>PhyloPlots.rexport</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">rexport(net::HybridNetwork; mainTree=false, useEdgeLength=true)</code></pre><p>Create an RObject of class <code>phylo</code> (and <code>evonet</code> depending on the number of hybridizations) recognized by the <code>ape</code> library in R (S3 object). This RObject can be evaluated using the tools available in the <code>ape</code> library in R. For example, we can visualize the network using <code>ape</code>&#39;s <code>plot</code> function.</p><p>not exported: <a href="../public/#RCall.sexp-Tuple{PhyloNetworks.HybridNetwork}"><code>sexp</code></a> is the best way to go.</p><p><strong>Arguments</strong></p><ul><li>useEdgeLength: if true, export edge lengths from <code>net</code>.</li><li>mainTree: if true, minor hybrid edges are omitted.</li></ul><p><strong>Examples</strong></p><pre><code class="language-julia-repl">julia&gt; net = readTopology(&quot;(((A,(B)#H1:::0.9),(C,#H1:::0.1)),D);&quot;);
+julia&gt; phy = rexport(net)
+RCall.RObject{RCall.VecSxp}
+$Nnode
+[1] 5
+
+$edge
+     [,1] [,2]
+[1,]    5    6
+[2,]    5    4
+[3,]    6    8
+[4,]    6    7
+[5,]    7    3
+[6,]    8    1
+[7,]    8    9
+[8,]    9    2
+
+$tip.label
+[1] &quot;A&quot; &quot;B&quot; &quot;C&quot; &quot;D&quot;
+
+$reticulation
+     [,1] [,2]
+[1,]    7    9
+
+$reticulation.gamma
+[1] 0.1
+
+attr(,&quot;class&quot;)
+[1] &quot;evonet&quot; &quot;phylo&quot;
+
+julia&gt; using RCall
+
+julia&gt; R&quot;library(ape)&quot;;
+
+julia&gt; phy
+RCall.RObject{RCall.VecSxp}
+
+    Evolutionary network with 1 reticulation
+
+               --- Base tree ---
+Phylogenetic tree with 4 tips and 5 internal nodes.
+
+Tip labels:
+[1] &quot;A&quot; &quot;B&quot; &quot;C&quot; &quot;D&quot;
+
+Rooted; no branch lengths.
+
+R&gt; phy
+
+Evolutionary network with 1 reticulation
+
+               --- Base tree ---
+Phylogenetic tree with 4 tips and 5 internal nodes.
+
+Tip labels:
+[1] &quot;A&quot; &quot;B&quot; &quot;C&quot; &quot;D&quot;
+
+Rooted; no branch lengths.
+
+R&gt; str(phy)
+List of 5
+$ Nnode             : int 5
+$ edge              : int [1:8, 1:2] 5 5 6 6 7 8 8 9 6 4 ...
+$ tip.label         : chr [1:4] &quot;A&quot; &quot;B&quot; &quot;C&quot; &quot;D&quot;
+$ reticulation      : int [1, 1:2] 7 9
+$ reticulation.gamma: num 0.1
+- attr(*, &quot;class&quot;)= chr [1:2] &quot;evonet&quot; &quot;phylo&quot;</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cecileane/PhyloPlots.jl/blob/3a73ae9b36d5066f7ef4915a3df8baabc9dc03f3/src/rexport.jl#L100">source</a></section></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../public/">« public</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 1 May 2021 14:13">Saturday 1 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

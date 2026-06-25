@@ -22,6 +22,8 @@ the right, using R graphics. Optional arguments are listed below.
   full tree style.
 - `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
   use a dictionary to map the number of each edge to its desired width.
+- `curved = :none`: edge curvature for hybrid edges (`:none`, `:minor`, `:both`).
+- `bend = 0.3`: curvature amount for Bézier curves (must be positive).
 - `xlim`, `ylim`: array of 2 values, to determine the axes limits.
 
 ## tip annotations:
@@ -134,13 +136,15 @@ function plot(
     style::Symbol=:fulltree,
     arrowlen::Real=(style==:majortree ? 0 : 0.1),
     minorlinetype = nothing,
-    edgewidth = 1,
+    edgewidth = 1,# fixit: define bothcurved
     edgenumbercolor = "grey", # don't limit the type because R accepts many types
     edgelabelcolor = "black", # and these colors are used as is
     nodelabelcolor = "black",
     edgelabeladj = [.5,0],
     nodelabeladj = 1,
     preorder::Bool=true,
+    curved::Symbol = :none,
+    bend::Real = 0.3,
 )
     if getroot(net).leaf
         @warn """The network is rooted at a leaf: the plot won't look good.
@@ -150,7 +154,7 @@ function plot(
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
      xmin, xmax, ymin, ymax) = edgenode_coordinates(
-        net, useedgelength, style==:majortree, preorder)
+        net, useedgelength, style==:majortree, preorder, curved==:both)
     labelnodes, nodelabel = check_nodedataframe(net, nodelabel)
     ndf = prepare_nodedataframe(net, nodelabel, shownodenumber,
             shownodelabel, labelnodes, node_x, node_y)
@@ -221,17 +225,158 @@ function plot(
       @warn "Style $style is unknown. Defaulted to :fulltree."
       style = :fulltree
     end
+    curved ∈ (:none, :minor, :both) ||
+        error("curved must be :none, :minor, or :both; got :$curved")
+    bend > 0 ||
+        error("bend must be a positive number; got $bend")
 
     R"""
     plot($(node_x[leaves]), $(node_y[leaves]), type='n',
          xlim=c($xmin,$xmax), ylim=c($ymin,$ymax),
          axes=FALSE, xlab='', ylab='')
     """
-    R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol, lwd=edgewidth_vec)
-    R"arrows"(hybridedge_xB, hybridedge_yB, hybridedge_xE, hybridedge_yE,
-              length=arrowlen, angle=20, col=hybmincol_vec, lty=minorlinetype,
-              lwd=hybridedgewidth_vec)
-    R"segments"(node_x, node_yB, node_x, node_yE, col=defaultedgecolor)
+    curved_major_parent_y2 = Dict{Int, Vector{Float64}}()
+    hybrid_offset = Float64(bend) * (ymax - ymin) / max(net.numtaxa, 1)
+    minor_edge_indices = [i for i in 1:length(net.edge) if !net.edge[i].ismajor]
+    overlapping_minors = Set{Int}()
+    if curved != :none
+        for j in 1:length(hybridedge_xB)
+            min_seg = _minor_hybrid_segment(j, hybridedge_xB, hybridedge_yB,
+                                            hybridedge_xE, hybridedge_yE)
+            child_j  = PhyloNetworks.getchild(net.edge[minor_edge_indices[j]])
+            maj_part = _major_partner_segment(child_j, net, edge_xB, edge_xE, edge_yE, node_y)
+            if maj_part !== nothing && _segs_overlap(min_seg, maj_part)
+                push!(overlapping_minors, j)
+            end
+        end
+    end
+
+    if curved == :none
+        R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol, lwd=edgewidth_vec)
+        R"arrows"(hybridedge_xB, hybridedge_yB, hybridedge_xE, hybridedge_yE,
+                  length=arrowlen, angle=20, col=hybmincol_vec, lty=minorlinetype,
+                  lwd=hybridedgewidth_vec)
+    else
+        if curved == :both
+            straight_idx = [i for i in 1:length(net.edge)
+                            if !net.edge[i].hybrid || !net.edge[i].ismajor]
+            ew_straight = isa(edgewidth_vec, Number) ? edgewidth_vec : edgewidth_vec[straight_idx]
+            R"segments"(edge_xB[straight_idx], edge_yB[straight_idx],
+                        edge_xE[straight_idx], edge_yE[straight_idx],
+                        col=eCol[straight_idx], lwd=ew_straight)
+            for i in findall(e -> e.hybrid && e.ismajor, net.edge)
+                seg = _major_hybrid_segment(i, net, edge_xB, edge_xE, edge_yE, node_y)
+                _, _, _, y2_i = seg
+                parent_ni_i = findfirst(x -> x === PhyloNetworks.getparent(net.edge[i]), net.node)
+                child_node_i = PhyloNetworks.getchild(net.edge[i])
+                minor_j = let jcount = 0, found = nothing
+                    for ee in net.edge
+                        if !ee.ismajor
+                            jcount += 1
+                            if PhyloNetworks.getchild(ee) === child_node_i
+                                found = jcount
+                                break
+                            end
+                        end
+                    end
+                    found
+                end
+                lwd_i = isa(edgewidth_vec, AbstractVector) ? edgewidth_vec[i] : edgewidth_vec
+                if minor_j !== nothing && minor_j in overlapping_minors
+                    # major overlaps minor: draw major straight so the minor arc is visible
+                    x0s, y0s, x2s, y2s = seg
+                    eff_al = Float64(arrowlen) > 0 ? Float64(arrowlen) : 0.1
+                    R"arrows"(x0s, y0s, x2s, y2s, length=eff_al, angle=20,
+                              col=eCol[i], lty="solid", lwd=lwd_i)
+                else
+                    # no overlap: curved major, update node-bar gap tracking
+                    if !haskey(curved_major_parent_y2, parent_ni_i)
+                        curved_major_parent_y2[parent_ni_i] = Float64[]
+                    end
+                    push!(curved_major_parent_y2[parent_ni_i], y2_i)
+                    bow = if minor_j !== nothing
+                        partner_seg = _minor_hybrid_segment(minor_j, hybridedge_xB, hybridedge_yB,
+                                                            hybridedge_xE, hybridedge_yE)
+                        _hybrid_bow_sign(seg; offset=hybrid_offset, partner=partner_seg)
+                    else
+                        _hybrid_bow_sign(seg; offset=hybrid_offset, partner=nothing)
+                    end
+                    _draw_hybrid_bezier!(seg; bow_sign=bow, offset=hybrid_offset, bend=bend,
+                                         xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                                         col=eCol[i], lwd=lwd_i, arrowlen=arrowlen, linetype="solid",
+                                         force_bow=false)
+                end
+            end
+        else
+            R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol, lwd=edgewidth_vec)
+        end
+        for j in 1:length(hybridedge_xB)
+            seg = _minor_hybrid_segment(j, hybridedge_xB, hybridedge_yB,
+                                        hybridedge_xE, hybridedge_yE)
+            is_overlap = j in overlapping_minors
+            bow = if is_overlap
+                -_bow_left_sign(seg..., hybrid_offset)
+            else
+                partner = curved == :both ?
+                    _major_partner_segment(PhyloNetworks.getchild(net.edge[minor_edge_indices[j]]),
+                                           net, edge_xB, edge_xE, edge_yE, node_y) : nothing
+                _hybrid_bow_sign(seg; offset=hybrid_offset, partner=partner)
+            end
+            col_j = isa(hybmincol_vec, AbstractVector) ? hybmincol_vec[j] : hybmincol_vec
+            lwd_j = isa(hybridedgewidth_vec, AbstractVector) ? hybridedgewidth_vec[j] :
+                    hybridedgewidth_vec
+            _draw_hybrid_bezier!(seg; bow_sign=bow, offset=hybrid_offset, bend=bend,
+                                 xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                                 col=col_j, lwd=lwd_j, arrowlen=arrowlen, linetype=minorlinetype,
+                                 force_bow=is_overlap)
+        end
+    end
+    if isempty(curved_major_parent_y2)
+        R"segments"(node_x, node_yB, node_x, node_yE, col=defaultedgecolor)
+    else
+        normal_node_idx = [i for i in 1:length(net.node) if !haskey(curved_major_parent_y2, i)]
+        R"segments"(node_x[normal_node_idx], node_yB[normal_node_idx],
+                    node_x[normal_node_idx], node_yE[normal_node_idx],
+                    col=defaultedgecolor)
+        for (pni, y2_list) in curved_major_parent_y2
+            y_parent = node_y[pni]
+            exclusions = Tuple{Float64, Float64}[]
+            for y2_i in y2_list
+                push!(exclusions, (min(y_parent, y2_i), max(y_parent, y2_i)))
+            end
+            sort!(exclusions)
+            merged = Tuple{Float64, Float64}[]
+            for (lo, hi) in exclusions
+                if isempty(merged) || lo > merged[end][2]
+                    push!(merged, (lo, hi))
+                else
+                    merged[end] = (merged[end][1], max(merged[end][2], hi))
+                end
+            end
+            tree_ys = sort!([node_y[findfirst(x -> x === PhyloNetworks.getchild(e), net.node)]
+                             for e in net.edge
+                             if PhyloNetworks.getparent(e) === net.node[pni] &&
+                                !(e.hybrid && e.ismajor)])
+            pos = node_yB[pni]
+            for (lo, hi) in merged
+                if pos < lo
+                    R"segments"(node_x[pni], pos, node_x[pni], lo, col=defaultedgecolor)
+                end
+                draw_from = max(pos, lo)
+                for ty in tree_ys
+                    if draw_from < ty <= hi
+                        R"segments"(node_x[pni], draw_from, node_x[pni], ty, col=defaultedgecolor)
+                        draw_from = ty
+                    end
+                end
+                pos = max(pos, hi)
+            end
+            if pos < node_yE[pni]
+                R"segments"(node_x[pni], pos, node_x[pni], node_yE[pni],
+                            col=defaultedgecolor)
+            end
+        end
+    end
     if showtiplabel
       R"text"(node_x[leaves] .+ tipoffset, node_y[leaves],
               tiplabels(net), adj=0, font=3, cex=tipcex)
@@ -276,4 +421,61 @@ function plot(
       arrow_x_lo=hybridedge_xB, arrow_x_hi=hybridedge_xE,
       arrow_y_lo=hybridedge_yB, arrow_y_hi=hybridedge_yE,
       node_data=ndf, edge_data=edf)
+end
+
+function _major_hybrid_segment(i::Int, net::HybridNetwork,
+                               edge_xB, edge_xE, edge_yE, node_y)
+    parent_ni = findfirst(x -> x === PhyloNetworks.getparent(net.edge[i]), net.node)
+    return (edge_xB[i], node_y[parent_ni], edge_xE[i], edge_yE[i])
+end
+
+_minor_hybrid_segment(j::Int, hxB, hyB, hxE, hyE) = (hxB[j], hyB[j], hxE[j], hyE[j])
+
+function _minor_partner_segment(x2::Float64, y2::Float64, hxB, hyB, hxE, hyE)
+    j = findfirst(k -> abs(hxE[k] - x2) < 1e-10 && abs(hyE[k] - y2) < 1e-10, 1:length(hxB))
+    j === nothing ? nothing : _minor_hybrid_segment(j, hxB, hyB, hxE, hyE)
+end
+
+function _major_partner_segment(child_node, net::HybridNetwork,
+                                edge_xB, edge_xE, edge_yE, node_y)
+    i = findfirst(e -> e.hybrid && e.ismajor &&
+                   PhyloNetworks.getchild(e) === child_node, net.edge)
+    i === nothing ? nothing : _major_hybrid_segment(i, net, edge_xB, edge_xE, edge_yE, node_y)
+end
+
+function _draw_hybrid_bezier!(seg::_HybridSegment;
+                              bow_sign::Float64, offset::Float64, bend::Float64,
+                              xmin::Float64, xmax::Float64, ymin::Float64, ymax::Float64,
+                              col, lwd, arrowlen::Real, linetype::AbstractString,
+                              force_bow::Bool=false)
+    x0, y0, x2, y2 = seg
+    cx, cy, straight = _quadbez_control(x0, y0, x2, y2;
+                                        bend=Float64(bend), offset_override=offset,
+                                        force_bow_sign=bow_sign, force_bow=force_bow)
+    cx = clamp(cx, xmin, xmax)
+    cy = clamp(cy, ymin, ymax)
+    if straight
+        R"segments"(x0, y0, x2, y2, col=col, lwd=lwd, lty=linetype)
+    else
+        R"""
+        t_vals = seq(0, 1, length.out=50)
+        x_curve = (1-t_vals)^2 * $(x0) + 2*(1-t_vals)*t_vals * $(cx) + t_vals^2 * $(x2)
+        y_curve = (1-t_vals)^2 * $(y0) + 2*(1-t_vals)*t_vals * $(cy) + t_vals^2 * $(y2)
+        lines(x_curve, y_curve, col=$(col), lwd=$(lwd), lty=$(linetype))
+        """
+    end
+    eff_arrowlen = arrowlen > 0 ? arrowlen : 0.1
+    tang_dx = x2 - cx
+    tang_dy = y2 - cy
+    tang_len = sqrt(tang_dx^2 + tang_dy^2)
+    chord_len = sqrt((x2 - x0)^2 + (y2 - y0)^2)
+    if tang_len > 1e-10
+        ε = 0.01 * max(chord_len, tang_len, 1e-10)
+        xfrom = x2 - ε * tang_dx / tang_len
+        yfrom = y2 - ε * tang_dy / tang_len
+    else
+        xfrom, yfrom = x0, y0
+    end
+    R"arrows"(xfrom, yfrom, x2, y2, length=eff_arrowlen, angle=20,
+              col=col, lty="solid", lwd=lwd)
 end

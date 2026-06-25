@@ -62,3 +62,50 @@
   @test res[:edge_data][[2,5],2:4] == DataFrame(
       gam=["0.2","1"], num=["2","5"], lab=["85",""])
 end
+
+@testset "curved hybrid bow direction" begin
+  function h1_hybrid_controls(net, offset)
+    c = PhyloPlots.edgenode_coordinates(net, false, true, true)
+    edge_xB, edge_xE, _, edge_yE = c[1], c[2], c[3], c[4]
+    node_y = c[6]
+    hxB, hxE, hyB, hyE = c[9], c[10], c[11], c[12]
+    h1_node = findfirst(n -> n.hybrid && n.name == "H1", net.node)
+    i = findfirst(e -> e.hybrid && e.ismajor &&
+                  PhyloNetworks.getchild(e) === net.node[h1_node], net.edge)
+    pni = findfirst(x -> x === PhyloNetworks.getparent(net.edge[i]), net.node)
+    major_seg = (edge_xB[i], node_y[pni], edge_xE[i], edge_yE[i])
+    _, _, x2, y2 = major_seg
+    minor_j = findfirst(j -> abs(hxE[j] - x2) < 1e-10 && abs(hyE[j] - y2) < 1e-10,
+                        1:length(hxB))
+    minor_seg = (hxB[minor_j], hyB[minor_j], hxE[minor_j], hyE[minor_j])
+    major_bow = PhyloPlots._hybrid_bow_sign(major_seg; offset=offset, partner=minor_seg)
+    minor_bow = PhyloPlots._hybrid_bow_sign(minor_seg; offset=offset, partner=major_seg)
+    major_cx, major_cy, _ = PhyloPlots._quadbez_control(major_seg...;
+        offset_override=offset, force_bow_sign=major_bow)
+    minor_cx, minor_cy, _ = PhyloPlots._quadbez_control(minor_seg...;
+        offset_override=offset, force_bow_sign=minor_bow)
+    return (
+        major=(cx=major_cx, cy=major_cy, mx=(major_seg[1] + major_seg[3]) / 2,
+               y0=major_seg[2], y2=major_seg[4]),
+        minor=(cx=minor_cx, cy=minor_cy, mx=(minor_seg[1] + minor_seg[3]) / 2,
+               y0=minor_seg[2], y2=minor_seg[4]),
+    )
+  end
+
+  net_op = readnewick("(A,((((B,(C)#H1:::0.7),(#H1:::0.3,D)))#H0,#H0),E);")
+  net_lsa2 = readnewick("((((B)#H1:::0.6,C),((#H1:::0.4,D))#H2:::0.8),(#H2:::0.2,E));")
+  offset_op = 0.3 * 5.0 / net_op.numtaxa
+  offset_lsa2 = 0.3 * 4.0 / net_lsa2.numtaxa
+
+  h1_op = h1_hybrid_controls(net_op, offset_op)
+  h1_lsa2 = h1_hybrid_controls(net_lsa2, offset_lsa2)
+
+  @test h1_op.major.cx < h1_op.major.mx
+  @test h1_lsa2.major.cx < h1_lsa2.major.mx
+  @test h1_op.major.cy > (h1_op.major.y0 + h1_op.major.y2) / 2
+  @test h1_lsa2.major.cy < (h1_lsa2.major.y0 + h1_lsa2.major.y2) / 2
+
+  @test_logs plot(net_op, curved=:both, style=:majortree)
+  @test_logs plot(net_lsa2, curved=:both, style=:majortree)
+  @test_logs plot(net_op, curved=:minor, style=:majortree)
+end

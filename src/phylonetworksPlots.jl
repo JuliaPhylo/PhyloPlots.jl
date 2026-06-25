@@ -3,7 +3,8 @@
         net::HybridNetwork,
         useedgelength::Bool,
         usedirecthybridline::Bool,
-        preorder::Bool=true
+        preorder::Bool=true,
+        majorcurved::Bool=false,
     )
 
 Calculate coordinates of edges segments and node midpoints & segments,
@@ -51,6 +52,7 @@ function edgenode_coordinates(
     useedgelength::Bool,
     usedirecthybridline::Bool,
     preorder::Bool=true,
+    majorcurved::Bool=false,
 )
     if preorder
       try
@@ -116,7 +118,9 @@ function edgenode_coordinates(
         nn = net.vec_node[i]
         !nn.leaf || continue # previous loop took care of leaves
         ni = findfirst(x -> x===nn, net.node)
-        node_yB[ni]=ymax; node_yE[ni]=ymin;
+        node_yB[ni]=ymax; node_yE[ni]=ymin
+        node_y[ni] = 0 # initialization for a running average
+        nchildren = 0
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
         for e in nn.edge
@@ -131,6 +135,8 @@ function edgenode_coordinates(
                         nomajorchild = false # we found a child edge that is a major edge
                         node_yB[ni] = min(node_yB[ni], yy)
                         node_yE[ni] = max(node_yE[ni], yy)
+                        node_y[ni] += yy
+                        nchildren += 1
                     elseif nomajorchild # e is minor edge, and no major found so far
                         minor_yB = min(minor_yB, yy)
                         minor_yE = max(minor_yE, yy)
@@ -144,8 +150,12 @@ function edgenode_coordinates(
                     else
                         child_y = edge_yB[findfirst(x->x===e, net.edge)]
                     end
-                    node_yB[ni] = min(node_yB[ni], child_y)
-                    node_yE[ni] = max(node_yE[ni], child_y)
+                    node_y[ni] += child_y
+                    nchildren += 1
+                    if !majorcurved || !e.ismajor || !e.hybrid
+                        node_yB[ni] = min(node_yB[ni], child_y)
+                        node_yE[ni] = max(node_yE[ni], child_y)
+                    end
                 end
             end
         end
@@ -156,13 +166,21 @@ function edgenode_coordinates(
             end
             node_yB[ni] = minor_yB
             node_yE[ni] = minor_yE
+            node_y[ni]  = (minor_yB + minor_yE)/2           
+        else
+            # node_y[ni] = (node_yB[ni]+node_yE[ni])/2 ## below: breaking change
+            node_y[ni] /= nchildren # nchildren > 0 necessarily if !nomajorchild
         end
-        node_y[ni] = (node_yB[ni]+node_yE[ni])/2
+        if !usedirecthybridline && majorcurved
+            node_yB[ni] = min(node_yB[ni], node_y[ni])
+            node_yE[ni] = max(node_yE[ni], node_y[ni])
+        end
         if nomajorchild #since the minor edges are leaving from the center of the node's y pos.
             node_yB[ni] = node_y[ni]
             node_yE[ni] = node_y[ni]
         end
     end
+    
 
     # setting branch lengths for plotting
     elenCalculate = !useedgelength
@@ -267,6 +285,127 @@ function edgenode_coordinates(
            node_x, node_y, node_yB, node_yE,
            minoredge_xB, minoredge_xE, minoredge_yB, minoredge_yE,
            xmin, xmax, ymin, ymax
+end
+
+
+"""
+    _quadbez_control(x0, y0, x2, y2; bend=0.3, offset_override=NaN, force_bow_sign=NaN, force_bow=false)
+
+Compute the control point for a quadratic Bézier curve from (x0,y0) to (x2,y2).
+Returns `(cx, cy, straight)` where `straight::Bool` is `true` when the caller
+should draw a straight line instead of a curve (degenerate or near-degenerate chord).
+Axis-aligned chords (vertical or horizontal) return `(mx, my, false)` — control
+point at the chord midpoint — so the Bézier is collinear and renders straight,
+unless `force_bow=true`, which overrides this and applies the perpendicular offset
+regardless of chord direction (used for same-chord hybrid pairs that must be
+visually separated).
+"""
+function _quadbez_control(x0::Float64, y0::Float64, x2::Float64, y2::Float64;
+                           bend::Float64=0.3, offset_override::Float64=NaN,
+                           force_bow_sign::Float64=NaN, force_bow::Bool=false)
+    dx = x2 - x0
+    dy = y2 - y0
+    chord_len = sqrt(dx^2 + dy^2)
+    mx = (x0 + x2) / 2
+    my = (y0 + y2) / 2
+    if chord_len < 1e-6
+        return (mx, my, true)
+    end
+    # Axis-aligned chords stay straight unless force_bow overrides (same-chord pairs)
+    if !force_bow && (abs(dx) < 1e-10 * abs(dy) || abs(dy) < 1e-10 * abs(dx))
+        return (mx, my, false)
+    end
+    actual_offset = isnan(offset_override) ? bend * chord_len : offset_override
+    bow_sign = isnan(force_bow_sign) ? 1.0 : force_bow_sign
+    cx = mx - bow_sign * actual_offset * dy / chord_len
+    cy = my + bow_sign * actual_offset * dx / chord_len
+    # Skip x-clamp when force_bow: for vertical same-chord pairs, cx is intentionally
+    # outside [x0, x0] and clamping would collapse the bow back onto the chord.
+    if !force_bow
+        cx = clamp(cx, min(x0, x2), max(x0, x2))
+    end
+    return (cx, cy, false)
+end
+
+const _HybridSegment = NTuple{4, Float64}
+
+"""`true` when two chords share the same start and end."""
+@inline function _same_chord(seg_a::_HybridSegment, seg_b::_HybridSegment)
+    x0, y0, x2, y2 = seg_a
+    px0, py0, px2, py2 = seg_b
+    return abs(px0 - x0) < 1e-10 && abs(py0 - y0) < 1e-10 &&
+           abs(px2 - x2) < 1e-10 && abs(py2 - y2) < 1e-10
+end
+
+"""
+    _segs_overlap(seg_a, seg_b; tol=1e-8)
+
+Return `true` when `seg_a` and `seg_b` are collinear (both endpoints of `seg_b`
+lie within perpendicular distance `tol` of the line through `seg_a`) and their
+projections onto the dominant axis overlap. Detects both full and partial overlap
+between major and minor hybrid edge segments.
+"""
+function _segs_overlap(seg_a::_HybridSegment, seg_b::_HybridSegment; tol::Float64=1e-8)
+    x0a, y0a, x2a, y2a = seg_a
+    x0b, y0b, x2b, y2b = seg_b
+    dxa = x2a - x0a;  dya = y2a - y0a
+    len_a = sqrt(dxa^2 + dya^2)
+    len_b = sqrt((x2b - x0b)^2 + (y2b - y0b)^2)
+    (len_a < 1e-6 || len_b < 1e-6) && return false
+    # Both endpoints of seg_b must lie on the line through seg_a
+    abs(dxa * (y0b - y0a) - dya * (x0b - x0a)) > tol * len_a && return false
+    abs(dxa * (y2b - y0a) - dya * (x2b - x0a)) > tol * len_a && return false
+    # Collinear: check range overlap on the dominant axis
+    if abs(dxa) >= abs(dya)
+        lo_a, hi_a = minmax(x0a, x2a)
+        lo_b, hi_b = minmax(x0b, x2b)
+        return lo_a <= hi_b + tol && lo_b <= hi_a + tol
+    else
+        lo_a, hi_a = minmax(y0a, y2a)
+        lo_b, hi_b = minmax(y0b, y2b)
+        return lo_a <= hi_b + tol && lo_b <= hi_a + tol
+    end
+end
+
+"""Signed side of point `(qx, qy)` relative to the chord direction."""
+@inline function _chord_side(dx::Float64, dy::Float64,
+                             mx::Float64, my::Float64, qx::Float64, qy::Float64)
+    return dx * (qy - my) - dy * (qx - mx)
+end
+
+"""
+    _bow_left_sign(x0, y0, x2, y2, offset)
+
+Return `±1` so the Bézier bows left (smaller `cx`, away from right-side taxa).
+Returns `NaN` when the chord is degenerate.
+"""
+function _bow_left_sign(x0::Float64, y0::Float64, x2::Float64, y2::Float64, offset::Float64)
+    cx_p, _, sp = _quadbez_control(x0, y0, x2, y2; offset_override=offset, force_bow_sign=1.0)
+    cx_m, _, sm = _quadbez_control(x0, y0, x2, y2; offset_override=offset, force_bow_sign=-1.0)
+    (sp || sm) && return NaN
+    return cx_p <= cx_m ? 1.0 : -1.0
+end
+
+"""
+    _hybrid_bow_sign(seg; offset, partner=nothing)
+
+Choose `force_bow_sign` for a hybrid Bézier chord `seg = (x0, y0, x2, y2)`.
+When the chord is the same as the partner chord, fans them in opposite directions.
+Otherwise bows left (away from right-side taxa).
+"""
+function _hybrid_bow_sign(seg::_HybridSegment; offset::Float64,
+                          partner::Union{Nothing, _HybridSegment}=nothing)
+    x0, y0, x2, y2 = seg
+    if partner !== nothing && _same_chord(seg, partner)
+        px0, py0, px2, py2 = partner
+        pcx, pcy, ps = _quadbez_control(px0, py0, px2, py2; offset_override=offset)
+        ps && return NaN
+        dx, dy = x2 - x0, y2 - y0
+        mx, my = (x0 + x2) / 2, (y0 + y2) / 2
+        side = _chord_side(dx, dy, mx, my, pcx, pcy)
+        return side >= 0 ? -1.0 : 1.0
+    end
+    return _bow_left_sign(x0, y0, x2, y2, offset)
 end
 
 

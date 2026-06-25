@@ -13,6 +13,9 @@ that can be used later for plotting.
 Actually modifies some (minor) attributes of the network, as it calls
 `directedges!` and `preorder!`, unless with argument `preorder=false`.
 
+`majorcurved`: if `true`, major edges are represented using curved segments
+instead of straight horizontal lines. Default: `false`.
+
 output: tuple with the following elements, in which the order of
 nodes corresponds to the order in `net.node`, and the order of
 edges corresponds to that in `net.edge` (filtered to minor edges as needed).

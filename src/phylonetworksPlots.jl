@@ -13,9 +13,6 @@ that can be used later for plotting.
 Actually modifies some (minor) attributes of the network, as it calls
 `directedges!` and `preorder!`, unless with argument `preorder=false`.
 
-`majorcurved`: if `true`, major edges are represented using curved segments
-instead of straight horizontal lines. Default: `false`.
-
 output: tuple with the following elements, in which the order of
 nodes corresponds to the order in `net.node`, and the order of
 edges corresponds to that in `net.edge` (filtered to minor edges as needed).
@@ -24,19 +21,22 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 2. `edge_xE`: ...  End of each edge, in the same order as in `net.edge`
 3. `edge_yB`: y coordinate for edges, Begin ...
 4. `edge_yE`: ... and End.
-   Each major edge is drawn as a single horizontal line. Minor hybrid edges are
-   drawn as: a single diagonal segment if `usedirecthybridline` is true,
-   or as 2 connected segments otherwise: one horizontal (whose length on the
-   x axis can be used to represent the edge length), and the other diagonal to
-   connect the horizontal segment to the child node.
+   * Each major edge is drawn as a horizontal line by default. But when
+     `majorcurved` is true, major hybrid edges are drawn curved instead.
+   * Minor hybrid edges are drawn as:
+     + a single diagonal segment (or curve) if `usedirecthybridline` is true,
+     + or as 2 connected segments otherwise: one horizontal (whose length on
+       the x axis can be used to represent the edge length), and the other
+       diagonal (or curved) to connect the horizontal segment to the child node.
+
    `edge_*` contains the coordinates for the horizontal segment only, which is
-   reduced to a single point (Begin = End) when using "SimpleHybridLines".
+   reduced to a single point (Begin = End) when `usedirecthybridline` is true.
    `minoredge_*` (see below) contains information for the diagonal segment.
    Agreed, `edge_yB` = `edge_yE` always (relic from before v0.3:
    no minoredge output back then, and simple diagonal lines only)
 5. `node_x`: x and ...
-6. `node_y`: ... y coordinate at the middle of the vertical bar that represents a node.
-   The (or each) parent edge of the node connects to this middle point,
+6. `node_y`: ... y coordinate along the vertical bar that represents a node.
+   The (or each) parent edge of the node connects to this central point,
    but the node itself is drawn as a vertical bar connected to all it children edges.
    order: same as in `net.node`
 7. `node_yB`: y coordinates of the Beginning and the ...
@@ -84,6 +84,7 @@ function edgenode_coordinates(
     edge_yB = zeros(Float64,net.numedges) # yE of edge = y of child node
     # set node_y of leaves: follow cladewise order
     # also sets edge_yB of minor hybrid edges
+    node_w  = zeros(Int, net.numnodes) # weight: number of descendant tips
     nexty = ymax # first tips at the top, last at bottom
     cladewise_queue = copy(getroot(net).edge) # the child edges of root
     # print("queued the root's children's indices: "); @show queue
@@ -97,6 +98,7 @@ function edgenode_coordinates(
             node_yB[ni] = nexty
             node_yE[ni] = nexty
             nexty -= 1
+            node_w[ni] = 1
         end
 
         # only for new hybrid lines:
@@ -122,8 +124,6 @@ function edgenode_coordinates(
         !nn.leaf || continue # previous loop took care of leaves
         ni = findfirst(x -> x===nn, net.node)
         node_yB[ni]=ymax; node_yE[ni]=ymin
-        node_y[ni] = 0 # initialization for a running average
-        nchildren = 0
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
         for e in nn.edge
@@ -131,30 +131,33 @@ function edgenode_coordinates(
                 if usedirecthybridline # unbroken one-segment hybrid lines
                     if e.ismajor || nomajorchild
                         cc = getchild(e)
-                        yy = node_y[findfirst(x -> x===cc, net.node)]
-                        yy!==nothing || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
+                        ci = findfirst(x -> x===cc, net.node)
+                        yy = node_y[ci]
+                        yy != 0 || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
                     end
                     if e.ismajor
                         nomajorchild = false # we found a child edge that is a major edge
                         node_yB[ni] = min(node_yB[ni], yy)
                         node_yE[ni] = max(node_yE[ni], yy)
-                        node_y[ni] += yy
-                        nchildren += 1
+                        node_y[ni] += node_w[ci] * yy # running average; was initialized at 0
+                        node_w[ni] += node_w[ci]
                     elseif nomajorchild # e is minor edge, and no major found so far
                         minor_yB = min(minor_yB, yy)
                         minor_yE = max(minor_yE, yy)
                     end
                 else
-                    # new pretty hybrid lines
                     if e.ismajor
                         cc = getchild(e)
-                        child_y = node_y[findfirst(x -> x===cc, net.node)]
-                        child_y!==nothing || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
+                        ci = findfirst(x -> x===cc, net.node)
+                        child_y = node_y[ci]
+                        child_y != 0 || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
+                        node_y[ni] += node_w[ci] * child_y
+                        node_w[ni] += node_w[ci]
                     else
                         child_y = edge_yB[findfirst(x->x===e, net.edge)]
+                        node_y[ni] += child_y
+                        node_w[ni] += 1
                     end
-                    node_y[ni] += child_y
-                    nchildren += 1
                     if !majorcurved || !e.ismajor || !e.hybrid
                         node_yB[ni] = min(node_yB[ni], child_y)
                         node_yE[ni] = max(node_yE[ni], child_y)
@@ -162,7 +165,7 @@ function edgenode_coordinates(
                 end
             end
         end
-        if nomajorchild # if all children edges are minor hybrid edges. If so: not level 1, not tree-child
+        if nomajorchild # children edges are all minor hybrids
             if minor_yB == minor_yE # one single child. jitter by 0.1 to make the plot readable
                 minor_yB += (minor_yB < (ymax+ymin)/2 ? 0.1 : -0.1)
                 minor_yE = minor_yB
@@ -171,8 +174,8 @@ function edgenode_coordinates(
             node_yE[ni] = minor_yE
             node_y[ni]  = (minor_yB + minor_yE)/2           
         else
-            # node_y[ni] = (node_yB[ni]+node_yE[ni])/2 ## below: breaking change
-            node_y[ni] /= nchildren # nchildren > 0 necessarily if !nomajorchild
+            # node_y[ni] = (node_yB[ni]+node_yE[ni])/2 ## v2.1.0 and earlier
+            node_y[ni] /= node_w[ni] # weight > 0 necessarily if !nomajorchild
         end
         if !usedirecthybridline && majorcurved
             node_yB[ni] = min(node_yB[ni], node_y[ni])
@@ -183,7 +186,6 @@ function edgenode_coordinates(
             node_yE[ni] = node_y[ni]
         end
     end
-    
 
     # setting branch lengths for plotting
     elenCalculate = !useedgelength

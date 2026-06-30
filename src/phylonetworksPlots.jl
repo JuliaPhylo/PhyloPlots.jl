@@ -49,9 +49,10 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 function edgenode_coordinates(
     net::HybridNetwork,
     useedgelength::Bool,
-    usedirecthybridline::Bool,
+    style::Symbol=:fulltree,
     preorder::Bool=true,
 )
+    usedirecthybridline = style==:majortree
     if preorder
       try
         directedges!(net)   # to update ischild1
@@ -69,10 +70,42 @@ function edgenode_coordinates(
     # y max is the numtaxa + number of minor edges
     ymin = 1.0;
     ymax = net.numtaxa
-    if !usedirecthybridline
+    if style == :fulltree # reserve space for "corner" nodes: from minor edges
         ymax += sum(!e.ismajor for e in net.edge)
+    elseif style == :lsatree
+        ymax += net.numhybrids
     end
 
+    if style == :lsatree
+        lsaM[:all] = leaststableancestor_matrix(net, false) # do not preorder again
+        # get LSA(parents(n)) for each hybrid node n
+        hybrid2lsa = Dict{Int,Int}()
+        for (ni,nn) in enumerate(net.node)
+            nn.hybrid || continue
+            # switch to indices in net.vec_node
+            lsa_i = findfirst(x->x===nn, net.vec_node)
+            for e in nn.edge # loop over parents of nn only
+                getchild(e) === nn || continue
+                pi_inlsaM = findfirst(x->x===getparent(e), net.vec_node)
+                newlsa = lsaM[lsa_i, pi_inlsaM]
+                lsa_i = findfirst(x->x===newlsa, net.vec_node)
+            end
+            # back to indices in net.node
+            lsa_node = net.vec_node[lsa_i]
+            push!(hybrid2lsa, ni => findfirst(x->x===lsa_node, net.node))
+        end
+        @show hybrid2lsa
+        # fixit: define lsa2hybrid Dict lsa_nodeindex => [h's ni...]
+        lsa2hybrid = Dict{Int, Vector{Int}}()
+        for (h_ni, lsa_ni) in hybrid2lsa
+            if haskey(lsa2hybrid, lsa_ni)
+                push!(lsa2hybrid[lsa_ni], h_ni)
+            else
+                lsa2hybrid[lsa_ni] = [h_ni]
+            end
+        end
+        @show lsa2hybrid
+    end
     node_y  = zeros(Float64, net.numnodes) # order: in net.nodes, *!not in vec_node!*
     node_yB = zeros(Float64,net.numnodes) # min (B=begin) and max (E=end)
     node_yE = zeros(Float64,net.numnodes) #   of at children's nodes
@@ -86,8 +119,8 @@ function edgenode_coordinates(
         cur_edge = pop!(cladewise_queue); # deliberate choice over shift! for cladewise order
         # increment spacing and add to node_y if leaf
         cur_child = getchild(cur_edge)
+        ni = findfirst(x->x===cur_child, net.node)
         if cur_child.leaf
-            ni = findfirst(x->x===cur_child, net.node)
             node_y[ni]  = nexty
             node_yB[ni] = nexty
             node_yE[ni] = nexty
@@ -95,20 +128,36 @@ function edgenode_coordinates(
         end
 
         # only for new hybrid lines:
-        # increment spacing and add to edge_yB if parent edge is minor
-        if !cur_edge.ismajor && !usedirecthybridline
-            edge_yB[findfirst(x->x===cur_edge, net.edge)] = nexty
-            nexty -= 1
+        if cur_edge.hybrid
+            if cur_edge.ismajor && style == :lsatree
+                node_y[ni]  = nexty
+                nexty -= 1
+            elseif !cur_edge.ismajor && style == :fulltree
+            # increment spacing and add to edge_yB if parent edge is minor
+                edge_yB[findfirst(x->x===cur_edge, net.edge)] = nexty
+                nexty -= 1
+            end
         end
 
-        # push children edges if this is a major edge:
+        # push the appropriate children edges to the "queue"
         if cur_edge.ismajor
             for e in cur_child.edge
                 if getparent(e) === cur_child # don't go backwards
-                    push!(cladewise_queue, e)
+                    if style != :lsatree || !e.hybrid
+                        push!(cladewise_queue, e)
+                    end
                 end
             end
         end
+       if style == :lsatree
+        # to follow the LSA tree: push the major parent edge of h when we visit lsa(h).
+        # 1. loop over hybrid2lsa: h_ni = hybrid node index, lsa_ni = its LSA node index
+        if haskey(lsa2hybrid, ni)
+            for h_ni in lsa2hybrid[ni]
+                push!(cladewise_queue, getparentedge(net.node[h_ni]))
+            end
+        end
+       end
     end
 
     # set node_y of internal nodes: follow post-order

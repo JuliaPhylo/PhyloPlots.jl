@@ -20,7 +20,34 @@ plot(net, style=:majortree);
 R"dev.off()" # hide
 nothing # hide
 ```
+
 ![example1](../assets/figures/style_example.svg)
+
+## Curved hybrid edges
+
+The `curved` option controls whether hybrid edges are drawn as Bézier curves or
+straight lines. It accepts `:none` (the default, all edges straight), `:minor`
+(only minor hybrid edges are curved), or `:both` (both major and minor hybrid
+edges are curved).
+
+Curved edges are most useful when hybrid edges overlap or cross one another,
+making the straight-line plot difficult to read. For example, the network below
+has two hybrid edges whose straight-line renderings overlap completely:
+
+```@example better_edges
+R"svg"(figname("curved_example.svg"), width=9, height=3) # hide
+R"par"(mar=[.1,.1,.1,.1]) # hide
+R"layout"([1 2 3]) # hide
+net_op = readnewick("(A,((((B,(C)#H1:::0.7),(#H1:::0.3,D)))#H0,#H0),E);") # hide
+plot(net_op, style=:majortree, curved=:none);
+R"mtext"("curved=:none", side=1, line=0) # hide
+plot(net_op, style=:majortree, curved=:minor);
+R"mtext"("curved=:minor", side=1, line=0) # hide
+plot(net_op, style=:majortree, curved=:both);
+R"mtext"("curved=:both", side=1, line=0) # hide
+R"dev.off()" # hide
+nothing # hide
+```
 
 ## Using edge lengths
 
@@ -40,11 +67,12 @@ R"text"([3], [0], ["useedgelength=false"]) # hide
 R"dev.off()" # hide
 nothing # hide
 ```
+
 ![example2](../assets/figures/edge_len_example.svg)
 
 !!! note
-    I used a DataFrame (not shown) to add the label "N" to the plot.
-    For more on this, see the [Adding labels](@ref) section.
+I used a DataFrame (not shown) to add the label "N" to the plot.
+For more on this, see the [Adding labels](@ref) section.
 
 If branch lengths represent time, D could represent a fossil, or a virus strain sequenced
 a year before the others. Seeing this visually is the advantage of `useedgelength=true`.
@@ -54,14 +82,14 @@ along the time (x) axis from node `N` to the hybrid node `H1` is
 the same both ways.
 
 !!! note "Time consistency"
-    A network is time-consistent if all the paths between 2 given nodes all
-    have the same length.
-    Time inconsistency can occur when branch lengths are not measured in
-    calendar time, such as if branch lengths are in substitutions per site
-    (some paths might evolve with more substitutions than others), or in
-    number of generations (some lineages might have 1 generation per year,
-    others more or fewer generations per year), or in coalescent units
-    (number of generations / effective population size).
+A network is time-consistent if all the paths between 2 given nodes all
+have the same length.
+Time inconsistency can occur when branch lengths are not measured in
+calendar time, such as if branch lengths are in substitutions per site
+(some paths might evolve with more substitutions than others), or in
+number of generations (some lineages might have 1 generation per year,
+others more or fewer generations per year), or in coalescent units
+(number of generations / effective population size).
 
     A time-consistent network may be ultrametric (the distance
     between the root and the tips is the same across all tips),
@@ -80,6 +108,7 @@ plot(net2, useedgelength=true); # hide
 R"dev.off()" # hide
 nothing # hide
 ```
+
 ![example3](../assets/figures/edge_len_example2.svg)
 
 It may be useful to consider using `style=:majortree` if it causes
@@ -96,6 +125,7 @@ plot(net2, useedgelength=true, style = :majortree, showedgelength=true, arrowlen
 R"dev.off()" # hide
 nothing # hide
 ```
+
 ![example4](../assets/figures/edge_len_example3.svg)
 
 I also used the `arrowlen=0.1` option to show the arrow tips to show the direction of minor edges,
@@ -122,6 +152,7 @@ plot(net1, edgewidth=log_populationsize);
 R"dev.off()"; # hide
 nothing # hide
 ```
+
 ![example5](../assets/figures/edge_len_example5.svg)
 
 ## Customization
@@ -139,6 +170,7 @@ for i in [9,8,6,5, 4,3] # except for edges ancestral to C
 end
 ecols
 ```
+
 ```@example better_edges
 R"svg"(figname("edge_len_example6.svg"), width=6, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]); R"layout"([1 2]); # hide
@@ -149,4 +181,5 @@ R"mtext"("minor hybrid edge is\nhidden: 'blank' type", side=1, line=-1); # hide
 R"dev.off()"; # hide
 nothing # hide
 ```
+
 ![example6](../assets/figures/edge_len_example6.svg)

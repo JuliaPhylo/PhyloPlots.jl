@@ -1,10 +1,13 @@
+indexin_net(n::PhyloNetworks.Node, net::HybridNetwork) = findfirst(x -> x === n, net.node)
+indexin_net(e::PhyloNetworks.Edge, net::HybridNetwork) = findfirst(x -> x === e, net.edge)
+
 """
     edgenode_coordinates(
         net::HybridNetwork,
         useedgelength::Bool,
         usedirecthybridline::Bool,
+        curved::Symbol=:none,
         preorder::Bool=true,
-        majorcurved::Bool=false,
     )
 
 Calculate coordinates of edges segments and node midpoints & segments,
@@ -54,8 +57,9 @@ function edgenode_coordinates(
     net::HybridNetwork,
     useedgelength::Bool,
     usedirecthybridline::Bool,
+    curved::Symbol=:none,
+    bend::Real=0.3,
     preorder::Bool=true,
-    majorcurved::Bool=false,
 )
     if preorder
       try
@@ -68,6 +72,8 @@ function edgenode_coordinates(
       end
       preorder!(net)       # to update net.vec_node: true pre-ordering
     end
+
+    majorcurved = curved==:both
 
     # determine y for each node = y of its parent edge: post-order traversal
     # also [yB,yE] for each internal node: range of y's of all children nodes
@@ -82,6 +88,7 @@ function edgenode_coordinates(
     node_yB = zeros(Float64,net.numnodes) # min (B=begin) and max (E=end)
     node_yE = zeros(Float64,net.numnodes) #   of at children's nodes
     edge_yB = zeros(Float64,net.numedges) # yE of edge = y of child node
+    edge_yE = Vector{Float64}(undef, net.numedges)
     # set node_y of leaves: follow cladewise order
     # also sets edge_yB of minor hybrid edges
     node_w  = zeros(Int, net.numnodes) # weight: number of descendant tips
@@ -93,7 +100,7 @@ function edgenode_coordinates(
         # increment spacing and add to node_y if leaf
         cur_child = getchild(cur_edge)
         if cur_child.leaf
-            ni = findfirst(x->x===cur_child, net.node)
+            ni = indexin_net(cur_child, net)
             node_y[ni]  = nexty
             node_yB[ni] = nexty
             node_yE[ni] = nexty
@@ -104,7 +111,9 @@ function edgenode_coordinates(
         # only for new hybrid lines:
         # increment spacing and add to edge_yB if parent edge is minor
         if !cur_edge.ismajor && !usedirecthybridline
-            edge_yB[findfirst(x->x===cur_edge, net.edge)] = nexty
+            ei = indexin_net(cur_edge, net)
+            edge_yB[ei] = nexty
+            edge_yE[ei] = nexty
             nexty -= 1
         end
 
@@ -122,7 +131,7 @@ function edgenode_coordinates(
     for i=length(net.node):-1:1
         nn = net.vec_node[i]
         !nn.leaf || continue # previous loop took care of leaves
-        ni = findfirst(x -> x===nn, net.node)
+        ni = indexin_net(nn, net)
         node_yB[ni]=ymax; node_yE[ni]=ymin
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
@@ -131,36 +140,38 @@ function edgenode_coordinates(
                 if usedirecthybridline # unbroken one-segment hybrid lines
                     if e.ismajor || nomajorchild
                         cc = getchild(e)
-                        ci = findfirst(x -> x===cc, net.node)
-                        yy = node_y[ci]
-                        yy != 0 || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
+                        ci = indexin_net(cc, net)
+                        cy = node_y[ci]
+                        cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
                     end
                     if e.ismajor
                         nomajorchild = false # we found a child edge that is a major edge
-                        node_yB[ni] = min(node_yB[ni], yy)
-                        node_yE[ni] = max(node_yE[ni], yy)
-                        node_y[ni] += node_w[ci] * yy # running average; was initialized at 0
+                        if !majorcurved || !e.hybrid
+                            node_yB[ni] = min(node_yB[ni], cy)
+                            node_yE[ni] = max(node_yE[ni], cy)
+                        end
+                        node_y[ni] += node_w[ci] * cy # running average; was initialized at 0
                         node_w[ni] += node_w[ci]
                     elseif nomajorchild # e is minor edge, and no major found so far
-                        minor_yB = min(minor_yB, yy)
-                        minor_yE = max(minor_yE, yy)
+                        minor_yB = min(minor_yB, cy)
+                        minor_yE = max(minor_yE, cy)
                     end
                 else
                     if e.ismajor
                         cc = getchild(e)
-                        ci = findfirst(x -> x===cc, net.node)
-                        child_y = node_y[ci]
-                        child_y != 0 || error("oops, child $(cc.number) has not been visited before node $(nn.number).")
-                        node_y[ni] += node_w[ci] * child_y
+                        ci = indexin_net(cc, net)
+                        cy = node_y[ci]
+                        cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
+                        node_y[ni] += node_w[ci] * cy
                         node_w[ni] += node_w[ci]
                     else
-                        child_y = edge_yB[findfirst(x->x===e, net.edge)]
-                        node_y[ni] += child_y
+                        cy = edge_yB[indexin_net(e, net)]
+                        node_y[ni] += cy
                         node_w[ni] += 1
                     end
                     if !majorcurved || !e.ismajor || !e.hybrid
-                        node_yB[ni] = min(node_yB[ni], child_y)
-                        node_yE[ni] = max(node_yE[ni], child_y)
+                        node_yB[ni] = min(node_yB[ni], cy)
+                        node_yE[ni] = max(node_yE[ni], cy)
                     end
                 end
             end
@@ -172,12 +183,12 @@ function edgenode_coordinates(
             end
             node_yB[ni] = minor_yB
             node_yE[ni] = minor_yE
-            node_y[ni]  = (minor_yB + minor_yE)/2           
+            node_y[ni]  = (minor_yB + minor_yE)/2
         else
             # node_y[ni] = (node_yB[ni]+node_yE[ni])/2 ## v2.1.0 and earlier
             node_y[ni] /= node_w[ni] # weight > 0 necessarily if !nomajorchild
         end
-        if !usedirecthybridline && majorcurved
+        if majorcurved
             node_yB[ni] = min(node_yB[ni], node_y[ni])
             node_yE[ni] = max(node_yE[ni], node_y[ni])
         end
@@ -212,11 +223,11 @@ function edgenode_coordinates(
         node_age = zeros(Float64,net.numnodes)
         for i=length(net.node):-1:1 # post-order traversal
             if net.vec_node[i].leaf continue; end
-            ni = findfirst(x -> x===net.vec_node[i], net.node)
+            ni = indexin_net(net.vec_node[i], net)
             for e in net.vec_node[i].edge # loop over children only
                 if net.vec_node[i] == (e.ischild1 ? e.node[2] : e.node[1])
                     node_age[ni] = max(node_age[ni], 1 +
-                     node_age[findfirst(x -> x=== getchild(e), net.node)])
+                     node_age[indexin_net(getchild(e), net)])
                 end
             end
         end
@@ -228,23 +239,19 @@ function edgenode_coordinates(
 
     # determine xB,xE for each edge: pre-order traversal, uses branch lengths
     # then x and yB,yE for each node: x=xE of parent edge
-    xmin = 1.0; xmax=xmin
+    xmin = 0.0; ## was 1.0 in v2.1.0 and earlier
+    xmax = xmin
     node_x  = zeros(Float64,net.numnodes) # order: in net.nodes, *!not in vec_node!*
     edge_xB = zeros(Float64,net.numedges) # min (B=begin) and max (E=end)
     edge_xE = zeros(Float64,net.numedges) # xE-xB = edge length
     node_x[net.rooti] = xmin # root node: x=xmin=0
-    for i=2:length(net.node)              # true pre-order, skipping the root (i=1)
-        ni = findfirst(x -> x===net.vec_node[i], net.node)
-        ei = nothing # index of major parent edge of current node
-        for e in net.vec_node[i].edge
-            if e.ismajor && net.vec_node[i] == e.node[e.ischild1 ? 1 : 2] # major parent edge
-                ei = findfirst(x -> x===e, net.edge)
-                break
-            end
-        end
-        ei !== nothing || error("oops, could not find major parent edge of node number $ni.")
-        edge_yB[ei] = node_y[ni]
-        pni = findfirst(x -> x===getparent(net.edge[ei]), net.node) # parent node index
+    for i in 2:length(net.node)           # true pre-order, skipping the root (i=1)
+        ni = indexin_net(net.vec_node[i], net)
+        ee = getparentedge(net.vec_node[i])
+        ei = indexin_net(ee, net) # index of major parent edge of current node
+        pni = indexin_net(getparent(ee), net) # parent node index
+        edge_yE[ei] = node_y[ni]
+        edge_yB[ei] = (majorcurved && ee.hybrid ? node_y[pni] : edge_yE[ei] )
         edge_xB[ei] = node_x[pni]
         if elenCalculate
             elen[ei] = node_age[pni] - node_age[ni]
@@ -252,84 +259,88 @@ function edgenode_coordinates(
         edge_xE[ei] = edge_xB[ei] + elen[ei]
         node_x[ni] = edge_xE[ei]
     end
-    edge_yE = copy(edge_yB) # true for tree and major edges
 
     # coordinates of the diagonal lines that connect hybrid edges with their targets
     minoredge_xB = Float64[]
     minoredge_xE = Float64[]
+    minoredge_xC = Union{Missing,Float64}[] # control point for Bézier curve
     minoredge_yB = Float64[]
     minoredge_yE = Float64[]
+    minoredge_yC = Union{Missing,Float64}[] # missing for straight line
 
-    for i=1:net.numedges
-        if !net.edge[i].ismajor # minor hybrid edges
-            # indices of child and parent nodes
-            cni = findfirst(x -> x===getchild( net.edge[i]), net.node)
-            pni = findfirst(x -> x===getparent(net.edge[i]), net.node)
-
-            edge_xB[i] = node_x[pni]
-            edge_xE[i] = usedirecthybridline ? edge_xB[i] : (useedgelength ? edge_xB[i] + elen[i] : node_x[cni])
-
-            if usedirecthybridline
-                edge_yB[i] = node_y[pni]
-            end
+    verticalhybridlines = !usedirecthybridline && !useedgelength
+    for (i, e) in enumerate(net.edge) # minor hybrid edges: arrow (& trivial segment)
+        e.ismajor && continue # skip major edges
+        cni = indexin_net(getchild(e), net) # indices of child and parent nodes
+        pni = indexin_net(getparent(e), net)
+        edge_xB[i] = node_x[pni]
+        edge_xE[i] = (usedirecthybridline ? edge_xB[i] :
+                        (useedgelength ? edge_xB[i] + elen[i] : node_x[cni]))
+        if usedirecthybridline # trivial horizontal segment: reduced to a point
+            edge_yB[i] = node_y[pni]
             edge_yE[i] = edge_yB[i]
-
-            push!(minoredge_xB, edge_xE[i])
-            push!(minoredge_yB, edge_yE[i])
-            push!(minoredge_xE, node_x[cni])
-            push!(minoredge_yE, node_y[cni])
-            #@show i; @show net.edge[i]; @show pni; @show net.node[pni]; @show cni; @show net.node[cni]
         end
+        x0 = edge_xE[i];  y0 = edge_yE[i]
+        x2 = node_x[cni]; y2 = node_y[cni]
+        push!(minoredge_xB, x0); push!(minoredge_yB, y0)
+        push!(minoredge_xE, x2); push!(minoredge_yE, y2)
+        if verticalhybridlines
+            push!(minoredge_xC, missing)
+            push!(minoredge_yC, missing)
+        else
+            cx, cy = quadraticbezier_control(x0, y0, x2, y2, bend)
+            push!(minoredge_xC, cx)
+            push!(minoredge_yC, cy)
+        end
+        #@show i; @show net.edge[i]; @show pni; @show net.node[pni]; @show cni; @show net.node[cni]
     end
 
     xmax = max(xmax, edge_xE...)
 
     #@show node_x;  @show node_yB; @show node_y;  @show node_yE
     #@show edge_xB; @show edge_xE; @show edge_yB; @show edge_yE
+    @show minoredge_xC; @show minoredge_yC
     return edge_xB, edge_xE, edge_yB, edge_yE,
            node_x, node_y, node_yB, node_yE,
-           minoredge_xB, minoredge_xE, minoredge_yB, minoredge_yE,
+           minoredge_xB, minoredge_xE, minoredge_xC,
+           minoredge_yB, minoredge_yE, minoredge_yC,
            xmin, xmax, ymin, ymax
 end
 
 
 """
-    _quadbez_control(x0, y0, x2, y2; bend=0.3, offset_override=NaN, force_bow_sign=NaN, force_bow=false)
+    quadraticbezier_control(x0, y0, x2, y2, bend, rtol=1e-10)
 
-Compute the control point for a quadratic Bézier curve from (x0,y0) to (x2,y2).
-Returns `(cx, cy, straight)` where `straight::Bool` is `true` when the caller
-should draw a straight line instead of a curve (degenerate or near-degenerate chord).
-Axis-aligned chords (vertical or horizontal) return `(mx, my, false)` — control
-point at the chord midpoint — so the Bézier is collinear and renders straight,
-unless `force_bow=true`, which overrides this and applies the perpendicular offset
-regardless of chord direction (used for same-chord hybrid pairs that must be
-visually separated).
+Coordinates P1 = (x0,y2), to serve as middle control point for a quadratic
+Bézier curve between the anchor points P0 = (x0,y0) and P2 = (x2,y2).
+
+If P1≈P0 (P0 → P2 is horizontal) or if P1≈P2 (P0 → P2 is vertical),
+then the Bézier curve is almost straight. In this case:
+- if P1≈P2 (vertical) or if `bend` is not 0, `(missing, missing)` is returned
+- if `bend==0` and if P1≈P2 (the default Bézier curve would be horizontal),
+  then `((x0+x2)/2, y2 + bend)` is returned to force a bend.
 """
-function _quadbez_control(x0::Float64, y0::Float64, x2::Float64, y2::Float64;
-                           bend::Float64=0.3, offset_override::Float64=NaN,
-                           force_bow_sign::Float64=NaN, force_bow::Bool=false)
-    dx = x2 - x0
-    dy = y2 - y0
-    chord_len = sqrt(dx^2 + dy^2)
-    mx = (x0 + x2) / 2
-    my = (y0 + y2) / 2
-    if chord_len < 1e-6
-        return (mx, my, true)
+function quadraticbezier_control(
+    x0::Real,
+    y0::Real,
+    x2::Real,
+    y2::Real,
+    bend::Real,
+    rtol=1e-10,
+)
+    dy = abs(y2 - y0) # d(P1,P0)
+    dx = abs(x2 - x0) # d(P1,P2)
+    if dy < rtol * dx
+        if bend==0
+            return (missing,missing)
+        else
+            return ((x0+x2)/2, y2 + bend)
+        end
     end
-    # Axis-aligned chords stay straight unless force_bow overrides (same-chord pairs)
-    if !force_bow && (abs(dx) < 1e-10 * abs(dy) || abs(dy) < 1e-10 * abs(dx))
-        return (mx, my, false)
+    if dx < rtol * dy
+        return (missing,missing)
     end
-    actual_offset = isnan(offset_override) ? bend * chord_len : offset_override
-    bow_sign = isnan(force_bow_sign) ? 1.0 : force_bow_sign
-    cx = mx - bow_sign * actual_offset * dy / chord_len
-    cy = my + bow_sign * actual_offset * dx / chord_len
-    # Skip x-clamp when force_bow: for vertical same-chord pairs, cx is intentionally
-    # outside [x0, x0] and clamping would collapse the bow back onto the chord.
-    if !force_bow
-        cx = clamp(cx, min(x0, x2), max(x0, x2))
-    end
-    return (cx, cy, false)
+    return (x0,y2)
 end
 
 const _HybridSegment = NTuple{4, Float64}
@@ -379,19 +390,6 @@ end
 end
 
 """
-    _bow_left_sign(x0, y0, x2, y2, offset)
-
-Return `±1` so the Bézier bows left (smaller `cx`, away from right-side taxa).
-Returns `NaN` when the chord is degenerate.
-"""
-function _bow_left_sign(x0::Float64, y0::Float64, x2::Float64, y2::Float64, offset::Float64)
-    cx_p, _, sp = _quadbez_control(x0, y0, x2, y2; offset_override=offset, force_bow_sign=1.0)
-    cx_m, _, sm = _quadbez_control(x0, y0, x2, y2; offset_override=offset, force_bow_sign=-1.0)
-    (sp || sm) && return NaN
-    return cx_p <= cx_m ? 1.0 : -1.0
-end
-
-"""
     _hybrid_bow_sign(seg; offset, partner=nothing)
 
 Choose `force_bow_sign` for a hybrid Bézier chord `seg = (x0, y0, x2, y2)`.
@@ -403,8 +401,7 @@ function _hybrid_bow_sign(seg::_HybridSegment; offset::Float64,
     x0, y0, x2, y2 = seg
     if partner !== nothing && _same_chord(seg, partner)
         px0, py0, px2, py2 = partner
-        pcx, pcy, ps = _quadbez_control(px0, py0, px2, py2; offset_override=offset)
-        ps && return NaN
+        pcx, pcy = quadraticbezier_control(px0, py0, px2, py2, 0.3)
         dx, dy = x2 - x0, y2 - y0
         mx, my = (x0 + x2) / 2, (y0 + y2) / 2
         side = _chord_side(dx, dy, mx, my, pcx, pcy)
@@ -581,4 +578,3 @@ function prepare_edgedataframe(
     # @show edf
     return labeledges, edf
 end
-

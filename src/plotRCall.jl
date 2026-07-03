@@ -22,8 +22,10 @@ the right, using R graphics. Optional arguments are listed below.
   full tree style.
 - `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
   use a dictionary to map the number of each edge to its desired width.
-- `curved = :none`: edge curvature for hybrid edges (`:none`, `:minor`, `:both`).
-- `bend = 0.3`: curvature amount for Bézier curves (must be positive).
+- `curved = :none`: curvature for hybrid edges (`:none`, `:minor`, `:both`).
+- `bend = 0.3`: y-bend for a downward curvature of minor hybrid edges that
+  would otherwise be horizontal, to avoid overlap with other edges.
+  Only used when `curved` is requested.
 - `xlim`, `ylim`: array of 2 values, to determine the axes limits.
 
 ## tip annotations:
@@ -136,15 +138,15 @@ function plot(
     style::Symbol=:fulltree,
     arrowlen::Real=(style==:majortree ? 0 : 0.1),
     minorlinetype = nothing,
-    edgewidth = 1,# fixit: define bothcurved
+    edgewidth = 1,
     edgenumbercolor = "grey", # don't limit the type because R accepts many types
     edgelabelcolor = "black", # and these colors are used as is
     nodelabelcolor = "black",
     edgelabeladj = [.5,0],
     nodelabeladj = 1,
-    preorder::Bool=true,
     curved::Symbol = :none,
     bend::Real = 0.3,
+    preorder::Bool=true,
 )
     if getroot(net).leaf
         @warn """The network is rooted at a leaf: the plot won't look good.
@@ -152,9 +154,12 @@ function plot(
             rootonedge!(network_name, $(getroot(net).edge[1].number))"""
     end
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
-     hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
+     hybridedge_xB, hybridedge_xE, hybridedge_xC,
+     hybridedge_yB, hybridedge_yE, hybridedge_yC,
      xmin, xmax, ymin, ymax) = edgenode_coordinates(
-        net, useedgelength, style==:majortree, preorder, curved==:both)
+        net, useedgelength, style==:majortree, curved, bend, preorder)
+    nedges = length(net.edge)
+    nminor = length(hybridedge_xB)
     labelnodes, nodelabel = check_nodedataframe(net, nodelabel)
     ndf = prepare_nodedataframe(net, nodelabel, shownodenumber,
             shownodelabel, labelnodes, node_x, node_y)
@@ -180,7 +185,7 @@ function plot(
     leaves = [n.leaf for n in net.node]
     if isa(edgecolor, AbstractDict) # then ignore {maj|min}orhybridedgecolor
       defaultedgecolor = (isnothing(defaultedgecolor) ? "black" : string(defaultedgecolor) )
-      eCol = Vector{String}(undef,length(net.edge))
+      eCol = Vector{String}(undef,nedges)
       hybmincol_vec = Vector{String}()
       for (ie,ee) in enumerate(net.edge)
         ec = string(get(edgecolor, ee.number, defaultedgecolor))
@@ -193,19 +198,19 @@ function plot(
       if isnothing(defaultedgecolor)
         defaultedgecolor = edgecolor
       end
-      eCol = fill(edgecolor, length(net.edge))
+      eCol = fill(edgecolor, nedges)
       eCol[ [ e.hybrid  for e in net.edge] ] .= majorhybridedgecolor
       eCol[ [!e.ismajor for e in net.edge] ] .= minorhybridedgecolor
-      hybmincol_vec = minorhybridedgecolor
+      hybmincol_vec = Iterators.repeated(minorhybridedgecolor, nminor)
     end
 
     if isa(edgewidth, Number)
-      edgewidth_vec = edgewidth
-      hybridedgewidth_vec = edgewidth
+      edgewidth_vec = Iterators.repeated(edgewidth, nedges)
+      hybridedgewidth_vec = Iterators.repeated(edgewidth, nminor)
     elseif isa(edgewidth, AbstractDict)
       ewtype = valtype(edgewidth)
       ewtype <: Number || error("edgewidth should be numerical")
-      edgewidth_vec = Vector{ewtype}(undef,length(edge_xB))
+      edgewidth_vec = Vector{ewtype}(undef,nedges)
       hybridedgewidth_vec = Vector{ewtype}()
       for (ie,ee) in enumerate(net.edge)
         # fill in edgewidth vector, with default 1 for non-listed edges
@@ -226,15 +231,33 @@ function plot(
       style = :fulltree
     end
     curved ∈ (:none, :minor, :both) ||
-        error("curved must be :none, :minor, or :both; got :$curved")
-    bend > 0 ||
-        error("bend must be a positive number; got $bend")
+        error("curved must be :none, :minor, or :both; got " * repr(curved))
 
-    R"""
-    plot($(node_x[leaves]), $(node_y[leaves]), type='n',
-         xlim=c($xmin,$xmax), ylim=c($ymin,$ymax),
-         axes=FALSE, xlab='', ylab='')
-    """
+    R"plot"(node_x[leaves], node_y[leaves], type="n",
+         xlim=[xmin,xmax], ylim=[ymin,ymax],
+         axes=false, xlab="", ylab="")
+    R"segments"(node_x, node_yB, node_x, node_yE, col=defaultedgecolor)
+    for (ie,e,le) in zip(1:nedges, net.edge, edgewidth_vec)
+        if !e.hybrid || !e.ismajor || curved != :both
+            R"segments"(edge_xB[ie], edge_yB[ie], edge_xE[ie], edge_yE[ie],
+                col=eCol[ie], lwd=le)
+        else
+            draw_quadraticbezier(edge_xB[ie], edge_yB[ie], edge_xE[ie], edge_yE[ie],
+                missing, missing, arrowlen, eCol[ie], le, "solid")
+                # fixit: replace missings by correct control point coordinates
+        end
+    end
+    for (ie,ce,le) in zip(1:nminor, hybmincol_vec, hybridedgewidth_vec)
+        if curved==:none
+            R"arrows"(hybridedge_xB[ie], hybridedge_yB[ie], hybridedge_xE[ie], hybridedge_yE[ie],
+                length=arrowlen, angle=20, col=ce, lty=minorlinetype, lwd=le)
+        else
+            draw_quadraticbezier(hybridedge_xB[ie], hybridedge_yB[ie],
+                hybridedge_xE[ie], hybridedge_yE[ie], hybridedge_xC[ie], hybridedge_yC[ie],
+                arrowlen, ce, le, minorlinetype)
+        end
+    end
+#=
     curved_major_parent_y2 = Dict{Int, Vector{Float64}}()
     hybrid_offset = Float64(bend) * (ymax - ymin) / max(net.numtaxa, 1)
     minor_edge_indices = [i for i in 1:length(net.edge) if !net.edge[i].ismajor]
@@ -301,7 +324,7 @@ function plot(
                     else
                         _hybrid_bow_sign(seg; offset=hybrid_offset, partner=nothing)
                     end
-                    _draw_hybrid_bezier!(seg; bow_sign=bow, offset=hybrid_offset, bend=bend,
+                    draw_quadraticbezier(seg; bow_sign=bow, offset=hybrid_offset, bend=bend,
                                          xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
                                          col=eCol[i], lwd=lwd_i, arrowlen=arrowlen, linetype="solid",
                                          force_bow=false)
@@ -325,7 +348,7 @@ function plot(
             col_j = isa(hybmincol_vec, AbstractVector) ? hybmincol_vec[j] : hybmincol_vec
             lwd_j = isa(hybridedgewidth_vec, AbstractVector) ? hybridedgewidth_vec[j] :
                     hybridedgewidth_vec
-            _draw_hybrid_bezier!(seg; bow_sign=bow, offset=hybrid_offset, bend=bend,
+            draw_quadraticbezier(seg; bow_sign=bow, offset=hybrid_offset, bend=bend,
                                  xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
                                  col=col_j, lwd=lwd_j, arrowlen=arrowlen, linetype=minorlinetype,
                                  force_bow=is_overlap)
@@ -377,6 +400,7 @@ function plot(
             end
         end
     end
+    =#
     if showtiplabel
       R"text"(node_x[leaves] .+ tipoffset, node_y[leaves],
               tiplabels(net), adj=0, font=3, cex=tipcex)
@@ -443,39 +467,25 @@ function _major_partner_segment(child_node, net::HybridNetwork,
     i === nothing ? nothing : _major_hybrid_segment(i, net, edge_xB, edge_xE, edge_yE, node_y)
 end
 
-function _draw_hybrid_bezier!(seg::_HybridSegment;
-                              bow_sign::Float64, offset::Float64, bend::Float64,
-                              xmin::Float64, xmax::Float64, ymin::Float64, ymax::Float64,
-                              col, lwd, arrowlen::Real, linetype::AbstractString,
-                              force_bow::Bool=false)
-    x0, y0, x2, y2 = seg
-    cx, cy, straight = _quadbez_control(x0, y0, x2, y2;
-                                        bend=Float64(bend), offset_override=offset,
-                                        force_bow_sign=bow_sign, force_bow=force_bow)
-    cx = clamp(cx, xmin, xmax)
-    cy = clamp(cy, ymin, ymax)
-    if straight
-        R"segments"(x0, y0, x2, y2, col=col, lwd=lwd, lty=linetype)
+function draw_quadraticbezier(
+    x0,y0, x2,y2, x1,y1,
+    arrowlen,
+    ce, # color for the edge
+    le, # line width for the edge
+    linetype,
+    nsegments=20,
+)
+    if ismissing(x1)
+        R"arrows"(x0, y0, x2, y2, length=arrowlen, angle=20,
+                  col=ce, lwd=le, lty=linetype)
     else
-        R"""
-        t_vals = seq(0, 1, length.out=50)
-        x_curve = (1-t_vals)^2 * $(x0) + 2*(1-t_vals)*t_vals * $(cx) + t_vals^2 * $(x2)
-        y_curve = (1-t_vals)^2 * $(y0) + 2*(1-t_vals)*t_vals * $(cy) + t_vals^2 * $(y2)
-        lines(x_curve, y_curve, col=$(col), lwd=$(lwd), lty=$(linetype))
-        """
+        ts = range(0, 1, step=1/nsegments)
+        xs = [(1-t)^2 * x0 + 2*(1-t)*t * x1 + t^2 * x2 for t in ts]
+        ys = [(1-t)^2 * y0 + 2*(1-t)*t * y1 + t^2 * y2 for t in ts]
+        for i in 1:(nsegments-1)
+            R"segments"(xs[i], ys[i], xs[i+1], ys[i+1], col=ce, lwd=le, lty=linetype)
+        end
+        R"arrows"(xs[nsegments], ys[nsegments], x2, y2,
+            length=arrowlen, angle=20, col=ce, lwd=le, lty=linetype)
     end
-    eff_arrowlen = arrowlen > 0 ? arrowlen : 0.1
-    tang_dx = x2 - cx
-    tang_dy = y2 - cy
-    tang_len = sqrt(tang_dx^2 + tang_dy^2)
-    chord_len = sqrt((x2 - x0)^2 + (y2 - y0)^2)
-    if tang_len > 1e-10
-        ε = 0.01 * max(chord_len, tang_len, 1e-10)
-        xfrom = x2 - ε * tang_dx / tang_len
-        yfrom = y2 - ε * tang_dy / tang_len
-    else
-        xfrom, yfrom = x0, y0
-    end
-    R"arrows"(xfrom, yfrom, x2, y2, length=eff_arrowlen, angle=20,
-              col=col, lty="solid", lwd=lwd)
 end

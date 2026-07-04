@@ -24,13 +24,14 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 2. `edge_xE`: ...  End of each edge, in the same order as in `net.edge`
 3. `edge_yB`: y coordinate for edges, Begin ...
 4. `edge_yE`: ... and End.
-   * Each major edge is drawn as a horizontal line by default. But when
-     `majorcurved` is true, major hybrid edges are drawn curved instead.
+   * Each major edge is drawn as a horizontal line by default. But with
+     `curved=:both`, major hybrid edges are drawn curved instead.
    * Minor hybrid edges are drawn as:
-     + a single diagonal segment (or curve) if `usedirecthybridline` is true,
-     + or as 2 connected segments otherwise: one horizontal (whose length on
-       the x axis can be used to represent the edge length), and the other
-       diagonal (or curved) to connect the horizontal segment to the child node.
+     + a single diagonal segment (straight or curved) if `usedirecthybridline` is true,
+     + or as 2 connected segments otherwise: one horizontal whose length on
+       the x axis can be used to represent the edge length, and the other
+       diagonal (straight or curved) to connect the horizontal segment
+       to the child node.
 
    `edge_*` contains the coordinates for the horizontal segment only, which is
    reduced to a single point (Begin = End) when `usedirecthybridline` is true.
@@ -58,7 +59,6 @@ function edgenode_coordinates(
     useedgelength::Bool,
     usedirecthybridline::Bool,
     curved::Symbol=:none,
-    bend::Real=0.3,
     preorder::Bool=true,
 )
     if preorder
@@ -263,12 +263,9 @@ function edgenode_coordinates(
     # coordinates of the diagonal lines that connect hybrid edges with their targets
     minoredge_xB = Float64[]
     minoredge_xE = Float64[]
-    minoredge_xC = Union{Missing,Float64}[] # control point for Bézier curve
     minoredge_yB = Float64[]
     minoredge_yE = Float64[]
-    minoredge_yC = Union{Missing,Float64}[] # missing for straight line
 
-    verticalhybridlines = !usedirecthybridline && !useedgelength
     for (i, e) in enumerate(net.edge) # minor hybrid edges: arrow (& trivial segment)
         e.ismajor && continue # skip major edges
         cni = indexin_net(getchild(e), net) # indices of child and parent nodes
@@ -284,14 +281,6 @@ function edgenode_coordinates(
         x2 = node_x[cni]; y2 = node_y[cni]
         push!(minoredge_xB, x0); push!(minoredge_yB, y0)
         push!(minoredge_xE, x2); push!(minoredge_yE, y2)
-        if verticalhybridlines
-            push!(minoredge_xC, missing)
-            push!(minoredge_yC, missing)
-        else
-            cx, cy = quadraticbezier_control(x0, y0, x2, y2, bend)
-            push!(minoredge_xC, cx)
-            push!(minoredge_yC, cy)
-        end
         #@show i; @show net.edge[i]; @show pni; @show net.node[pni]; @show cni; @show net.node[cni]
     end
 
@@ -299,11 +288,9 @@ function edgenode_coordinates(
 
     #@show node_x;  @show node_yB; @show node_y;  @show node_yE
     #@show edge_xB; @show edge_xE; @show edge_yB; @show edge_yE
-    @show minoredge_xC; @show minoredge_yC
     return edge_xB, edge_xE, edge_yB, edge_yE,
            node_x, node_y, node_yB, node_yE,
-           minoredge_xB, minoredge_xE, minoredge_xC,
-           minoredge_yB, minoredge_yE, minoredge_yC,
+           minoredge_xB, minoredge_xE, minoredge_yB, minoredge_yE,
            xmin, xmax, ymin, ymax
 end
 
@@ -341,73 +328,6 @@ function quadraticbezier_control(
         return (missing,missing)
     end
     return (x0,y2)
-end
-
-const _HybridSegment = NTuple{4, Float64}
-
-"""`true` when two chords share the same start and end."""
-@inline function _same_chord(seg_a::_HybridSegment, seg_b::_HybridSegment)
-    x0, y0, x2, y2 = seg_a
-    px0, py0, px2, py2 = seg_b
-    return abs(px0 - x0) < 1e-10 && abs(py0 - y0) < 1e-10 &&
-           abs(px2 - x2) < 1e-10 && abs(py2 - y2) < 1e-10
-end
-
-"""
-    _segs_overlap(seg_a, seg_b; tol=1e-8)
-
-Return `true` when `seg_a` and `seg_b` are collinear (both endpoints of `seg_b`
-lie within perpendicular distance `tol` of the line through `seg_a`) and their
-projections onto the dominant axis overlap. Detects both full and partial overlap
-between major and minor hybrid edge segments.
-"""
-function _segs_overlap(seg_a::_HybridSegment, seg_b::_HybridSegment; tol::Float64=1e-8)
-    x0a, y0a, x2a, y2a = seg_a
-    x0b, y0b, x2b, y2b = seg_b
-    dxa = x2a - x0a;  dya = y2a - y0a
-    len_a = sqrt(dxa^2 + dya^2)
-    len_b = sqrt((x2b - x0b)^2 + (y2b - y0b)^2)
-    (len_a < 1e-6 || len_b < 1e-6) && return false
-    # Both endpoints of seg_b must lie on the line through seg_a
-    abs(dxa * (y0b - y0a) - dya * (x0b - x0a)) > tol * len_a && return false
-    abs(dxa * (y2b - y0a) - dya * (x2b - x0a)) > tol * len_a && return false
-    # Collinear: check range overlap on the dominant axis
-    if abs(dxa) >= abs(dya)
-        lo_a, hi_a = minmax(x0a, x2a)
-        lo_b, hi_b = minmax(x0b, x2b)
-        return lo_a <= hi_b + tol && lo_b <= hi_a + tol
-    else
-        lo_a, hi_a = minmax(y0a, y2a)
-        lo_b, hi_b = minmax(y0b, y2b)
-        return lo_a <= hi_b + tol && lo_b <= hi_a + tol
-    end
-end
-
-"""Signed side of point `(qx, qy)` relative to the chord direction."""
-@inline function _chord_side(dx::Float64, dy::Float64,
-                             mx::Float64, my::Float64, qx::Float64, qy::Float64)
-    return dx * (qy - my) - dy * (qx - mx)
-end
-
-"""
-    _hybrid_bow_sign(seg; offset, partner=nothing)
-
-Choose `force_bow_sign` for a hybrid Bézier chord `seg = (x0, y0, x2, y2)`.
-When the chord is the same as the partner chord, fans them in opposite directions.
-Otherwise bows left (away from right-side taxa).
-"""
-function _hybrid_bow_sign(seg::_HybridSegment; offset::Float64,
-                          partner::Union{Nothing, _HybridSegment}=nothing)
-    x0, y0, x2, y2 = seg
-    if partner !== nothing && _same_chord(seg, partner)
-        px0, py0, px2, py2 = partner
-        pcx, pcy = quadraticbezier_control(px0, py0, px2, py2, 0.3)
-        dx, dy = x2 - x0, y2 - y0
-        mx, my = (x0 + x2) / 2, (y0 + y2) / 2
-        side = _chord_side(dx, dy, mx, my, pcx, pcy)
-        return side >= 0 ? -1.0 : 1.0
-    end
-    return _bow_left_sign(x0, y0, x2, y2, offset)
 end
 
 
@@ -500,7 +420,8 @@ end
 """
     prepare_edgedataframe(net, edgelabel::DataFrame, style::Symbol,
         edge_xB, edge_xE, edge_yB, edge_yE,
-        minoredge_xB, minoredge_xE, minoredge_yB, minoredge_yE)
+        minoredge_xB, minoredge_xE, minoredge_yB, minoredge_yE,
+        curved, bend)
 
 Check data frame for edge annotation.
 `edge_*`: Float64 vectors giving the coordinates for the beginning and end of edges.
@@ -524,7 +445,9 @@ function prepare_edgedataframe(
     minoredge_xB::Array{Float64,1},
     minoredge_xE::Array{Float64,1},
     minoredge_yB::Array{Float64,1},
-    minoredge_yE::Array{Float64,1}
+    minoredge_yE::Array{Float64,1},
+    curved::Symbol,
+    bend::Real,
 )
     nrows = net.numedges
     edf = DataFrame(:len => Vector{String}(undef,nrows),
@@ -566,8 +489,20 @@ function prepare_edgedataframe(
         end
         edf[j,:hyb] = ee.hybrid
         edf[j,:min] = !ee.ismajor
-        edf[j,:y] = (edge_yB[i] + edge_yE[i])/2
-        edf[j,:x] = (edge_xB[i] + edge_xE[i])/2
+        x0,y0, x2,y2 = edge_xB[i], edge_yB[i], edge_xE[i], edge_yE[i]
+        edf[j,:x] = (x0 + x2)/2
+        if curved==:none || (curved==:minor && ee.ismajor)
+            edf[j,:y] = (y0 + y2)/2
+        else # mid-point depends on the Bézier control point
+            x1,y1 = quadraticbezier_control(x0,y0, x2,y2, bend)
+            if ismissing(x1)
+                edf[j,:y] = (y0 + y2)/2
+            elseif x1==x0 # take Bézier at t=1/sqrt(2). we should have y1=y2, but not used
+                edf[j,:y] = 0.085786437626905*y0 + 0.4142135623730951*y1 + y2/2
+            else # take Bézier at t=1/2, from x1=(x0+x2)/2 and y1=y2+bend
+                edf[j,:y] = y0/4 + y1/2 + y2/4
+            end 
+        end
         if style == :majortree && !ee.ismajor
             edf[j,:y] = (minoredge_yB[imh] + minoredge_yE[imh])/2
             edf[j,:x] = (minoredge_xB[imh] + minoredge_xE[imh])/2

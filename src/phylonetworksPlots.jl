@@ -221,14 +221,13 @@ function edgenode_coordinates(
         # calculating node ages first, elen will be calculated later.
         elen     = zeros(Float64,net.numedges)
         node_age = zeros(Float64,net.numnodes)
-        for i=length(net.node):-1:1 # post-order traversal
-            if net.vec_node[i].leaf continue; end
-            ni = indexin_net(net.vec_node[i], net)
-            for e in net.vec_node[i].edge # loop over children only
-                if net.vec_node[i] == (e.ischild1 ? e.node[2] : e.node[1])
-                    node_age[ni] = max(node_age[ni], 1 +
-                     node_age[indexin_net(getchild(e), net)])
-                end
+        for nn in Iterators.reverse(net.vec_node) # post-order traversal
+            nn.leaf && continue
+            ni = indexin_net(nn, net)
+            for e in nn.edge # loop over children only
+                nn == getparent(e) || continue
+                node_age[ni] = max(node_age[ni],
+                    1 + node_age[indexin_net(getchild(e), net)])
             end
         end
     else

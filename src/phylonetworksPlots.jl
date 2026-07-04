@@ -321,7 +321,7 @@ function quadraticbezier_control(
         if bend==0
             return (missing,missing)
         else
-            return ((x0+x2)/2, y2 + bend)
+            return ((x0+x2)/2, y2 - bend)
         end
     end
     if dx < rtol * dy

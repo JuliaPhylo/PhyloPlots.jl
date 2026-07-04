@@ -330,6 +330,23 @@ function quadraticbezier_control(
     return (x0,y2)
 end
 
+"""
+    quadraticbezier_midpoint(x0, y0, x2, y2, bend)
+
+Midpoint around the Bézier curve from [`quadraticbezier_control`](@ref),
+with `x = (x0+x2)/2`. In most cases, the Bézier control point is (x0,y2)
+and the midpoint is at time `t=1/sqrt(2)`.
+It is at `t=1/2` if a bent is forced to avoid a straight horizontal curve.
+"""
+function quadraticbezier_midpoint(x0, y0, x2, y2, bend)
+    xmid = (x0 + x2)/2
+    x1,y1 = quadraticbezier_control(x0,y0, x2,y2, bend)
+    ymid = (ismissing(x1) ? (y0 + y2)/2 :
+        (x1==x0 ? # then take Bézier at t=1/sqrt(2). not using that y1=y2
+            0.085786437626905*y0 + 0.4142135623730951*y1 + y2/2 :
+            y0/4 + y1/2 + y2/4)) # take Bézier at t=1/2
+    return (xmid, ymid)
+end
 
 """
     check_nodedataframe(net, nodelabel)
@@ -489,24 +506,18 @@ function prepare_edgedataframe(
         end
         edf[j,:hyb] = ee.hybrid
         edf[j,:min] = !ee.ismajor
-        x0,y0, x2,y2 = edge_xB[i], edge_yB[i], edge_xE[i], edge_yE[i]
-        edf[j,:x] = (x0 + x2)/2
-        if curved==:none || (curved==:minor && ee.ismajor)
+        if ee.ismajor || style != :majortree
+            x0,y0, x2,y2 = (edge_xB[i], edge_yB[i], edge_xE[i], edge_yE[i])
+        else
+            x0,y0, x2,y2 = (minoredge_xB[imh], minoredge_yB[imh],
+                            minoredge_xE[imh], minoredge_yE[imh])
+            imh += 1
+        end
+        if curved==:none || !ee.hybrid || (curved==:minor && ee.ismajor)
+            edf[j,:x] = (x0 + x2)/2
             edf[j,:y] = (y0 + y2)/2
         else # mid-point depends on the Bézier control point
-            x1,y1 = quadraticbezier_control(x0,y0, x2,y2, bend)
-            if ismissing(x1)
-                edf[j,:y] = (y0 + y2)/2
-            elseif x1==x0 # take Bézier at t=1/sqrt(2). we should have y1=y2, but not used
-                edf[j,:y] = 0.085786437626905*y0 + 0.4142135623730951*y1 + y2/2
-            else # take Bézier at t=1/2, from x1=(x0+x2)/2 and y1=y2+bend
-                edf[j,:y] = y0/4 + y1/2 + y2/4
-            end 
-        end
-        if style == :majortree && !ee.ismajor
-            edf[j,:y] = (minoredge_yB[imh] + minoredge_yE[imh])/2
-            edf[j,:x] = (minoredge_xB[imh] + minoredge_xE[imh])/2
-            imh += 1
+            edf[j,:x], edf[j,:y] = quadraticbezier_midpoint(x0,y0, x2,y2, bend)
         end
         j += 1
     end

@@ -1,4 +1,6 @@
 @testset "RCall-based plots" begin
+
+  @testset "basic case and warnings" begin
   # testing for absence of errors, not for correctness
 
   # network rooted at a leaf: test for no error in warning message
@@ -23,9 +25,10 @@
 
   @test_logs plot(net, style=:majortree, arrowlen=0.1);
   @test_logs (:warn, "Style bogus is unknown. Defaulted to :fulltree.") plot(net, style=:bogus);
+  end # of basic case
 
-
-  # coverage for the nomajorchild
+  @testset "node with nomajorchild" begin
+  # limited testing for correctness
   net2 = readnewick("((((B)#H1)#H2,((D,C,#H2)S1,(#H1:::.8,A)S2)S3)S4);")
   ecd = Dict(1 => SubString("grey50"), 2 => 2, 3 => "violet") # color 2 = red in R
   res = (@test_logs plot(net2, style=:majortree, edgecolor=ecd,
@@ -36,12 +39,12 @@
     :node_data, :edge_data)
   @test res[:node_y_lo] == [3,3,2.9,1,2,1,4,3,1.5,2.5]
   @test res[:node_y_hi] == [3,3,2.9,1,2,2,4,4,3.5,2.9]
-  @test res[:edge_x_lo] == [5,4,  1,  3,3,3,  2,  4,4,2,  1]
-  @test res[:edge_x_hi] == [6,4,  4,  6,6,3,  3,  5,6,4,  2]
+  @test res[:edge_x_lo] == [4,3,  0,  2,2,2,  1,  3,3,1,  0]
+  @test res[:edge_x_hi] == [5,3,  3,  5,5,2,  2,  4,5,3,  1]
   @test res[:edge_y_lo] == [3,2.9,2.9,1,2,1.5,1.5,3,4,3.5,2.5]
   @test res[:edge_y_hi] == res[:edge_y_lo]
-  @test res[:arrow_x_lo] == [4,3]
-  @test res[:arrow_x_hi] == [5,4]
+  @test res[:arrow_x_lo] == [3,2]
+  @test res[:arrow_x_hi] == [4,3]
   @test res[:arrow_y_lo] == [2.9,1.5]
   @test res[:arrow_y_hi] == [3,  2.9]
   @test res[:node_data].lab[[1,3]] == ["",""]
@@ -50,18 +53,29 @@
   res = (@test_logs plot(net2, preorder=false,
     edgelabel=DataFrame(num=[2,6], annotate=[85.0001,90])))
   @test res[:node_y_lo] == [5,5,1,2,3,2,6,5,3,  1]
-  @test res[:node_y_hi] == [5,5,1,2,3,4,6,6,5.5,4.25]
-  @test res[:edge_x_lo] == [5,4,1,3,3,3,2,4,4,2,1]
-  @test res[:edge_x_hi] == [6,5,4,6,6,4,3,5,6,4,2]
-  @test res[:edge_y_lo] == [5,1,1,2,3,4,3,5,6,5.5,4.25]
+  @test res[:node_y_hi] == [5,5,1,2,3,4,6,6,5.5,4]
+  @test res[:edge_x_lo] == [4,3,0,2,2,2,1,3,3,1,0]
+  @test res[:edge_x_hi] == [5,4,3,5,5,3,2,4,5,3,1]
+  @test res[:edge_y_lo] == [5,1,1,2,3,4,3,5,6,5.5,4]
   @test res[:edge_y_hi] == res[:edge_y_lo]
-  @test res[:arrow_x_lo] == [5,4]
+  @test res[:arrow_x_lo] == [4,3]
   @test res[:arrow_x_hi] == res[:arrow_x_lo] # bc :fulltree style
   @test res[:arrow_y_lo] == [1,4]
   @test res[:arrow_y_hi] == [5,1]
   @test res[:node_data].lab[[1,3]] == ["",""]
   @test res[:edge_data][[2,5],2:4] == DataFrame(
       gam=["0.2","1"], num=["2","5"], lab=["85",""])
+  end # of nomajorchild
+
+  @testset "curved edges" begin
+  # next net: not time-consistent, minor "corner" younger than youngest tip,
+  # overlapping hybrid edges with style=:majortree (without curving edges)
+  net = readnewick("((((b1:2,(B:1)#H3:1::0.3,b0:2):.5,#H3:1.3):.5,#H1:2):1,(((C:1)#H2:1::0.8)#H1:1::0.9,(((D:0.1)#H4:1::0.6,#H4:1.5):1,#H2:0.2):1):1);")
+  # next: bend forced bc overlapping segments when style=:majortree
+  # edge overlapping minor hybrid != major partner
+  net = readnewick("((#H3:1.3,(A:3,((B:1.0)#H3:1.0,b1:2.0):0.5):1.5),D:3);")
+
+  end
 end
 
 @testset "curved hybrid bow direction" begin

@@ -69,7 +69,7 @@
   # one hybrid node ends up as a leaf in the major tree.
   # no major child edge to follow to set coordinates
   net = readnewick("((((B)#H1:::0.2)#H2,((D,C,#H2:::0.8)S1,(#H1,A)S2)S3)S4);")
-  @test_logs plot(net, shownodenumber=true, showgamma=true);
+  @test_logs plot(net, shownodenumber=true, showgamma=true, style=:fulltree, curved=:none);
   @test PhyloPlots.edgenode_coordinates(net, false, false, :none, false) == (
     [4.0, 3.0, 0.0, 2.0, 2.0, 2.0, 1.0, 3.0, 3.0, 1.0, 0.0],
     [5.0, 4.0, 3.0, 5.0, 5.0, 3.0, 2.0, 4.0, 5.0, 3.0, 1.0],
@@ -81,7 +81,7 @@
     [5.0, 5.0, 4.0, 2.0, 3.0, 4.0, 6.0, 6.0, 5.5, 4.0],
     [4.0, 3.0], [4.0, 3.0], [4.0, 1.0], [5.0, 4.0], 0.0, 5.0, 1.0, 6)
   net = readnewick("((((B)#H1:::0.2)#H2,((D,C,#H2)S1,(#H1,A)S2)S3)S4);")
-  @test_logs plot(net, shownodenumber=true, showgamma=true);
+  @test_logs plot(net, shownodenumber=true, showgamma=true, style=:fulltree, curved=:none);
   @test PhyloPlots.edgenode_coordinates(net, false, false, :none, false) == (
     [4.0, 3.0, 0.0, 2.0, 2.0, 2.0, 1.0, 3.0, 3.0, 1.0, 0.0],
     [5.0, 4.0, 3.0, 5.0, 5.0, 3.0, 2.0, 4.0, 5.0, 3.0, 1.0],

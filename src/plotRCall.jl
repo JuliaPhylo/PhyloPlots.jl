@@ -9,11 +9,12 @@ the right, using R graphics. Optional arguments are listed below.
 - `useedgelength = false`: if true, the tree edges and major hybrid edges are
   drawn proportionally to their length. Minor hybrid edges are not, however.
   Note that edge lengths in coalescent units may scale very poorly with time.
-- `style = :fulltree`: symbol indicating the style of the diagram
-  * `:majortree` will simply draw minor edges onto the major tree.
-  * `:fulltree` will draw minor edges as their own branches in the tree,
+- `style = :majortree`: symbol indicating the style of the diagram
+  * `:majortree` draws minor edges onto the major tree.
+  * `:fulltree` draws minor edges as their own branches in the tree,
     in the same style used by [icytree](https://icytree.org). This is
     useful for overlapping or confusing networks.
+- `curved = :both`: curvature for hybrid edges (`:none`, `:minor`, `:both`).
 - `arrowlen`: the length of the arrow tips in the full tree style.
   The default is 0.1 if `style = :fulltree`,
   and 0 if `style = :majortree` (making the arrows appear as segments).
@@ -22,7 +23,6 @@ the right, using R graphics. Optional arguments are listed below.
   full tree style.
 - `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
   use a dictionary to map the number of each edge to its desired width.
-- `curved = :none`: curvature for hybrid edges (`:none`, `:minor`, `:both`).
 - `bend = 0.3`: y-bend for a downward curvature of minor hybrid edges that
   would otherwise be horizontal, to avoid overlap with other edges.
   Only used when `curved` is requested.
@@ -135,8 +135,8 @@ function plot(
     tipcex = 1,
     nodecex = 1,
     edgecex = 1,
-    style::Symbol=:fulltree,
-    curved::Symbol = :none,
+    style::Symbol = :majortree, # was :fulltree in v2.1
+    curved::Symbol = :both,     # was :none     in v2.1
     bend::Real = 0.3,
     arrowlen::Real=(style==:majortree && curved==:none ? 0 : 0.1),
     minorlinetype = nothing,
@@ -163,10 +163,10 @@ function plot(
     ndf = prepare_nodedataframe(net, nodelabel, shownodenumber,
             shownodelabel, labelnodes, node_x, node_y)
     if showtiplabel || shownodenumber || shownodelabel || labelnodes
-        expfac = 0.1  # force 10% more space to show tip/node/root name
+        expfacx = (xmax-xmin) * 0.1  # force 10% more space to show tip/node/root name
         expfacy = 0.5 # additive expansion for y axis
-        xmin -= (xmax-xmin)*expfac
-        xmax += (xmax-xmin)*expfac
+        xmin -= expfacx
+        xmax += expfacx
         ymin -= expfacy
         ymax += expfacy
     end

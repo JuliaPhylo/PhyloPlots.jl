@@ -33,10 +33,12 @@ nothing # hide
 For the function's full documentation, see here: [`plot`](@ref).
 
 !!! note "version history"
-    Compared to v0.3, v1 does not support the Gadfly-based plots,
-    and uses small-case-only argument names.
-
-    The v0.3 syntax `plot(net, :R; ...)` still works in v1.0 but is
-    **deprecated**, and will be removed in a future release. For example,
-    you can still use `plot(net, :R; showNodeNumber=true)`,
-    but you should instead start using `plot(net; shownodenumber=true)`.
+    - By default, v3 uses a `:majortree` style and `:both` hybrid edges curved.
+      Instead, v2 used the `:fulltree` style by default,
+      and had no option to curve edges.
+    - The v0.3 syntax `plot(net, :R; ...)` still worked in v1 but was
+      deprecated, and then removed in v2. For example, we could still use
+      `plot(net, :R; showNodeNumber=true)` in v1, but in v2 (and later)
+      we have to use instead `plot(net; shownodenumber=true)`.
+    - Compared to v0.3, v1 does not support the Gadfly-based plots,
+      and uses small-case-only argument names.

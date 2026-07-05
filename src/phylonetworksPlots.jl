@@ -297,8 +297,11 @@ end
 """
     quadraticbezier_control(x0, y0, x2, y2, bend, rtol=1e-10)
 
-Coordinates P1 = (x0,y2), to serve as middle control point for a quadratic
+Coordinates of point P1 to serve as middle control point for a quadratic
 Bézier curve between the anchor points P0 = (x0,y0) and P2 = (x2,y2).
+- P1 = (x0,y2) if x0 ≤ x2, which is most frequent
+  (i.e. when not using branch lengths, or if the network is time-consistent).
+- P1 = (x2,y0) if x0 > x2, which looks like the edge goes back in time.
 
 If P1≈P0 (P0 → P2 is horizontal) or if P1≈P2 (P0 → P2 is vertical),
 then the Bézier curve is almost straight. In this case:
@@ -326,7 +329,7 @@ function quadraticbezier_control(
     if dx < rtol * dy
         return (missing,missing)
     end
-    return (x0,y2)
+    return (x0>x2 ? (x2,y0) : (x0,y2))
 end
 
 """
@@ -341,9 +344,11 @@ function quadraticbezier_midpoint(x0, y0, x2, y2, bend)
     xmid = (x0 + x2)/2
     x1,y1 = quadraticbezier_control(x0,y0, x2,y2, bend)
     ymid = (ismissing(x1) ? (y0 + y2)/2 :
-        (x1==x0 ? # then take Bézier at t=1/sqrt(2). not using that y1=y2
+        (x1==x0 ? # then take Bézier at t =   1/sqrt(2)
             0.085786437626905*y0 + 0.4142135623730951*y1 + y2/2 :
-            y0/4 + y1/2 + y2/4)) # take Bézier at t=1/2
+        (y1==y0 ? # then take Bézier at t = 1-1/sqrt(2)
+            0.085786437626905*y2 + 0.4142135623730951*y1 + y0/2 :
+            y0/4 + y1/2 + y2/4))) # take Bézier at t=1/2
     return (xmid, ymid)
 end
 
@@ -505,18 +510,19 @@ function prepare_edgedataframe(
         end
         edf[j,:hyb] = ee.hybrid
         edf[j,:min] = !ee.ismajor
-        if ee.ismajor || style != :majortree
+        if ee.ismajor || style != :majortree # use first segment
             x0,y0, x2,y2 = (edge_xB[i], edge_yB[i], edge_xE[i], edge_yE[i])
-        else
+        else # minor edge, use second segment (arrow)
             x0,y0, x2,y2 = (minoredge_xB[imh], minoredge_yB[imh],
                             minoredge_xE[imh], minoredge_yE[imh])
             imh += 1
         end
-        if curved==:none || !ee.hybrid || (curved==:minor && ee.ismajor)
+        if curved==:none || !ee.hybrid || (ee.ismajor && curved != :both) ||
+                (!ee.ismajor && style != :majortree)
             edf[j,:x] = (x0 + x2)/2
             edf[j,:y] = (y0 + y2)/2
         else # mid-point depends on the Bézier control point
-            edf[j,:x], edf[j,:y] = quadraticbezier_midpoint(x0,y0, x2,y2, bend)
+            edf[j,:x], edf[j,:y] = quadraticbezier_midpoint(x0,y0, x2,y2, (ee.ismajor ? 0 : bend))
         end
         j += 1
     end

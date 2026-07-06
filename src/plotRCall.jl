@@ -15,9 +15,9 @@ the right, using R graphics. Optional arguments are listed below.
     in the same style used by [icytree](https://icytree.org). This is
     useful for overlapping or confusing networks.
 - `curved = :both`: curvature for hybrid edges (`:none`, `:minor`, `:both`).
-- `arrowlen`: the length of the arrow tips in the full tree style.
-  The default is 0.1 if `style = :fulltree`,
-  and 0 if `style = :majortree` (making the arrows appear as segments).
+- `arrowlen=0.1`: the length of the arrow tips for minor hybrid edges,
+  and also for major hybrid edges when they are curved.
+  Set to 0 to suppress the arrowheads.
 - `minorlinetype`: type of lines used for minor edges, represented by arrows.
   Default is "solid" under the major-tree style, and "longdash" under the
   full tree style.
@@ -138,7 +138,7 @@ function plot(
     style::Symbol = :majortree, # was :fulltree in v2.1
     curved::Symbol = :both,     # was :none     in v2.1
     bend::Real = 0.3,
-    arrowlen::Real=(style==:majortree && curved==:none ? 0 : 0.1),
+    arrowlen::Real=0.1,
     minorlinetype = nothing,
     edgewidth = 1,
     edgenumbercolor = "grey", # don't limit the type because R accepts many types

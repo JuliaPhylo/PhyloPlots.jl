@@ -11,14 +11,13 @@ To demonstrate, we will plot the simple network: `(A,((B,#H1),(C,(D)#H1)));`
 To start plotting, use the packages:
 
 ```@repl getting_started
-using PhyloNetworks
-using PhyloPlots
+using PhyloNetworks, PhyloPlots
 ```
 Then read the topology
 ```@repl getting_started
 net = readnewick("(A,((B,#H1),(C,(D)#H1)));")
 ```
-and call `plot`, as shown below.
+and call [`plot`](@ref), as shown below.
 
 ```@example getting_started
 R"svg"(figname("gettingstarted.svg"), width=3, height=3) # hide

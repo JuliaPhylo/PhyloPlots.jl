@@ -73,9 +73,30 @@
   end # of nomajorchild
 
   @testset "curved edges" begin
+  # tree-child, level-2. not used for testing so far
+  #net_lsa2 = readnewick("((((B)#H1:::0.6,C),((#H1:::0.4,D))#H2:::0.8),(#H2:::0.2,E));")
+
+  # next net: overlapping segments when style=:majortree,
+  #           and edge overlapping minor hybrid != major partner
+  net = readnewick("((#H3:1.3,(A:3,((B:1.0)#H3:1,b1:2.0):0.5):1.5):0.3,D:3);")
+  res = plot(net, curved=:both, style=:majortree,
+    shownodenumber=true, showedgenumber=true)
+  @test res[:node_data][!,4:6] == DataFrame(
+    lea = Bool[1,1,0,1,0,0,0,1,0],
+    x = [5,5,4,5,3,2,1,5,0.0],
+    y = [1,2,2,3,2.5,2,2,4,2.5],
+  )
+  @test res[:edge_data][!,5:8] == DataFrame(
+    hyb = Bool[1,0,0,1,0,0,0,0,0],
+    min = Bool[1,0,0,0,0,0,0,0,0],
+    x = [2.5,3.5,4.5,3.5,4,2.5,1.5,.5,2.5],
+    y = [1.85,1,2,2.0428932188134525,3,2.5,2,2,4]
+  )
+  #
   # next net: not time-consistent, minor "corner" younger than youngest tip,
   # overlapping hybrid edges with style=:majortree (without curving edges)
   net = readnewick("((((b1:2,(B:1)#H3:1::0.3,b0:2):.5,#H3:1.3):.5,#H1:2):1,(((C:1)#H2:1::0.8)#H1:1::0.9,(((D:0.1)#H4:1::0.6,#H4:1.5):1,#H2:0.2):1):1);")
+  #
   res = plot(net, curved=:both, style=:majortree, showedgelength=true)
   @test res[[:xmin,:xmax,:ymin,:ymax]] == (xmin=-.5, xmax=5.5, ymin=.5, ymax=5.5)
   @test res[[:node_y,:node_y_lo,:node_y_hi]] == (
@@ -110,6 +131,7 @@
   )
   @test res[:edge_data][!,:y] ≈
     [1,3,2.871320343559643,2,1.5,2.914213562373095,2,3.8284271247461903,2,4,4,4.042893218813453,5,5,4.85,5,4.085786437626905,5,4.5]
+  #
   # same net, new options
   res = plot(net, curved=:minor, style=:majortree, showgamma=true,
     shownodenumber=true, preorder=false)
@@ -121,14 +143,34 @@
     x = [5,5,4,5,3,2,1,5,4,3,5,4,3,2,1,0],
     y = [1,3,3,2,1.5,2,2,4,4,4,5,5,5,5,4.5,3],
   )
-
-  res = plot(net, curved=:both, style=:fulltree, showedgenumber=true, preorder=false)
-  res = plot(net, curved=:minor, style=:fulltree, showedgenumber=true, preorder=false)
-  # next net: overlapping segments when style=:majortree,
-  #           and edge overlapping minor hybrid != major partner
-  net = readnewick("((#H3:1.3,(A:3,((B:1.0)#H3:1.0,b1:2.0):0.5):1.5),D:3);")
-
-  # tree-child, level-2. not used for testing so far
-  #net_lsa2 = readnewick("((((B)#H1:::0.6,C),((#H1:::0.4,D))#H2:::0.8),(#H2:::0.2,E));")
+  @test res[:edge_data][!,5:7] == DataFrame(
+    hyb = Bool[0,0,1,0,0,1,0,1,0,0,1,1,0,1,1,0,1,0,0],
+    min = Bool[0,0,1,0,0,0,0,1,0,0,0,0,0,0,1,0,1,0,0],
+    x = [4,4.5,3.5,4,2.5,3,1.5,2,.5,4.5,3.5,2,4.5,3.5,3.5,2.5,3,1.5,.5],
+  )
+  @test res[:edge_data][!,:y] ≈
+    [1,3,2.871320343559643,2,1.5,3,2,3.8284271247461903,2,4,4,4,5,5,4.85,5,4.085786437626905,5,4.5]
+  #
+  res = plot(net, curved=:both, style=:fulltree,
+    shownodenumber=true, showedgenumber=true, preorder=false)
+  @test res[:node_data][!,[:x,:y]] == DataFrame(
+    x = [5,5,4,5,3,2,1,5,4,3,5,4,3,2,1,0],
+    y = [1,4,4,3,2,2.5,3,6,6,6,7,7,7.5,8,7.5,5],
+  )
+  @test res[:edge_data][!,:x] ==
+    [4,4.5,3.5,4,2.5,3,1.5,2,0.5,4.5,3.5,2,4.5,3.5,3.5,2.5,3,1.5,0.5]
+  @test res[:edge_data][!,:y] ≈
+    [1,4,2,3,2,3.871320343559643,2.5,5,3,6,6,6.128679656440358,7,7.042893218813453,8,7.5,9,8,7.5]
+  #
+  res = plot(net, curved=:minor, style=:fulltree, useedgelength=true,
+    shownodenumber=true, showedgelength=true, preorder=false)
+  @test res[:node_data][!,[:x,:y]] == DataFrame(
+    x = [4,3.8,2.8,4,2,1.5,1,4,3,2,4.1,4,3,2,1,0],
+    y = [1,4,4,3,2,2.5,3,6,6,6,7,7,7.5,8,7.5,5],
+  )
+  @test res[:edge_data][!,[:x,:y]] == DataFrame(
+    x = [3,3.3,2.5,3,1.75,2.15,1.25,2,.5,3.5,2.5,1.5,4.05,3.5,3.75,2.5,2.1,1.5,.5],
+    y = [1,4,2,3,2,4,2.5,5,3,6,6,6,7,7,8,7.5,9,8,7.5],
+  )
   end
 end

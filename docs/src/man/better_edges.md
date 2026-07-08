@@ -50,21 +50,21 @@ df = DataFrame(number=[-3], label=["N"]); # hide
 R"svg"(figname("edge_len_example.svg"), width=6, height=6) # hide
 R"layout"([1 3; 2 4]) # hide
 R"par"(mar=[0,0,0,0], oma=[0,0,.3,0]) # hide
-plot(net, useedgelength=false, nodelabel=df); # hide
+plot(net, useedgelength=false, nodelabel=df, nodelabeladj=[1.2,-.2]); # hide
 R"mtext"("useedgelength = false (default)", side=3, line=-1.5); # hide
 R"mtext"("style = :majortree (default)", side=2, line=-1.5, las=0); # hide
-plot(net, useedgelength=false, style=:fulltree, nodelabel=df); # hide
+plot(net, useedgelength=false, style=:fulltree, nodelabel=df, nodelabeladj=[1.2,-.2]); # hide
 R"mtext"("style = :fulltree", side=2, line=-1.5, las=0); # hide
-plot(net, useedgelength=true, curved=:none, showedgelength=true, nodelabel=df); # hide
+plot(net, useedgelength=true, curved=:none, showedgelength=true, nodelabel=df, nodelabeladj=[1.2,-.2]); # hide
 R"mtext"("useedgelength = true, curved = :none", side=3, line=-1.5); # hide
-plot(net, useedgelength=true, curved=:none, style=:fulltree, showedgelength=true, nodelabel=df); # hide
+plot(net, useedgelength=true, curved=:none, style=:fulltree, showedgelength=true, nodelabel=df, nodelabeladj=[1.2,-.2]); # hide
 R"dev.off()" # hide
 nothing # hide
 ```
 ![example2](../assets/figures/edge_len_example.svg)
 
-!!! note
-    We used a DataFrame (not shown) to add the label "N" to the plot.
+!!! note "node N"
+    We used a DataFrame (not shown) to add the label "N".
     For more on this, see the section on [Adding labels](@ref).
 
 If branch lengths represent time, D could represent a fossil, or a virus strain sequenced
@@ -76,7 +76,7 @@ the same both ways: the "upper" path has length 0.2 + 1.8 = 2,
 which is the same along the "lower" path, 1.5 + 0.5 = 2.
 We used option `showedgelength=true` to annotate the edges with their length.
 
-!!! note "Time consistency"
+!!! note "time consistency"
     A network is time-consistent if all the paths between 2 given nodes all
     have the same length.
     Time inconsistency can occur when branch lengths are not measured in

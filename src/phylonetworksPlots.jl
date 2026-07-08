@@ -6,7 +6,7 @@ indexin_net(e::PhyloNetworks.Edge, net::HybridNetwork) = findfirst(x -> x === e,
         net::HybridNetwork,
         useedgelength::Bool,
         usedirecthybridline::Bool,
-        curved::Symbol=:none,
+        majorcurved::Bool,
         preorder::Bool=true,
     )
 
@@ -24,8 +24,10 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 2. `edge_xE`: ...  End of each edge, in the same order as in `net.edge`
 3. `edge_yB`: y coordinate for edges, Begin ...
 4. `edge_yE`: ... and End.
-   * Each major edge is drawn as a horizontal line by default. But with
-     `curved=:both`, major hybrid edges are drawn curved instead.
+   * Each major edge is drawn as a horizontal line if `majorcurved` is false,
+     and curved otherwise. This choice affects the beginning `yB` of hybrid edges;
+     and the `node_yB/E` interval of node segments, which covers the y positions
+     of a node's children drawn as straight line only.
    * Minor hybrid edges are drawn as:
      + a single diagonal segment (straight or curved) if `usedirecthybridline` is true,
      + or as 2 connected segments otherwise: one horizontal whose length on
@@ -58,7 +60,7 @@ function edgenode_coordinates(
     net::HybridNetwork,
     useedgelength::Bool,
     usedirecthybridline::Bool,
-    curved::Symbol=:none,
+    majorcurved::Bool,
     preorder::Bool=true,
 )
     if preorder
@@ -72,8 +74,6 @@ function edgenode_coordinates(
       end
       preorder!(net)       # to update net.vec_node: true pre-ordering
     end
-
-    majorcurved = curved==:both
 
     # determine y for each node = y of its parent edge: post-order traversal
     # also [yB,yE] for each internal node: range of y's of all children nodes

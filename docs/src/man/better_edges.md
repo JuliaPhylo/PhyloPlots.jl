@@ -55,9 +55,9 @@ R"mtext"("useedgelength = false (default)", side=3, line=-1.5); # hide
 R"mtext"("style = :majortree (default)", side=2, line=-1.5, las=0); # hide
 plot(net, useedgelength=false, style=:fulltree, nodelabel=df); # hide
 R"mtext"("style = :fulltree", side=2, line=-1.5, las=0); # hide
-plot(net, useedgelength=true, curved=:none, nodelabel=df); # hide
+plot(net, useedgelength=true, curved=:none, showedgelength=true, nodelabel=df); # hide
 R"mtext"("useedgelength = true, curved = :none", side=3, line=-1.5); # hide
-plot(net, useedgelength=true, curved=:none, style=:fulltree, nodelabel=df); # hide
+plot(net, useedgelength=true, curved=:none, style=:fulltree, showedgelength=true, nodelabel=df); # hide
 R"dev.off()" # hide
 nothing # hide
 ```
@@ -72,7 +72,9 @@ a year before the others. Seeing this visually is the advantage of `useedgelengt
 
 This network happens to be time consistent, because the distance
 along the time (x) axis from node `N` to the hybrid node is
-the same both ways.
+the same both ways: the "upper" path has length 0.2 + 1.8 = 2,
+which is the same along the "lower" path, 1.5 + 0.5 = 2.
+We used option `showedgelength=true` to annotate the edges with their length.
 
 !!! note "Time consistency"
     A network is time-consistent if all the paths between 2 given nodes all

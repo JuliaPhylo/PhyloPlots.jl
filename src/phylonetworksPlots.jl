@@ -88,33 +88,8 @@ function edgenode_coordinates(
     end
 
     if style == :lsatree
-        lsaM[:all] = leaststableancestor_matrix(net, false) # do not preorder again
-        # get LSA(parents(n)) for each hybrid node n
-        hybrid2lsa = Dict{Int,Int}()
-        for (ni,nn) in enumerate(net.node)
-            nn.hybrid || continue
-            # switch to indices in net.vec_node
-            lsa_i = findfirst(x->x===nn, net.vec_node)
-            for e in nn.edge # loop over parents of nn only
-                getchild(e) === nn || continue
-                pi_inlsaM = findfirst(x->x===getparent(e), net.vec_node)
-                newlsa = lsaM[lsa_i, pi_inlsaM]
-                lsa_i = findfirst(x->x===newlsa, net.vec_node)
-            end
-            # back to indices in net.node
-            lsa_node = net.vec_node[lsa_i]
-            push!(hybrid2lsa, ni => findfirst(x->x===lsa_node, net.node))
-        end
+        hybrid2lsa, lsa2hybrid = prepare_LSAtreetraversal(net)
         @show hybrid2lsa
-        # fixit: define lsa2hybrid Dict lsa_nodeindex => [h's ni...]
-        lsa2hybrid = Dict{Int, Vector{Int}}()
-        for (h_ni, lsa_ni) in hybrid2lsa
-            if haskey(lsa2hybrid, lsa_ni)
-                push!(lsa2hybrid[lsa_ni], h_ni)
-            else
-                lsa2hybrid[lsa_ni] = [h_ni]
-            end
-        end
         @show lsa2hybrid
     end
     node_y  = zeros(Float64, net.numnodes) # order: in net.nodes, *!not in vec_node!*
@@ -579,4 +554,46 @@ function prepare_edgedataframe(
     end
     # @show edf
     return labeledges, edf
+end
+
+"""
+    prepare_LSAtreetraversal(net::HybridNetwork)
+
+Pair of dictionaries `(hybrid2lsa, lsa2hybrid)` ... fixit
+
+Also, the network is modified as follows:
+- for each hybrid node `n` in `net`, `n.prev` stores its LSA node.
+- `net.vec_int1` ... fixit
+
+**Warning**: assume that `net` is already preordered, that is,
+with its nodes listed in a preorder in `net.vec_node`
+"""
+function prepare_LSAtreetraversal(net::HybridNetwork)
+    lsaM[:all] = leaststableancestor_matrix(net, false) # do not preorder again
+    # get LSA(parents(n)) for each hybrid node n
+    hybrid2lsa = Dict{Int,Int}()
+    for (ni,nn) in enumerate(net.node)
+        nn.hybrid || continue
+        # switch to indices in net.vec_node
+        lsa_i = findfirst(x->x===nn, net.vec_node)
+        for e in nn.edge # loop over parents of nn only
+            getchild(e) === nn || continue
+            pi_inlsaM = findfirst(x->x===getparent(e), net.vec_node)
+            newlsa = lsaM[lsa_i, pi_inlsaM]
+            lsa_i = findfirst(x->x===newlsa, net.vec_node)
+        end
+        # back to indices in net.node
+        lsa_node = net.vec_node[lsa_i]
+        nn.prev = lsa_node
+        push!(hybrid2lsa, ni => indexin_net(lsa_node, net))
+    end
+    lsa2hybrid = Dict{Int, Vector{Int}}()
+    for (h_ni, lsa_ni) in hybrid2lsa
+        if haskey(lsa2hybrid, lsa_ni)
+            push!(lsa2hybrid[lsa_ni], h_ni)
+        else
+            lsa2hybrid[lsa_ni] = [h_ni]
+        end
+    end
+    return (hybrid2lsa, lsa2hybrid)
 end

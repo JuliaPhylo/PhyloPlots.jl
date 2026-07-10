@@ -99,7 +99,7 @@ function edgenode_coordinates(
     edge_yE = Vector{Float64}(undef, net.numedges)
     # set node_y of leaves: follow cladewise order
     # also sets edge_yB of minor hybrid edges
-    node_w  = zeros(Int, net.numnodes) # weight: number of descendant tips
+    node_w = [(nn.leaf ? 1 : 0) for nn in net.node] # weight: number of descendant tips
     nexty = ymax # first tips at the top, last at bottom
     cladewise_queue = copy(getroot(net).edge) # the child edges of root
     # print("queued the root's children's indices: "); @show queue
@@ -108,19 +108,18 @@ function edgenode_coordinates(
         # increment spacing and add to node_y if leaf
         cur_child = getchild(cur_edge)
         ni = findfirst(x->x===cur_child, net.node)
-        if cur_child.leaf
+        if cur_child.leaf # later: instead check if the node/index is not a key in the dictionary
             ni = indexin_net(cur_child, net)
             node_y[ni]  = nexty
             node_yB[ni] = nexty
             node_yE[ni] = nexty
             nexty -= 1
-            node_w[ni] = 1
         end
 
         # only for new hybrid lines:
         if cur_edge.hybrid
             if cur_edge.ismajor && style == :lsatree
-                # fixit: not sure this is what we should do. re-think.
+                # fixit: do *not* do this, unless cur_child is a leaf in the LSA tree
                 node_y[ni]  = nexty
                 nexty -= 1
             elseif !cur_edge.ismajor && !usedirecthybridline
@@ -596,4 +595,50 @@ function prepare_LSAtreetraversal(net::HybridNetwork)
         end
     end
     return (hybrid2lsa, lsa2hybrid)
+end
+
+"""
+fixit
+
+**Warning**: assume that `net` is already preordered, that is,
+with its nodes listed in a preorder in `net.vec_node`
+"""
+function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
+    node2childvec = Dict{Int,Vector{Int}}()
+    cladewise_stack = copy(getroot(net).edge) # the child edges of root
+    while !isempty(cladewise_stack)
+        cur_edge = pop!(cladewise_stack); # deliberate choice over shift! for cladewise order
+        nn = getchild(cur_edge)
+        ni = findfirst(x->x===nn, net.node)
+        # todo: push ni to the vector of corresponding to the parent node of cur_edge
+        # pni = parentnodeindex
+        pni = indexin_net(getparent(cur_edge), net)
+        # adding the element if the key is already there 
+        if haskey(node2childvec, pni)
+            push!(node2childvec[pni], ni)
+        else
+            node2childvec[pni] = [ni]
+        end
+
+        # push the appropriate children edges to the "queue"
+        if cur_edge.ismajor
+            for e in nn.edge
+                if getparent(e) === nn # don't go backwards
+                    if style != :lsatree || !e.hybrid
+                        push!(cladewise_stack, e)
+                    end
+                end
+            end
+        end
+       if style == :lsatree
+        # to follow the LSA tree: push the major parent edge of h when we visit lsa(h).
+        # 1. loop over hybrid2lsa: h_ni = hybrid node index, lsa_ni = its LSA node index
+        if haskey(lsa2hybrid, ni)
+            for h_ni in lsa2hybrid[ni]
+                push!(cladewise_stack, getparentedge(net.node[h_ni]))
+            end
+        end
+       end
+    end
+    return node2childvec
 end

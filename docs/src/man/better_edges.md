@@ -8,15 +8,31 @@ figname(x) = joinpath("..", "assets", "figures", x)
 
 ## Different hybrid edge styles
 
-We can use the `style` option to visualize minor hybrid edges as simple lines,
-unlike the [icytree](https://icytree.org/) style visualization. `style` is by default `:fulltree`,
-but by switching it to `:majortree`, we can draw minor hybrid edges as diagonal lines.
+We can use the `style` and `curved` options to visualize hybrid edges
+in various ways.
+We will see examples later when hybrid edges are drawn straight with
+`curved=:none`, or only minor hybrid edges are curved with `curved=:minor`.
+By default `curved=:both` so both minor and major edges are curved.
+
+- The default `style = :majortree` has the advantage of drawing each
+  minor edge as a single segment, but the disadvantage of being unable
+  to draw it proportional to the edge length (because the segment
+  connects its 2 nodes, whose placements are dictated by the other edges).
+- The `:fulltree` style draws each minor edge as 2 segments: one straight
+  whose length can represent the edge length, and another segment
+  (diagonal straight or curved) connecting to the hybrid child.
+
 
 ```@example better_edges
-R"svg"(figname("style_example.svg"), width=3, height=3) # hide
-R"par"(mar=[.1,.1,.1,.1]) # hide
+using RCall # to add annotations to the R-based plot
 net = readnewick("(A,((B,#H1),(C,(D)#H1)));") # hide
-plot(net, style=:majortree);
+R"svg"(figname("style_example.svg"), width=6, height=3) # hide
+R"layout"([1 2]) # hide
+R"par"(mar=[.1,.1,.1,.1]) # hide
+plot(net, style=:majortree); # default
+R"mtext"("style = :majortree", side=1, line=-2);
+plot(net, style=:fulltree);
+R"mtext"("style = :fulltree", side=1, line=-2);
 R"dev.off()" # hide
 nothing # hide
 ```
@@ -24,36 +40,43 @@ nothing # hide
 
 ## Using edge lengths
 
-We can use `useedgelength=true` to draw a plot that uses the network's edge lengths to determine the lengths of the
-lines. For this, we'll use a network that has branch lengths:
+We can use `useedgelength=true` to draw a plot that uses the
+network's edge lengths to determine the lengths of the lines.
+For this, we'll use a network that has branch lengths:
 
 ```@example better_edges
-R"svg"(figname("edge_len_example.svg"), width=6, height=3) # hide
-R"par"(mar=[.1,.1,.1,.1]) # hide
-R"layout"([1 2]) # hide
 net = readnewick("(A:3.3,((B:1.5,#H1:0.5):1.5,((C:1)#H1:1.8,D:1.1):.2):0.3);")
-df = DataFrame(number=[-3,3], label=["N","H1"]); # hide
-plot(net, useedgelength=true, ylim = [-1, 5.5], nodelabel = df); # hide
-R"text"([3], [0], ["useedgelength=true"]) # hide
-plot(net, useedgelength=false, ylim = [-1, 5.5], nodelabel = df); # hide
-R"text"([3], [0], ["useedgelength=false"]) # hide
+df = DataFrame(number=[-3], label=["N"]); # hide
+R"svg"(figname("edge_len_example.svg"), width=6, height=6) # hide
+R"layout"([1 3; 2 4]) # hide
+R"par"(mar=[0,0,0,0], oma=[0,0,.3,0]) # hide
+plot(net, useedgelength=false, nodelabel=df, nodelabeladj=[1.2,-.2]); # hide
+R"mtext"("useedgelength = false (default)", side=3, line=-1.5); # hide
+R"mtext"("style = :majortree (default)", side=2, line=-1.5, las=0); # hide
+plot(net, useedgelength=false, style=:fulltree, nodelabel=df, nodelabeladj=[1.2,-.2]); # hide
+R"mtext"("style = :fulltree", side=2, line=-1.5, las=0); # hide
+plot(net, useedgelength=true, curved=:none, showedgelength=true, nodelabel=df, nodelabeladj=[1.2,-.2]); # hide
+R"mtext"("useedgelength = true, curved = :none", side=3, line=-1.5); # hide
+plot(net, useedgelength=true, curved=:none, style=:fulltree, showedgelength=true, nodelabel=df, nodelabeladj=[1.2,-.2]); # hide
 R"dev.off()" # hide
 nothing # hide
 ```
 ![example2](../assets/figures/edge_len_example.svg)
 
-!!! note
-    I used a DataFrame (not shown) to add the label "N" to the plot.
-    For more on this, see the [Adding labels](@ref) section.
+!!! note "node N"
+    We used a DataFrame (not shown) to add the label "N".
+    For more on this, see the section on [Adding labels](@ref).
 
 If branch lengths represent time, D could represent a fossil, or a virus strain sequenced
 a year before the others. Seeing this visually is the advantage of `useedgelength=true`.
 
 This network happens to be time consistent, because the distance
-along the time (x) axis from node `N` to the hybrid node `H1` is
-the same both ways.
+along the time (x) axis from node `N` to the hybrid node is
+the same both ways: the "upper" path has length 0.2 + 1.8 = 2,
+which is the same along the "lower" path, 1.5 + 0.5 = 2.
+We used option `showedgelength=true` to annotate the edges with their length.
 
-!!! note "Time consistency"
+!!! note "time consistency"
     A network is time-consistent if all the paths between 2 given nodes all
     have the same length.
     Time inconsistency can occur when branch lengths are not measured in
@@ -67,39 +90,44 @@ the same both ways.
     between the root and the tips is the same across all tips),
     or not like the network above.
 
-Time-inconsistent networks like these ones below might cause confusion:
+Time-inconsistent networks like these ones below might cause confusion.
+Below we use the `:fulltree` style for the minor hybrid edges to have a
+straight segment showing (proportional to) their length.
 
 ```@example better_edges
-R"svg"(figname("edge_len_example2.svg"), width=6, height=3) # hide
-R"par"(mar=[.1,.1,.1,.1]) # hide
-R"layout"([1 2]) # hide
 net1 = readnewick("(A:3.3,((B:1.5,#H1:1.2):1.5,((C:1.8)#H1:1,D:1.1):.2):0.3);");
 net2 = readnewick("(A:3.3,((B:1.5,#H1:0.2):1.5,((C:1)#H1:1.8,D:1.1):.2):0.3);");
-plot(net1, useedgelength=true); # hide
-plot(net2, useedgelength=true); # hide
+R"svg"(figname("edge_len_example2.svg"), width=6, height=3) # hide
+R"layout"([1 2]) # hide
+R"par"(mar=[0,0,0,0], cex=0.8) # hide
+plot(net1, style=:fulltree, curved=:minor,
+     useedgelength=true, showedgelength=true);
+R"mtext"("net1", side=3, line=-2); # hide
+plot(net2, style=:fulltree, curved=:minor,
+     useedgelength=true, showedgelength=true);
+R"mtext"("net2", side=3, line=-2); # hide
 R"dev.off()" # hide
 nothing # hide
 ```
 ![example3](../assets/figures/edge_len_example2.svg)
 
-It may be useful to consider using `style=:majortree` if it causes
-too much confusion, since the `:majortree` style doesn't visually represent
-minor edge lengths. Because of this, I used the `showedgelength=true` option to
-see the information anyway.
+The default `style=:majortree` simplifies the visualization, as it
+does not visually represent minor edge lengths.
+Because of this, the option `showedgelength=true` to annotate each edge
+with its length gives us the information anyway.
 
 ```@example better_edges
 R"svg"(figname("edge_len_example3.svg"), width=6, height=3) # hide
-R"par"(mar=[.1,.1,.1,.1]) # hide
-R"layout"([1 2])
-plot(net1, useedgelength=true, style = :majortree, showedgelength=true, arrowlen=0.1);
-plot(net2, useedgelength=true, style = :majortree, showedgelength=true, arrowlen=0.1);
+R"layout"([1 2]) # hide
+R"par"(mar=[0,0,0,0], cex=0.8) # hide
+plot(net1, useedgelength=true, showedgelength=true);
+R"mtext"("net1", side=3, line=-2); # hide
+plot(net2, useedgelength=true, showedgelength=true);
+R"mtext"("net2", side=3, line=-2); # hide
 R"dev.off()" # hide
 nothing # hide
 ```
 ![example4](../assets/figures/edge_len_example3.svg)
-
-I also used the `arrowlen=0.1` option to show the arrow tips to show the direction of minor edges,
-which are hidden by default when using the `style=:majortree` option.
 
 ## Varying edge widths
 
@@ -110,7 +138,7 @@ We do this with a dictionary.
 ```@repl better_edges
 R"svg"(figname("edge_len_example5.svg"), width=6, height=3) # hide
 using RCall # to send any command to R, to modify the plot
-R"par"(mar=[.1,.1,.1,.1]); R"layout"([1 2]);
+R"par"(mar=[.1,0,0,0]); R"layout"([1 2]);
 plot(net1, showedgenumber=true);
 R"mtext"("edge numbers, used\nas keys in edgewidth", side=1, line=-1);
 # below: population sizes on the log scale
@@ -141,10 +169,13 @@ ecols
 ```
 ```@example better_edges
 R"svg"(figname("edge_len_example6.svg"), width=6, height=3) # hide
-R"par"(mar=[.1,.1,.1,.1]); R"layout"([1 2]); # hide
-plot(net1, edgecolor=ecols, defaultedgecolor="grey80", minorlinetype="solid");
-plot(net1, style=:majortree, majorhybridedgecolor="red",
-     minorlinetype="blank"); # make minor edges (arrows) of type 'blank'
+R"par"(mar=[.1,0,0,0]); R"layout"([1 2]); # hide
+plot(net1, edgecolor=ecols, defaultedgecolor="grey80",
+     minorlinetype="solid");
+R"mtext"("default curved = :both", side=3, line=-2); # hide
+plot(net1, majorhybridedgecolor="red", defaultedgecolor="grey80",
+     minorlinetype="blank", curved=:minor); # make minor edges (arrows) of type 'blank'
+R"mtext"("curved = :minor", side=3, line=-2); # hide
 R"mtext"("minor hybrid edge is\nhidden: 'blank' type", side=1, line=-1); # hide
 R"dev.off()"; # hide
 nothing # hide

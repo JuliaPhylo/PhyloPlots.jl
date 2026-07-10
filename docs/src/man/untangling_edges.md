@@ -16,12 +16,13 @@ To fix this, we can to rotate C and D's edges around their parent node.
 First we need to know the number of this parent node. By showing node numbers
 with the `shownodenumber = true` option, we can find the number of the node
 whose child edges we should rotate.
+Below, we also use the option `curved=:none` to get straight hybrid edges.
 
 ```@example untangling
 R"svg"(figname("untangling1.svg"), width=3, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]) # hide
 net = readnewick("(A,((B,#H1),(C,(D)#H1)));") # hide
-plot(net, shownodenumber=true);
+plot(net, shownodenumber=true, curved=:none);
 R"dev.off()" # hide
 nothing # hide
 ```

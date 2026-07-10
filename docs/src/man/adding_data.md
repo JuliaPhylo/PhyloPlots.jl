@@ -22,7 +22,7 @@ R"svg"(figname("adding_data1.svg"), width=6, height=3) # hide
 R"par"(mar=[.1,.1,.1,.1]); R"layout"([1 2]); # hide
 net = readnewick("(A,((B,#H1),((C)#H1, D)));") # hide
 plot(net, showedgenumber=true);
-plot(net, showedgenumber=true, edgenumbercolor="red4");
+plot(net, showedgenumber=true, edgenumbercolor="red4", curved=:none);
 R"dev.off()" # hide
 nothing # hide
 ```
@@ -70,7 +70,6 @@ The [`plot`](@ref) function returns the following named tuple:
  :edge_x_lo, :edge_x_hi, :edge_y_lo, :edge_y_hi,
  :node_data, :edge_data)
 ```
-See the documentation for descriptions of these elements: [`plot`](@ref)
 
 ## Side clade bars example
 
@@ -78,12 +77,12 @@ Here's example code that adds bars to denote clades in the margin:
 
 ```@example adding_data
 R"svg"(figname("side_bars.svg"), width=4, height=4) # hide
-R"par"(mar=[.1,.1,.1,.1]) # hide
+R"par"(mar=[0,0,0,0]) # hide
 net = readnewick("(((((((t1,t2),t3),t4),t5),(t6,t7)),(t8,t9)),t10);");
-plot(net, xlim=(1,10))
+plot(net, xlim=(0,9))
 using RCall # to send any R command, to make further plot modifications
-R"segments"([9, 9, 9], [0.8, 7.8, 9.8], [9, 9, 9], [7.2, 9.2, 10.2])
-R"text"([9.5, 9.5, 9.5], [4, 8.5, 10], ["C", "B", "A"])
+R"segments"([8,8,8], [0.8, 7.8, 9.8], [8,8,8], [7.2, 9.2, 10.2])
+R"text"([8.5, 8.5, 8.5], [4, 8.5, 10], ["C", "B", "A"])
 R"dev.off()" # hide
 nothing # hide
 ```
@@ -100,26 +99,20 @@ res = plot(net);
 res[[:xmin,:xmax]]
 ```
 
-Looking at `xmin` and `xmax` returned by default, we can see that the x
-range is about `(0.3, 9)`.
+Looking at `xmin` and `xmax` returned by default, we can see that the
+default x range is `(-0.7, 7.7)`.
 To give us extra space to work with, we can
-set `xlim` to `(0.3,10)`, forcing the range to be wider on the right, for annotations.
-We can also see that in this case there is some extra white space on the left,
-so that we can increase `xmin` a little bit, finally settling on `xlim=(1,10)`.
+set `xlim` to `(-0.7,9)`, forcing the range to be wider on the right, for annotations.
+We also see that there is some extra white space on the left,
+so we can increase `xmin` a little bit, finally settling on `xlim=(0,9)`.
 
 ```julia
 plot(net, xlim=(1, 10));
 ```
 
 Knowing the coordinates, we can now add more information to the plot through
-`RCall`. For this, I use the R functions `segments` and `text` to add side bars with
-text on them.
-
-```julia
-using RCall # add (install) the RCall package prior to 'using' it
-R"segments"([9, 9, 9], [0.8, 7.8, 9.8], [9, 9, 9], [7.2, 9.2, 10.2])
-R"text"([9.5, 9.5, 9.5], [4, 8.5, 10], ["C", "B", "A"])
-```
+`RCall`. For this, we used the R functions `segments` to add side bars,
+then `text` to add text next to the side bars.
 
 # Beyond
 

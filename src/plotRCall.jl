@@ -9,19 +9,23 @@ the right, using R graphics. Optional arguments are listed below.
 - `useedgelength = false`: if true, the tree edges and major hybrid edges are
   drawn proportionally to their length. Minor hybrid edges are not, however.
   Note that edge lengths in coalescent units may scale very poorly with time.
-- `style = :fulltree`: symbol indicating the style of the diagram
-  * `:majortree` will simply draw minor edges onto the major tree.
-  * `:fulltree` will draw minor edges as their own branches in the tree,
+- `style = :majortree`: symbol indicating the style of the diagram
+  * `:majortree` draws minor edges onto the major tree.
+  * `:fulltree` draws minor edges as their own branches in the tree,
     in the same style used by [icytree](https://icytree.org). This is
     useful for overlapping or confusing networks.
-- `arrowlen`: the length of the arrow tips in the full tree style.
-  The default is 0.1 if `style = :fulltree`,
-  and 0 if `style = :majortree` (making the arrows appear as segments).
+- `curved = :both`: curvature for hybrid edges (`:none`, `:minor`, `:both`).
+- `arrowlen=0.1`: the length of the arrow tips for minor hybrid edges,
+  and also for major hybrid edges when they are curved.
+  Set to 0 to suppress the arrowheads.
 - `minorlinetype`: type of lines used for minor edges, represented by arrows.
   Default is "solid" under the major-tree style, and "longdash" under the
   full tree style.
 - `edgewidth=1`: width of horizontal (not diagonal) edges. To vary them,
   use a dictionary to map the number of each edge to its desired width.
+- `bend = 0.3`: y-bend for a downward curvature of minor hybrid edges that
+  would otherwise be horizontal, to avoid overlap with other edges.
+  Only used when `curved` is requested.
 - `xlim`, `ylim`: array of 2 values, to determine the axes limits.
 
 ## tip annotations:
@@ -131,8 +135,10 @@ function plot(
     tipcex = 1,
     nodecex = 1,
     edgecex = 1,
-    style::Symbol=:fulltree,
-    arrowlen::Real=(style==:majortree ? 0 : 0.1),
+    style::Symbol = :majortree, # was :fulltree in v2.1
+    curved::Symbol = :both,     # was :none     in v2.1
+    bend::Real = 0.3,
+    arrowlen::Real=0.1,
     minorlinetype = nothing,
     edgewidth = 1,
     edgenumbercolor = "grey", # don't limit the type because R accepts many types
@@ -150,15 +156,17 @@ function plot(
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
      xmin, xmax, ymin, ymax) = edgenode_coordinates(
-        net, useedgelength, style==:majortree, preorder)
+        net, useedgelength, style==:majortree, curved==:both, preorder)
+    nedges = length(net.edge)
+    nminor = length(hybridedge_xB)
     labelnodes, nodelabel = check_nodedataframe(net, nodelabel)
     ndf = prepare_nodedataframe(net, nodelabel, shownodenumber,
             shownodelabel, labelnodes, node_x, node_y)
     if showtiplabel || shownodenumber || shownodelabel || labelnodes
-        expfac = 0.1  # force 10% more space to show tip/node/root name
+        expfacx = (xmax-xmin) * 0.1  # force 10% more space to show tip/node/root name
         expfacy = 0.5 # additive expansion for y axis
-        xmin -= (xmax-xmin)*expfac
-        xmax += (xmax-xmin)*expfac
+        xmin -= expfacx
+        xmax += expfacx
         ymin -= expfacy
         ymax += expfacy
     end
@@ -176,7 +184,7 @@ function plot(
     leaves = [n.leaf for n in net.node]
     if isa(edgecolor, AbstractDict) # then ignore {maj|min}orhybridedgecolor
       defaultedgecolor = (isnothing(defaultedgecolor) ? "black" : string(defaultedgecolor) )
-      eCol = Vector{String}(undef,length(net.edge))
+      eCol = Vector{String}(undef,nedges)
       hybmincol_vec = Vector{String}()
       for (ie,ee) in enumerate(net.edge)
         ec = string(get(edgecolor, ee.number, defaultedgecolor))
@@ -189,19 +197,19 @@ function plot(
       if isnothing(defaultedgecolor)
         defaultedgecolor = edgecolor
       end
-      eCol = fill(edgecolor, length(net.edge))
+      eCol = fill(edgecolor, nedges)
       eCol[ [ e.hybrid  for e in net.edge] ] .= majorhybridedgecolor
       eCol[ [!e.ismajor for e in net.edge] ] .= minorhybridedgecolor
-      hybmincol_vec = minorhybridedgecolor
+      hybmincol_vec = Iterators.repeated(minorhybridedgecolor, nminor)
     end
 
     if isa(edgewidth, Number)
-      edgewidth_vec = edgewidth
-      hybridedgewidth_vec = edgewidth
+      edgewidth_vec = Iterators.repeated(edgewidth, nedges)
+      hybridedgewidth_vec = Iterators.repeated(edgewidth, nminor)
     elseif isa(edgewidth, AbstractDict)
       ewtype = valtype(edgewidth)
       ewtype <: Number || error("edgewidth should be numerical")
-      edgewidth_vec = Vector{ewtype}(undef,length(edge_xB))
+      edgewidth_vec = Vector{ewtype}(undef,nedges)
       hybridedgewidth_vec = Vector{ewtype}()
       for (ie,ee) in enumerate(net.edge)
         # fill in edgewidth vector, with default 1 for non-listed edges
@@ -221,17 +229,35 @@ function plot(
       @warn "Style $style is unknown. Defaulted to :fulltree."
       style = :fulltree
     end
+    curved ∈ (:none, :minor, :both) ||
+        error("curved must be :none, :minor, or :both; got " * repr(curved))
 
-    R"""
-    plot($(node_x[leaves]), $(node_y[leaves]), type='n',
-         xlim=c($xmin,$xmax), ylim=c($ymin,$ymax),
-         axes=FALSE, xlab='', ylab='')
-    """
-    R"segments"(edge_xB, edge_yB, edge_xE, edge_yE, col=eCol, lwd=edgewidth_vec)
-    R"arrows"(hybridedge_xB, hybridedge_yB, hybridedge_xE, hybridedge_yE,
-              length=arrowlen, angle=20, col=hybmincol_vec, lty=minorlinetype,
-              lwd=hybridedgewidth_vec)
+    R"plot"(node_x[leaves], node_y[leaves], type="n",
+         xlim=[xmin,xmax], ylim=[ymin,ymax],
+         axes=false, xlab="", ylab="")
     R"segments"(node_x, node_yB, node_x, node_yE, col=defaultedgecolor)
+    for (ie,e,le) in zip(1:nedges, net.edge, edgewidth_vec)
+        if !e.hybrid || !e.ismajor || curved != :both
+            R"segments"(edge_xB[ie], edge_yB[ie], edge_xE[ie], edge_yE[ie],
+                col=eCol[ie], lwd=le)
+        else
+            draw_quadraticbezier(
+                edge_xB[ie],edge_yB[ie], edge_xE[ie],edge_yE[ie],
+                arrowlen, eCol[ie], le, "solid", 0) # no bend for major edges
+        end
+    end
+    for (ie,ce,le) in zip(1:nminor, hybmincol_vec, hybridedgewidth_vec)
+        if curved==:none
+            R"arrows"(hybridedge_xB[ie], hybridedge_yB[ie],
+                hybridedge_xE[ie], hybridedge_yE[ie],
+                length=arrowlen, angle=20, col=ce, lwd=le, lty=minorlinetype)
+        else
+            draw_quadraticbezier(hybridedge_xB[ie], hybridedge_yB[ie],
+                hybridedge_xE[ie], hybridedge_yE[ie],
+                arrowlen, ce, le, minorlinetype, bend)
+        end
+    end
+
     if showtiplabel
       R"text"(node_x[leaves] .+ tipoffset, node_y[leaves],
               tiplabels(net), adj=0, font=3, cex=tipcex)
@@ -249,7 +275,8 @@ function plot(
     end
     labeledges, edf = prepare_edgedataframe(net, edgelabel, style,
                         edge_xB, edge_xE, edge_yB, edge_yE,
-                        hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE)
+                        hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
+                        curved, bend)
     if labeledges
       R"text"(edf[!,:x], edf[!,:y], edf[!,:lab], adj=edgelabeladj,
               col=edgelabelcolor, cex=edgecex)
@@ -276,4 +303,30 @@ function plot(
       arrow_x_lo=hybridedge_xB, arrow_x_hi=hybridedge_xE,
       arrow_y_lo=hybridedge_yB, arrow_y_hi=hybridedge_yE,
       node_data=ndf, edge_data=edf)
+end
+
+function draw_quadraticbezier(
+    x0,y0, x2,y2,
+    arrowlen,
+    ce, # color for the edge
+    le, # line width for the edge
+    linetype,
+    bend,
+    nsegments=20,
+)
+    x1, y1 = quadraticbezier_control(x0, y0, x2, y2, bend)
+    if ismissing(x1)
+        R"arrows"(x0, y0, x2, y2, length=arrowlen, angle=20,
+                  col=ce, lwd=le, lty=linetype)
+    else
+        ts = range(0, 1, step=1/nsegments)
+        xs = [(1-t)^2 * x0 + 2*(1-t)*t * x1 + t^2 * x2 for t in ts]
+        ys = [(1-t)^2 * y0 + 2*(1-t)*t * y1 + t^2 * y2 for t in ts]
+        for i in 1:(nsegments-1)
+            R"segments"(xs[i], ys[i], xs[i+1], ys[i+1], col=ce, lwd=le, lty=linetype)
+        end
+        R"arrows"(xs[nsegments], ys[nsegments], x2, y2,
+            length=arrowlen, angle=20, col=ce, lwd=le, lty=linetype)
+    end
+    return (x1,y1)
 end

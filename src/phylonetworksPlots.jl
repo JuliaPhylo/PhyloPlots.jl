@@ -610,16 +610,9 @@ function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
         cur_edge = pop!(cladewise_stack); # deliberate choice over shift! for cladewise order
         nn = getchild(cur_edge)
         ni = findfirst(x->x===nn, net.node)
-        # todo: push ni to the vector of corresponding to the parent node of cur_edge
-        # pni = parentnodeindex
-        pni = indexin_net(getparent(cur_edge), net)
-        # adding the element if the key is already there 
-        if haskey(node2childvec, pni)
-            push!(node2childvec[pni], ni)
-        else
-            node2childvec[pni] = [ni]
-        end
-
+        pni = indexin_net(getparent(cur_edge), net)  # pni = parent node index 
+        # add ni to the list of pni's children
+        push!(get!(node2childvec, pni, Int[]), ni)
         # push the appropriate children edges to the "queue"
         if cur_edge.ismajor
             for e in nn.edge

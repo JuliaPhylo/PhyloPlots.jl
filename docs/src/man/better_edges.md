@@ -11,6 +11,12 @@ in various ways.
 
 ## Different hybrid edge styles
 
+We can use the `style` and `curved` options to visualize hybrid edges
+in various ways.
+We will see examples later when hybrid edges are drawn straight with
+`curved=:none`, or only minor hybrid edges are curved with `curved=:minor`.
+By default `curved=:both` so both minor and major edges are curved.
+
 - The default `style = :majortree` has the advantage of drawing each
   minor edge as a single segment, but the disadvantage of being unable
   to draw it proportional to the edge length (because the segment
@@ -18,7 +24,6 @@ in various ways.
 - The `:fulltree` style draws each minor edge as 2 segments: one straight
   whose length can represent the edge length, and another segment
   (diagonal straight or curved) connecting to the hybrid child.
-
 
 ```@example better_edges
 using RCall # to add annotations to the R-based plot
@@ -33,7 +38,6 @@ R"mtext"("style = :fulltree", side=1, line=-2);
 R"dev.off()" # hide
 nothing # hide
 ```
-
 ![example1](../assets/figures/style_example.svg)
 
 ## Curved hybrid edges
@@ -88,7 +92,6 @@ plot(net, useedgelength=true, curved=:none, style=:fulltree, showedgelength=true
 R"dev.off()" # hide
 nothing # hide
 ```
-
 ![example2](../assets/figures/edge_len_example.svg)
 
 !!! note "node N"
@@ -137,7 +140,6 @@ R"mtext"("net2", side=3, line=-2); # hide
 R"dev.off()" # hide
 nothing # hide
 ```
-
 ![example3](../assets/figures/edge_len_example2.svg)
 
 The default `style=:majortree` simplifies the visualization, as it
@@ -156,7 +158,6 @@ R"mtext"("net2", side=3, line=-2); # hide
 R"dev.off()" # hide
 nothing # hide
 ```
-
 ![example4](../assets/figures/edge_len_example3.svg)
 
 ## Varying edge widths
@@ -180,7 +181,6 @@ plot(net1, edgewidth=log_populationsize);
 R"dev.off()"; # hide
 nothing # hide
 ```
-
 ![example5](../assets/figures/edge_len_example5.svg)
 
 ## Customization
@@ -212,5 +212,4 @@ R"mtext"("minor hybrid edge is\nhidden: 'blank' type", side=1, line=-1); # hide
 R"dev.off()"; # hide
 nothing # hide
 ```
-
 ![example6](../assets/figures/edge_len_example6.svg)

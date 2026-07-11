@@ -568,9 +568,10 @@ Also, the network is modified as follows:
 with its nodes listed in a preorder in `net.vec_node`
 """
 function prepare_LSAtreetraversal(net::HybridNetwork)
-    lsaM[:all] = leaststableancestor_matrix(net, false) # do not preorder again
+    # fix2 :   lsaM[:all] = leaststableancestor_matrix(net, false) # do not preorder again
+    lsaM = leaststableancestor_matrix(net, false) # do not preorder again
     # get LSA(parents(n)) for each hybrid node n
-    hybrid2lsa = Dict{Int,Int}()
+    hybrid2lsa = Dict{Int,Int}()    
     for (ni,nn) in enumerate(net.node)
         nn.hybrid || continue
         # switch to indices in net.vec_node
@@ -578,7 +579,9 @@ function prepare_LSAtreetraversal(net::HybridNetwork)
         for e in nn.edge # loop over parents of nn only
             getchild(e) === nn || continue
             pi_inlsaM = findfirst(x->x===getparent(e), net.vec_node)
-            newlsa = lsaM[lsa_i, pi_inlsaM]
+            # fix3: orginal newlsa = lsaM[lsa_i, pi_inlsaM]
+            #needs to first pull out the raw matrix via lsaM[:all], then index into that with the two integers:
+            newlsa = lsaM[:all][lsa_i, pi_inlsaM]
             lsa_i = findfirst(x->x===newlsa, net.vec_node)
         end
         # back to indices in net.node
@@ -604,6 +607,8 @@ fixit
 with its nodes listed in a preorder in `net.vec_node`
 """
 function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
+    ## fix1: defined lsa2hybrid
+    lsa2hybrid = style == :lsatree ? prepare_LSAtreetraversal(net)[2] : nothing
     node2childvec = Dict{Int,Vector{Int}}()
     cladewise_stack = copy(getroot(net).edge) # the child edges of root
     while !isempty(cladewise_stack)

@@ -84,22 +84,38 @@ function edgenode_coordinates(
     if style == :fulltree # reserve space for "corner" nodes: from minor edges
         ymax += sum(!e.ismajor for e in net.edge)
     elseif style == :lsatree
-        ymax += net.numhybrids
+        # add number of internal nodes that are leaves in the LSA tree
+        for n in net.node
+            n.leaf && continue
+            isleaf = true
+            for e in n.edge
+                getchild(e) === n && continue
+                if !e.hybrid
+                    isleaf = false
+                    break
+                end
+            end
+            if isleaf
+                ymax += 1
+            end
+        end
     end
 
-    if style == :lsatree
-        hybrid2lsa, lsa2hybrid = prepare_LSAtreetraversal(net)
-        @show hybrid2lsa
-        @show lsa2hybrid
-    end
     node_y  = zeros(Float64, net.numnodes) # order: in net.nodes, *!not in vec_node!*
     node_yB = zeros(Float64,net.numnodes) # min (B=begin) and max (E=end)
     node_yE = zeros(Float64,net.numnodes) #   of at children's nodes
     edge_yB = zeros(Float64,net.numedges) # yE of edge = y of child node
     edge_yE = Vector{Float64}(undef, net.numedges)
-    # set node_y of leaves: follow cladewise order
-    # also sets edge_yB of minor hybrid edges
     node_w = [(nn.leaf ? 1 : 0) for nn in net.node] # weight: number of descendant tips
+
+    # set node_y of leaves: follow cladewise order along a spanning tree
+    # also sets edge_yB of minor hybrid edges
+    cladewise_node2children =  prepare_cladewiseorder(net, style)
+    leafcoordinates_cladewiseorder!(
+        (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), # modified
+        cladewise_node2children, net, style==:fulltree)
+    # fixit: check that it work below. then delete the commented-out block below
+    #=
     nexty = ymax # first tips at the top, last at bottom
     cladewise_queue = copy(getroot(net).edge) # the child edges of root
     # print("queued the root's children's indices: "); @show queue
@@ -151,9 +167,11 @@ function edgenode_coordinates(
         end
        end
     end
+    =#
+    @show node_y # only leaves should be non-zero
 
     # set node_y of internal nodes: follow post-order
-    for i=length(net.node):-1:1
+    for i in length(net.node):-1:1
         nn = net.vec_node[i]
         !nn.leaf || continue # previous loop took care of leaves
         ni = indexin_net(nn, net)
@@ -605,7 +623,7 @@ end
 """
     prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
 
-Dictionary mapping each internal node index to the vector of its children indices,
+Dictionary `d` mapping each internal node index to the vector of children indices,
 where 'internal' and 'children' correspond to the tree defined by `net`
 and the `style`; and where indices are in `net.node`.
 - `:majortree` style: tree obtained by removing all minor hybrid edges in `net`
@@ -616,22 +634,43 @@ and the `style`; and where indices are in `net.node`.
 - `:lsatree`: tree obtained by removing all hybrid edges, then connecting each
   original hybrid node to the LSA of its parents in `net`.
 
+For each node with index `ni`, `d[ni]` is the following tuple:
+- (vector of children indices, `true`) for the major tree & LSA tree styles
+- (vector of children indices, vector of children type) for the full tree style
+  where the children type is a boolean: true if child via a major edge,
+  false if child via a minor edge, that is, a corner / fake leaf.
+  For such children, the index is that of the minor hybrid child *edge*,
+  and this index is in `net.edge`.
+
 **Warning**: assume that `net` is already preordered, that is,
 with its nodes listed in a preorder in `net.vec_node`
 """
 function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
-    lsa2hybrid = style == :lsatree ? prepare_LSAtreetraversal(net)[2] : nothing
-    node2childvec = Dict{Int,Vector{Int}}()
+    lsa2hybrid = (style == :lsatree ? prepare_LSAtreetraversal(net)[2] : nothing)
+    fulltree = (style == :fulltree)
+    childType = Tuple{Int,Bool}
+    node2childvec = Dict{Int,Vector{childType}}()
     cladewise_stack = copy(getroot(net).edge) # the child edges of root
+    if style == :lsatree && haskey(lsa2hybrid, net.rooti)
+        for h_ni in lsa2hybrid[net.rooti]
+            push!(cladewise_stack, getparentedge(net.node[h_ni]))
+        end
+    end
     while !isempty(cladewise_stack)
         cur_edge = pop!(cladewise_stack); # deliberate choice over shift! for cladewise order
         nn = getchild(cur_edge)
         ni = findfirst(x->x===nn, net.node)
-        pni = indexin_net(getparent(cur_edge), net)  # pni = parent node index 
+        pn = (style == :lsatree && nn.hybrid ? nn.prev : getparent(cur_edge)) # parent in *tree*
+        pni = indexin_net(pn, net)  # pni = parent node index
         # add ni to the list of pni's children
-        push!(get!(node2childvec, pni, Int[]), ni)
-        # push the appropriate children edges to the "queue"
         if cur_edge.ismajor
+            push!(get!(node2childvec, pni, childType[]), (ni, true))
+        elseif fulltree
+            ei = indexin_net(cur_edge, net)
+            push!(get!(node2childvec, pni, childType[]), (ei, false))
+        end
+        # push the appropriate children edges to the stack
+        if cur_edge.ismajor || fulltree
             for e in nn.edge
                 if getparent(e) === nn # don't go backwards
                     if style != :lsatree || !e.hybrid
@@ -640,15 +679,61 @@ function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
                 end
             end
         end
-       if style == :lsatree
-        # to follow the LSA tree: push the major parent edge of h when we visit lsa(h).
-        # 1. loop over hybrid2lsa: h_ni = hybrid node index, lsa_ni = its LSA node index
-        if haskey(lsa2hybrid, ni)
+        if style == :lsatree  && haskey(lsa2hybrid, ni)
+            # nn = lsa(h) for some hybrid h: push major parent edge of h
             for h_ni in lsa2hybrid[ni]
                 push!(cladewise_stack, getparentedge(net.node[h_ni]))
             end
-        end
        end
     end
     return node2childvec
+end
+
+"""
+    leafcoordinates_cladewiseorder!(node_edge_y, fixit..., style)
+
+Set the node y-axis coordinates of leaves, and the edge y-axis coordinates of
+minor diagonal segments (placement of "corners", or fake leaves, for
+minor hybrid edges) under the full tree style.
+
+The first 2 arguments are modified.
+
+fixit
+"""
+function leafcoordinates_cladewiseorder!(
+    node_edge_y,
+    nexty::Base.RefValue,
+    cladewisedict::Dict,
+    net::HybridNetwork,
+    fulltree::Bool
+)
+    leafcoordinates_cladewiseorder!(node_edge_y, nexty, net.rooti, cladewisedict, net, fulltree)
+end
+function leafcoordinates_cladewiseorder!(
+    node_edge_y,
+    nexty::Base.RefValue,
+    pni::Int, # node index in net.node, and in y vectors
+    cladewisedict::Dict,
+    net::HybridNetwork,
+    fulltree::Bool,
+)
+    node_y, node_yB, node_yE, edge_yB, edge_yE = node_edge_y
+    if haskey(cladewisedict, pni) # parent node: not a leaf in traversal tree
+        for (ni,ismajor) in cladewisedict[pni]
+            if ismajor
+                leafcoordinates_cladewiseorder!(node_edge_y, nexty, ni, cladewisedict, net, fulltree)
+            else # fake leaf, corner edge: stop recursion, assign next y
+                @info "parent index: $pni, minor child edge index: $ni"
+                edge_yB[ni] = nexty[]
+                edge_yE[ni] = nexty[]
+                nexty[] -= 1
+            end
+        end
+    else # leaf in the traversal tree: stop recursion; assign the next y
+        @info "node index: $pni, nexty = $(nexty[])"
+        node_y[ pni] = nexty[]
+        node_yB[pni] = nexty[]
+        node_yE[pni] = nexty[]
+        nexty[] -= 1
+    end
 end

@@ -225,9 +225,9 @@ function plot(
         minorlinetype = (style==:majortree ? "solid" : "longdash")
     end
 
-    if !(style in [:fulltree, :majortree])
-      @warn "Style $style is unknown. Defaulted to :fulltree."
-      style = :fulltree
+    if !(style in [:fulltree, :majortree, :lsatree])
+      @warn "Style $style is unknown. Defaulted to :majortree."
+      style = :majortree
     end
     curved ∈ (:none, :minor, :both) ||
         error("curved must be :none, :minor, or :both; got " * repr(curved))

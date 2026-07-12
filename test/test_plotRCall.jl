@@ -28,7 +28,7 @@
   @test_logs plot(net, style=:majortree, curved=:both,
     edgelabel=dat[!,[:edge,:bs]], preorder=false);
   @test_logs plot(net, style=:majortree, curved=:none, arrowlen=0.1, preorder=false);
-  @test_logs (:warn, "Style bogus is unknown. Defaulted to :fulltree.") plot(net,
+  @test_logs (:warn, "Style bogus is unknown. Defaulted to :majortree.") plot(net,
     style=:bogus, preorder=false);
   end # of basic case
 

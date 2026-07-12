@@ -558,7 +558,7 @@ end
 """
     prepare_LSAtreetraversal(net::HybridNetwork)
 
-Pair of dictionaries `(hybrid2lsa, lsa2hybrid)`, containing indices of
+Dictionaries `(hybrid2lsa, lsa2hybrid)`, containing indices of
 hybrid nodes and, for each hybrid, the index of the LSA of its parents.
 Indices are in `net.node`.
 - `hybrid2lsa` maps each hybrid to its parents' LSA.
@@ -603,7 +603,18 @@ function prepare_LSAtreetraversal(net::HybridNetwork)
 end
 
 """
-fixit
+    prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
+
+Dictionary mapping each internal node index to the vector of its children indices,
+where 'internal' and 'children' correspond to the tree defined by `net`
+and the `style`; and where indices are in `net.node`.
+- `:majortree` style: tree obtained by removing all minor hybrid edges in `net`
+- `:fulltree` style: tree obtained by creating a new leaf for each minor hybrid edge,
+  whose name is that of the hybrid node. A hybrid with `p` parents is then represented
+  as an internal node (the hybrid node itself) along the major hybrid edge, and by
+  `p-1` fake leaves (or "corners" in the plot) sharing the same name.
+- `:lsatree`: tree obtained by removing all hybrid edges, then connecting each
+  original hybrid node to the LSA of its parents in `net`.
 
 **Warning**: assume that `net` is already preordered, that is,
 with its nodes listed in a preorder in `net.vec_node`

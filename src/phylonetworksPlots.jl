@@ -114,67 +114,13 @@ function edgenode_coordinates(
     leafcoordinates_cladewiseorder!(
         (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), # modified
         cladewise_node2children, net, style==:fulltree)
-    # fixit: check that it work below. then delete the commented-out block below
-    #=
-    nexty = ymax # first tips at the top, last at bottom
-    cladewise_queue = copy(getroot(net).edge) # the child edges of root
-    # print("queued the root's children's indices: "); @show queue
-    while !isempty(cladewise_queue)
-        cur_edge = pop!(cladewise_queue); # deliberate choice over shift! for cladewise order
-        # increment spacing and add to node_y if leaf
-        cur_child = getchild(cur_edge)
-        ni = findfirst(x->x===cur_child, net.node)
-        if cur_child.leaf # later: instead check if the node/index is not a key in the dictionary
-            ni = indexin_net(cur_child, net)
-            node_y[ni]  = nexty
-            node_yB[ni] = nexty
-            node_yE[ni] = nexty
-            nexty -= 1
-        end
-
-        # only for new hybrid lines:
-        if cur_edge.hybrid
-            if cur_edge.ismajor && style == :lsatree
-                # fixit: do *not* do this, unless cur_child is a leaf in the LSA tree
-                node_y[ni]  = nexty
-                nexty -= 1
-            elseif !cur_edge.ismajor && !usedirecthybridline
-            # increment spacing and add to edge_yB if parent edge is minor
-                ei = indexin_net(cur_edge, net)
-                edge_yB[ei] = nexty
-                edge_yE[ei] = nexty
-                nexty -= 1
-            end
-        end
-
-        # push the appropriate children edges to the "queue"
-        if cur_edge.ismajor
-            for e in cur_child.edge
-                if getparent(e) === cur_child # don't go backwards
-                    if style != :lsatree || !e.hybrid
-                        push!(cladewise_queue, e)
-                    end
-                end
-            end
-        end
-       if style == :lsatree
-        # to follow the LSA tree: push the major parent edge of h when we visit lsa(h).
-        # 1. loop over hybrid2lsa: h_ni = hybrid node index, lsa_ni = its LSA node index
-        if haskey(lsa2hybrid, ni)
-            for h_ni in lsa2hybrid[ni]
-                push!(cladewise_queue, getparentedge(net.node[h_ni]))
-            end
-        end
-       end
-    end
-    =#
     @show node_y # only leaves should be non-zero
 
     # set node_y of internal nodes: follow post-order
     for i in length(net.node):-1:1
         nn = net.vec_node[i]
-        !nn.leaf || continue # previous loop took care of leaves
         ni = indexin_net(nn, net)
+        node_y[ni] == 0 || continue # previous loop took care of this node already
         node_yB[ni]=ymax; node_yE[ni]=ymin
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
@@ -650,39 +596,30 @@ function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
     fulltree = (style == :fulltree)
     childType = Tuple{Int,Bool}
     node2childvec = Dict{Int,Vector{childType}}()
-    cladewise_stack = copy(getroot(net).edge) # the child edges of root
-    if style == :lsatree && haskey(lsa2hybrid, net.rooti)
-        for h_ni in lsa2hybrid[net.rooti]
-            push!(cladewise_stack, getparentedge(net.node[h_ni]))
-        end
-    end
+    cladewise_stack = [net.rooti]
     while !isempty(cladewise_stack)
-        cur_edge = pop!(cladewise_stack); # deliberate choice over shift! for cladewise order
-        nn = getchild(cur_edge)
-        ni = findfirst(x->x===nn, net.node)
-        pn = (style == :lsatree && nn.hybrid ? nn.prev : getparent(cur_edge)) # parent in *tree*
-        pni = indexin_net(pn, net)  # pni = parent node index
-        # add ni to the list of pni's children
-        if cur_edge.ismajor
-            push!(get!(node2childvec, pni, childType[]), (ni, true))
-        elseif fulltree
-            ei = indexin_net(cur_edge, net)
-            push!(get!(node2childvec, pni, childType[]), (ei, false))
-        end
-        # push the appropriate children edges to the stack
-        if cur_edge.ismajor || fulltree
-            for e in nn.edge
-                if getparent(e) === nn # don't go backwards
-                    if style != :lsatree || !e.hybrid
-                        push!(cladewise_stack, e)
-                    end
+        pni = pop!(cladewise_stack) # deliberate choice over shift! for cladewise order
+        pn = net.node[pni]
+        for ce in pn.edge # loop over children edges
+            cn = getchild(ce)
+            cn !== pn || continue
+            # add child to the list of pni's children
+            if ce.ismajor
+                ni = indexin_net(cn, net)
+                push!(get!(node2childvec, pni, childType[]), (ni, true))
+                # push the appropriate children to the stack
+                if !(style == :lsatree && ce.hybrid)
+                    push!(cladewise_stack, ni)
                 end
+            elseif fulltree
+                ei = indexin_net(ce, net)
+                push!(get!(node2childvec, pni, childType[]), (ei, false))
             end
         end
-        if style == :lsatree  && haskey(lsa2hybrid, ni)
-            # nn = lsa(h) for some hybrid h: push major parent edge of h
-            for h_ni in lsa2hybrid[ni]
-                push!(cladewise_stack, getparentedge(net.node[h_ni]))
+        if style == :lsatree  && haskey(lsa2hybrid, pni)
+            # pn = lsa(h) for some hybrid h: push h to stack
+            for h_ni in lsa2hybrid[pni]
+                push!(cladewise_stack, h_ni)
             end
        end
     end
@@ -707,6 +644,7 @@ function leafcoordinates_cladewiseorder!(
     net::HybridNetwork,
     fulltree::Bool
 )
+    @info "cladewisedict:" cladewisedict
     leafcoordinates_cladewiseorder!(node_edge_y, nexty, net.rooti, cladewisedict, net, fulltree)
 end
 function leafcoordinates_cladewiseorder!(
@@ -723,14 +661,12 @@ function leafcoordinates_cladewiseorder!(
             if ismajor
                 leafcoordinates_cladewiseorder!(node_edge_y, nexty, ni, cladewisedict, net, fulltree)
             else # fake leaf, corner edge: stop recursion, assign next y
-                @info "parent index: $pni, minor child edge index: $ni"
                 edge_yB[ni] = nexty[]
                 edge_yE[ni] = nexty[]
                 nexty[] -= 1
             end
         end
     else # leaf in the traversal tree: stop recursion; assign the next y
-        @info "node index: $pni, nexty = $(nexty[])"
         node_y[ pni] = nexty[]
         node_yB[pni] = nexty[]
         node_yE[pni] = nexty[]

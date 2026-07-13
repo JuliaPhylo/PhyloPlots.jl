@@ -581,12 +581,12 @@ and the `style`; and where indices are in `net.node`.
 - `:lsatree`: tree obtained by removing all hybrid edges, then connecting each
   original hybrid node to the LSA of its parents in `net`.
 
-For each node with index `ni`, `d[ni]` is the following tuple:
-- (vector of children indices, `true`) for the major tree & LSA tree styles
-- (vector of children indices, vector of children type) for the full tree style
-  where the children type is a boolean: true if child via a major edge,
+For each node with index `ni`, `d[ni]` is a vector containing the following tuple:
+- (child node index, `true`) for the major tree & LSA tree styles
+- (child node/edge index, is major edge?) for the full tree style
+  where the second entry is a boolean: true if child via a major edge,
   false if child via a minor edge, that is, a corner / fake leaf.
-  For such children, the index is that of the minor hybrid child *edge*,
+  For such a child, the index is that of the minor hybrid child *edge*,
   and this index is in `net.edge`.
 
 **Warning**: assume that `net` is already preordered, that is,

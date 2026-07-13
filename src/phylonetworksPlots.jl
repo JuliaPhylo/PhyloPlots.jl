@@ -111,16 +111,22 @@ function edgenode_coordinates(
     # set node_y of leaves: follow cladewise order along a spanning tree
     # also sets edge_yB of minor hybrid edges
     cladewise_node2children =  prepare_cladewiseorder(net, style)
-    leafcoordinates_cladewiseorder!(
+    @info "cladewisedict:" cladewisedict
+    leafYcoordinates_cladewiseorder!(
         (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), # modified
         cladewise_node2children, net, style==:fulltree)
-    @show node_y # only leaves should be non-zero
 
+    #= fixit:
+    1. create new function to do the work of the for loop below: internalYcoordinates!(...)
+    2. create new function that calculates the reticulate displacement cost: reticulatedisplacement()
+    3. create new function that finds the orderings with the best cost
+    =#
     # set node_y of internal nodes: follow post-order
     for i in length(net.node):-1:1
         nn = net.vec_node[i]
+        nn.leaf && continue
         ni = indexin_net(nn, net)
-        node_y[ni] == 0 || continue # previous loop took care of this node already
+        setnode_y = haskey(cladewise_node2children, ni) # previous loop already set its node_y
         node_yB[ni]=ymax; node_yE[ni]=ymin
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
@@ -139,7 +145,9 @@ function edgenode_coordinates(
                             node_yB[ni] = min(node_yB[ni], cy)
                             node_yE[ni] = max(node_yE[ni], cy)
                         end
-                        node_y[ni] += node_w[ci] * cy # running average; was initialized at 0
+                        if setnode_y
+                            node_y[ni] += node_w[ci] * cy # running average; was initialized at 0
+                        end
                         node_w[ni] += node_w[ci]
                     elseif nomajorchild # e is minor edge, and no major found so far
                         minor_yB = min(minor_yB, cy)
@@ -149,13 +157,17 @@ function edgenode_coordinates(
                     if e.ismajor
                         cc = getchild(e)
                         ci = indexin_net(cc, net)
-                        cy = node_y[ci]
-                        cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
-                        node_y[ni] += node_w[ci] * cy
+                        if setnode_y
+                            cy = node_y[ci]
+                            cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
+                            node_y[ni] += node_w[ci] * cy
+                        end
                         node_w[ni] += node_w[ci]
                     else
-                        cy = edge_yB[indexin_net(e, net)]
-                        node_y[ni] += cy
+                        if setnode_y
+                            cy = edge_yB[indexin_net(e, net)]
+                            node_y[ni] += cy
+                        end
                         node_w[ni] += 1
                     end
                     if !majorcurved || !e.ismajor || !e.hybrid
@@ -172,8 +184,10 @@ function edgenode_coordinates(
             end
             node_yB[ni] = minor_yB
             node_yE[ni] = minor_yE
-            node_y[ni]  = (minor_yB + minor_yE)/2
-        else
+            if setnode_y
+                node_y[ni]  = (minor_yB + minor_yE)/2
+            end
+        elseif setnode_y
             # node_y[ni] = (node_yB[ni]+node_yE[ni])/2 ## v2.1.0 and earlier
             node_y[ni] /= node_w[ni] # weight > 0 necessarily if !nomajorchild
         end
@@ -186,7 +200,6 @@ function edgenode_coordinates(
             node_yE[ni] = node_y[ni]
         end
     end
-    @show node_y
 
     # setting branch lengths for plotting
     elenCalculate = !useedgelength
@@ -629,7 +642,7 @@ function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
 end
 
 """
-    leafcoordinates_cladewiseorder!(node_edge_y, fixit..., style)
+    leafYcoordinates_cladewiseorder!(node_edge_y, fixit..., style)
 
 Set the node y-axis coordinates of leaves, and the edge y-axis coordinates of
 minor diagonal segments (placement of "corners", or fake leaves, for
@@ -639,17 +652,16 @@ The first 2 arguments are modified.
 
 fixit
 """
-function leafcoordinates_cladewiseorder!(
+function leafYcoordinates_cladewiseorder!(
     node_edge_y,
     nexty::Base.RefValue,
     cladewisedict::Dict,
     net::HybridNetwork,
     fulltree::Bool
 )
-    @info "cladewisedict:" cladewisedict
-    leafcoordinates_cladewiseorder!(node_edge_y, nexty, net.rooti, cladewisedict, net, fulltree)
+    leafYcoordinates_cladewiseorder!(node_edge_y, nexty, net.rooti, cladewisedict, net, fulltree)
 end
-function leafcoordinates_cladewiseorder!(
+function leafYcoordinates_cladewiseorder!(
     node_edge_y,
     nexty::Base.RefValue,
     pni::Int, # node index in net.node, and in y vectors
@@ -661,7 +673,7 @@ function leafcoordinates_cladewiseorder!(
     if haskey(cladewisedict, pni) # parent node: not a leaf in traversal tree
         for (ni,ismajor) in cladewisedict[pni]
             if ismajor
-                leafcoordinates_cladewiseorder!(node_edge_y, nexty, ni, cladewisedict, net, fulltree)
+                leafYcoordinates_cladewiseorder!(node_edge_y, nexty, ni, cladewisedict, net, fulltree)
             else # fake leaf, corner edge: stop recursion, assign next y
                 edge_yB[ni] = nexty[]
                 edge_yE[ni] = nexty[]

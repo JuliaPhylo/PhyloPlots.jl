@@ -186,6 +186,7 @@ function edgenode_coordinates(
             node_yE[ni] = node_y[ni]
         end
     end
+    @show node_y
 
     # setting branch lengths for plotting
     elenCalculate = !useedgelength
@@ -603,12 +604,12 @@ function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
         for ce in pn.edge # loop over children edges
             cn = getchild(ce)
             cn !== pn || continue
-            # add child to the list of pni's children
+            # add child to the list of pni's children, and
+            # push the appropriate children to the stack
             if ce.ismajor
-                ni = indexin_net(cn, net)
-                push!(get!(node2childvec, pni, childType[]), (ni, true))
-                # push the appropriate children to the stack
                 if !(style == :lsatree && ce.hybrid)
+                    ni = indexin_net(cn, net)
+                    push!(get!(node2childvec, pni, childType[]), (ni, true))
                     push!(cladewise_stack, ni)
                 end
             elseif fulltree
@@ -619,6 +620,7 @@ function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
         if style == :lsatree  && haskey(lsa2hybrid, pni)
             # pn = lsa(h) for some hybrid h: push h to stack
             for h_ni in lsa2hybrid[pni]
+                push!(get!(node2childvec, pni, childType[]), (h_ni, true))
                 push!(cladewise_stack, h_ni)
             end
        end

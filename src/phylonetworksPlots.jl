@@ -117,89 +117,14 @@ function edgenode_coordinates(
         cladewise_node2children, net, style==:fulltree)
 
     #= fixit:
-    1. create new function to do the work of the for loop below: internalYcoordinates!(...)
-    2. create new function that calculates the reticulate displacement cost: reticulatedisplacement()
+    1. check new functions
     3. create new function that finds the orderings with the best cost
     =#
-    # set node_y of internal nodes: follow post-order
-    for i in length(net.node):-1:1
-        nn = net.vec_node[i]
-        nn.leaf && continue
-        ni = indexin_net(nn, net)
-        setnode_y = haskey(cladewise_node2children, ni) # previous loop already set its node_y
-        node_yB[ni]=ymax; node_yE[ni]=ymin
-        minor_yB  = ymax; minor_yE  = ymin;
-        nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
-        for e in nn.edge
-            if nn == getparent(e) # if e = child of node
-                if usedirecthybridline # unbroken one-segment hybrid lines
-                    if e.ismajor || nomajorchild
-                        cc = getchild(e)
-                        ci = indexin_net(cc, net)
-                        cy = node_y[ci]
-                        cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
-                    end
-                    if e.ismajor
-                        nomajorchild = false # we found a child edge that is a major edge
-                        if !majorcurved || !e.hybrid
-                            node_yB[ni] = min(node_yB[ni], cy)
-                            node_yE[ni] = max(node_yE[ni], cy)
-                        end
-                        if setnode_y
-                            node_y[ni] += node_w[ci] * cy # running average; was initialized at 0
-                        end
-                        node_w[ni] += node_w[ci]
-                    elseif nomajorchild # e is minor edge, and no major found so far
-                        minor_yB = min(minor_yB, cy)
-                        minor_yE = max(minor_yE, cy)
-                    end
-                else
-                    if e.ismajor
-                        cc = getchild(e)
-                        ci = indexin_net(cc, net)
-                        if setnode_y
-                            cy = node_y[ci]
-                            cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
-                            node_y[ni] += node_w[ci] * cy
-                        end
-                        node_w[ni] += node_w[ci]
-                    else
-                        if setnode_y
-                            cy = edge_yB[indexin_net(e, net)]
-                            node_y[ni] += cy
-                        end
-                        node_w[ni] += 1
-                    end
-                    if !majorcurved || !e.ismajor || !e.hybrid
-                        node_yB[ni] = min(node_yB[ni], cy)
-                        node_yE[ni] = max(node_yE[ni], cy)
-                    end
-                end
-            end
-        end
-        if nomajorchild # children edges are all minor hybrids
-            if minor_yB == minor_yE # one single child. jitter by 0.1 to make the plot readable
-                minor_yB += (minor_yB < (ymax+ymin)/2 ? 0.1 : -0.1)
-                minor_yE = minor_yB
-            end
-            node_yB[ni] = minor_yB
-            node_yE[ni] = minor_yE
-            if setnode_y
-                node_y[ni]  = (minor_yB + minor_yE)/2
-            end
-        elseif setnode_y
-            # node_y[ni] = (node_yB[ni]+node_yE[ni])/2 ## v2.1.0 and earlier
-            node_y[ni] /= node_w[ni] # weight > 0 necessarily if !nomajorchild
-        end
-        if majorcurved
-            node_yB[ni] = min(node_yB[ni], node_y[ni])
-            node_yE[ni] = max(node_yE[ni], node_y[ni])
-        end
-        if nomajorchild #since the minor edges are leaving from the center of the node's y pos.
-            node_yB[ni] = node_y[ni]
-            node_yE[ni] = node_y[ni]
-        end
-    end
+    internalYcoordinates!(
+        (node_y, node_yB, node_yE, node_w), # modified
+        cladewise_node2children, net, edge_yB,
+        usedirecthybridline, majorcurved, ymin, ymax)
+    rd_score = reticulatedisplacement(net, node_y, style==:lsatree)
 
     # setting branch lengths for plotting
     elenCalculate = !useedgelength
@@ -543,9 +468,22 @@ Indices are in `net.node`.
 - `lsa2hybrid` maps each node that is the LSA of some hybrid to a
   vector listing these hybrids.
 
-Also, the network is modified as follows:
-- for each hybrid node `n` in `net`, `n.prev` stores its LSA node.
-- `net.vec_int1` ... fixit
+Also, the network is modified:
+for each hybrid node `n` in `net`, `n.prev` stores its LSA node.
+
+The LSA (Least Stable Ancestor) is calculated as the most recent
+common ancestor of all parents of a hybrid node. In `:lsatree`
+plotting, this LSA node acts as the "rescue" point: the cladewise
+traversal skips the hybrid node initially and only processes its major
+parent edge when the traversal reaches this LSA node.
+
+fixit:
+-add reference to PhyloNetworks leaststableancestor_matrix
+- think if it should only return lsa2hybrid if not code coulde be a bit faster
+
+Returns:
+- `(hybrid2lsa, lsa2hybrid)`: A tuple of dictionaries where keys and 
+values are indices into the `net.node` array.
 
 **Warning**: assume that `net` is already preordered, that is,
 with its nodes listed in a preorder in `net.vec_node`
@@ -642,7 +580,7 @@ function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
 end
 
 """
-    leafYcoordinates_cladewiseorder!(node_edge_y, fixit..., style)
+    leafYcoordinates_cladewiseorder!(node_edge_y, nexty::Base.RefValue, cladewisedict, net, fulltree)
 
 Set the node y-axis coordinates of leaves, and the edge y-axis coordinates of
 minor diagonal segments (placement of "corners", or fake leaves, for
@@ -650,7 +588,10 @@ minor hybrid edges) under the full tree style.
 
 The first 2 arguments are modified.
 
-fixit
+- `node_edge_y` is a tuple of 5 vectors: `(node_y, node_yB, node_yE, edge_yB, edge_yE)`.
+- `nexty` is a running counter for vertical spacing,
+  decremented by 1 each time a leaf or a minor-edge corner is assigned.
+
 """
 function leafYcoordinates_cladewiseorder!(
     node_edge_y,
@@ -686,4 +627,150 @@ function leafYcoordinates_cladewiseorder!(
         node_yE[pni] = nexty[]
         nexty[] -= 1
     end
+end
+
+"""
+    internalYcoordinates!(node_y_yB_yE_w, cladewise_node2children, net,
+                           edge_yB, usedirecthybridline, majorcurved, ymin, ymax)
+
+Set the node y-axis coordinate of each internal node, along with its
+[yB,yE] range (used to draw the node's vertical bar), by post-order
+traversal of `net.vec_node`.
+
+The first argument is a tuple `(node_y, node_yB, node_yE, node_w)`,
+all of which are modified.
+"""
+function internalYcoordinates!(
+    node_y_yB_yE_w,
+    cladewise_node2children::Dict,
+    net::HybridNetwork,
+    edge_yB::Vector{Float64},
+    usedirecthybridline::Bool,
+    majorcurved::Bool,
+    ymin::Float64,
+    ymax::Float64,
+)
+    node_y, node_yB, node_yE, node_w = node_y_yB_yE_w
+    # set node_y of internal nodes: follow post-order
+    for i in length(net.node):-1:1
+        nn = net.vec_node[i]
+        nn.leaf && continue
+        ni = indexin_net(nn, net)
+        setnode_y = haskey(cladewise_node2children, ni) # previous loop already set its node_y
+        node_yB[ni]=ymax; node_yE[ni]=ymin
+        minor_yB  = ymax; minor_yE  = ymin;
+        nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
+        for e in nn.edge
+            if nn == getparent(e) # if e = child of node
+                if usedirecthybridline # unbroken one-segment hybrid lines
+                    if e.ismajor || nomajorchild
+                        cc = getchild(e)
+                        ci = indexin_net(cc, net)
+                        cy = node_y[ci]
+                        cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
+                    end
+                    if e.ismajor
+                        nomajorchild = false # we found a child edge that is a major edge
+                        if !majorcurved || !e.hybrid
+                            node_yB[ni] = min(node_yB[ni], cy)
+                            node_yE[ni] = max(node_yE[ni], cy)
+                        end
+                        if setnode_y
+                            node_y[ni] += node_w[ci] * cy # running average; was initialized at 0
+                        end
+                        node_w[ni] += node_w[ci]
+                    elseif nomajorchild # e is minor edge, and no major found so far
+                        minor_yB = min(minor_yB, cy)
+                        minor_yE = max(minor_yE, cy)
+                    end
+                else
+                    if e.ismajor
+                        cc = getchild(e)
+                        ci = indexin_net(cc, net)
+                        if setnode_y
+                            cy = node_y[ci]
+                            cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
+                            node_y[ni] += node_w[ci] * cy
+                        end
+                        node_w[ni] += node_w[ci]
+                    else
+                        if setnode_y
+                            cy = edge_yB[indexin_net(e, net)]
+                            node_y[ni] += cy
+                        end
+                        node_w[ni] += 1
+                    end
+                    if !majorcurved || !e.ismajor || !e.hybrid
+                        node_yB[ni] = min(node_yB[ni], cy)
+                        node_yE[ni] = max(node_yE[ni], cy)
+                    end
+                end
+            end
+        end
+        if nomajorchild # children edges are all minor hybrids
+            if minor_yB == minor_yE # one single child. jitter by 0.1 to make the plot readable
+                minor_yB += (minor_yB < (ymax+ymin)/2 ? 0.1 : -0.1)
+                minor_yE = minor_yB
+            end
+            node_yB[ni] = minor_yB
+            node_yE[ni] = minor_yE
+            if setnode_y
+                node_y[ni]  = (minor_yB + minor_yE)/2
+            end
+        elseif setnode_y
+            # node_y[ni] = (node_yB[ni]+node_yE[ni])/2 ## v2.1.0 and earlier
+            node_y[ni] /= node_w[ni] # weight > 0 necessarily if !nomajorchild
+        end
+        if majorcurved
+            node_yB[ni] = min(node_yB[ni], node_y[ni])
+            node_yE[ni] = max(node_yE[ni], node_y[ni])
+        end
+        if nomajorchild #since the minor edges are leaving from the center of the node's y pos.
+            node_yB[ni] = node_y[ni]
+            node_yE[ni] = node_y[ni]
+        end
+    end
+end
+
+"""
+    reticulatedisplacement((rd,), net, node_y, lsatree)
+
+Calculate the reticulate displacement (RD) cost of a network drawing:
+the sum, over some hybrid edges `e=(v,w)` of the vertical distance `|y(v) - y(w)|`
+between the edge's parent `v` and child `w`. This cost was introduced by
+[Huson (2025)](fixit: doi here).
+- If `lsatree` is true, all hybrid edges are considered in the sum (the "combining view"
+  in Huson (2025));
+- otherwise, only minor hybrid edges are considered ("transfer view").
+Used to compare candidate node orderings and pick the
+one that minimizes the vertical stretching of hybrid lines.
+
+The first argument `(rd,)` is a 1-tuple holding a `Base.RefValue{Float64}`
+that is set (modified) to the RD score, which is also returned.
+"""
+function reticulatedisplacement(
+    net::HybridNetwork,
+    node_y::AbstractVector{<:Real},
+    lsatree::Bool,
+)
+    rd = 0.0
+    for (wi, hn) in net.node
+        hn.hybrid || continue
+        for e in hn.edge # loop over parent (hybrid) edges of hn
+            getchild(e) === hn || continue
+            lsatree || !e.ismajor || continue # lsa tree or minor hybrid edges only
+            vi = indexin_net(getparent(e), net) # parent index
+            rd += abs(node_y[vi] - node_y[wi])
+        end
+    end
+    #=
+    for e in net.edge
+        e.hybrid || continue
+        lsatree || !e.ismajor || continue # lsa tree or minor hybrid edges only
+        vi = indexin_net(getparent(e), net) # parent index
+        wi = indexin_net(getchild(e), net) # child index
+        rd += abs(node_y[vi] - node_y[wi])
+    end
+    =#
+    return rd
 end

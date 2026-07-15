@@ -108,10 +108,9 @@ function edgenode_coordinates(
     edge_yE = Vector{Float64}(undef, net.numedges)
     node_w = [(nn.leaf ? 1 : 0) for nn in net.node] # weight: number of descendant tips
 
-    # set node_y of leaves: follow cladewise order along a spanning tree
+    # set node_y of leaves: follow cladewise order along some tree
     # also sets edge_yB of minor hybrid edges
     cladewise_node2children =  prepare_cladewiseorder(net, style)
-    @info "cladewisedict:" cladewisedict
     leafYcoordinates_cladewiseorder!(
         (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), # modified
         cladewise_node2children, net, style==:fulltree)
@@ -647,8 +646,8 @@ function internalYcoordinates!(
     edge_yB::Vector{Float64},
     usedirecthybridline::Bool,
     majorcurved::Bool,
-    ymin::Float64,
-    ymax::Float64,
+    ymin::Real,
+    ymax::Real,
 )
     node_y, node_yB, node_yE, node_w = node_y_yB_yE_w
     # set node_y of internal nodes: follow post-order
@@ -754,7 +753,7 @@ function reticulatedisplacement(
     lsatree::Bool,
 )
     rd = 0.0
-    for (wi, hn) in net.node
+    for (wi, hn) in enumerate(net.node)
         hn.hybrid || continue
         for e in hn.edge # loop over parent (hybrid) edges of hn
             getchild(e) === hn || continue

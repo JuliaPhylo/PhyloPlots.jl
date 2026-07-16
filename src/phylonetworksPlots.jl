@@ -737,7 +737,7 @@ end
 Calculate the reticulate displacement (RD) cost of a network drawing:
 the sum, over some hybrid edges `e=(v,w)` of the vertical distance `|y(v) - y(w)|`
 between the edge's parent `v` and child `w`. This cost was introduced by
-[Huson (2025)](fixit: doi here).
+[Huson (2025)](https://doi.org/10.1371/journal.pcbi.1013805).
 - If `lsatree` is true, all hybrid edges are considered in the sum (the "combining view"
   in Huson (2025));
 - otherwise, only minor hybrid edges are considered ("transfer view").
@@ -772,4 +772,130 @@ function reticulatedisplacement(
     end
     =#
     return rd
+end
+
+# all permutations of the elements of `v`, as a vector of vectors.
+# local helper: avoids adding Combinatorics.jl as a dependency just for this.
+function _all_permutations(v::Vector{T}) where T
+     # 1. Start with a list containing one empty arrangement
+    all_permutations = Vector{T}[T[]]
+    # 2. Go through every new element we want to add to our arrangements
+    for current_element in v
+        # 3. This temporary list will hold the new, longer versions
+        extended_permutations = Vector{T}[]
+        # 4. Look at every arrangement we have built so far
+        for existing_perm in all_permutations    
+            # 5. Find every possible "gap" where we can stick the new element.
+            # (Example: In [A, B], gaps are: [Gap] A [Gap] B [Gap])
+            for gap_index in 1:(length(existing_perm) + 1)  
+                # 6. Create a copy of the existing arrangement
+                candidate = copy(existing_perm)
+                # 7. Insert the new element into that specific gap
+                insert!(candidate, gap_index, current_element)
+                # 8. Add this new version to our temporary list
+                push!(extended_permutations, candidate)
+            end
+        end
+        # 9. Move our finished "extended" list into our main list for the next round
+        all_permutations = extended_permutations
+    end
+    return all_permutations
+end
+"""
+    find_optimal_reticulate_ordering!(
+        (cladewise_node2children,), # modified
+        net, style, usedirecthybridline, majorcurved, ymin, ymax)
+
+Search for a node ordering `O` (that is, a left-to-right order of children
+at each internal node) that minimizes the Reticulate Displacement (RD) cost
+(see [`reticulatedisplacement`](@ref)) of the resulting network drawing.
+
+Trying every joint combination of sibling orders across all nodes at once
+is combinatorially infeasible, so this uses a greedy coordinate-descent
+heuristic instead: for each node with more than 1 child (in the order
+returned by `keys(cladewise_node2children)`), it tries every permutation
+of *that node's* children only, recomputes the full set of y-coordinates
+and the resulting RD score (holding all other nodes' child orders fixed),
+and keeps whichever permutation yields the lowest RD score before moving
+on to the next node. This is not guaranteed to find a global optimum.
+
+The first argument `(cladewise_node2children,)` is a 1-tuple: the
+dictionary (as built by [`prepare_cladewiseorder`](@ref)) is modified in
+place, overwritten with the best child ordering found for each node.
+
+Returns the RD score of the final ordering.
+"""
+function find_optimal_reticulate_ordering!(
+    (cladewise_node2children,), # : a dictionary of parent -> [children] that we will modify
+    net::HybridNetwork,
+    style::Symbol,
+    usedirecthybridline::Bool,
+    majorcurved::Bool,
+    ymin::Real,
+    ymax::Real,
+)
+    # 2. Helper booleans to know which plotting style we are using
+    lsatree = (style == :lsatree)
+    fulltree = (style == :fulltree)
+
+    # This INNER function is a "Simulator". 
+    # It calculates the RD score for whatever the current state of the dictionary is.
+    function rd_for_current_ordering()
+        # Create empty arrays to hold temporary coordinates
+        node_y  = zeros(Float64, net.numnodes)
+        node_yB = zeros(Float64, net.numnodes)
+        node_yE = zeros(Float64, net.numnodes)
+        edge_yB = zeros(Float64, net.numedges)
+        edge_yE = Vector{Float64}(undef, net.numedges)
+        
+        # Initialize node weights (leaves = 1, internal = 0)
+        node_w  = [(nn.leaf ? 1 : 0) for nn in net.node]
+
+        # Step A: Run the leaf coordinate logic (sets the "tips" of the tree)
+        leafYcoordinates_cladewiseorder!(
+            (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), 
+            cladewise_node2children, net, fulltree)
+
+        # Step B: Run the internal coordinate logic (sets the "parents")
+        internalYcoordinates!(
+            (node_y, node_yB, node_yE, node_w), 
+            cladewise_node2children, net, edge_yB,
+            usedirecthybridline, majorcurved, ymin, ymax)
+
+        # Step C: Calculate the "Penalty" (how stretched the hybrid lines are)
+        return reticulatedisplacement(net, node_y, lsatree)
+    end
+
+    # Calculate the starting score
+    best_rd = rd_for_current_ordering()
+
+    #for every parent
+    for ni in collect(keys(cladewise_node2children))
+        children = cladewise_node2children[ni]
+        
+        # 6. If a parent only has 1 child, there's nothing to shuffle. Skip it.
+        length(children) > 1 || continue
+        
+        # 7. Remember the current best order for this specific family
+        best_children = children
+
+        # 8. Try every possible left-to-right permutation of this parent's children
+        for candidate in _all_permutations(children)
+            # Temporarily update the dictionary with this new "shuffled" order
+            cladewise_node2children[ni] = candidate
+            
+            # Run the simulator to see the new RD score
+            rd = rd_for_current_ordering()
+
+            # 9. If this shuffle is better (lower score), remember it!
+            if rd < best_rd
+                best_rd = rd
+                best_children = candidate
+            end
+        end
+
+        # 10. Once we've tried all shuffles for this node, lock in the best one found
+        cladewise_node2children[ni] = best_children
+    end
+    return best_rd
 end

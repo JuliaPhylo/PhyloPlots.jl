@@ -611,7 +611,8 @@ function leafYcoordinates_cladewiseorder!(
 )
     node_y, node_yB, node_yE, edge_yB, edge_yE = node_edge_y
     if haskey(cladewisedict, pni) # parent node: not a leaf in traversal tree
-        for (ni,ismajor) in cladewisedict[pni]
+        # originally the stack processed LIFO so restoring that oder 
+        for (ni,ismajor) in Iterators.reverse(cladewisedict[pni])
             if ismajor
                 leafYcoordinates_cladewiseorder!(node_edge_y, nexty, ni, cladewisedict, net, fulltree)
             else # fake leaf, corner edge: stop recursion, assign next y

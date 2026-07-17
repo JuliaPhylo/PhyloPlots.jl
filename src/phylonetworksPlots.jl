@@ -460,25 +460,16 @@ end
 """
     prepare_LSAtreetraversal(net::HybridNetwork)
 
-Dictionaries `(hybrid2lsa, lsa2hybrid)`, containing indices of
-hybrid nodes and, for each hybrid, the index of the LSA of its parents.
-Indices are in `net.node`.
-- `hybrid2lsa` maps each hybrid to its parents' LSA.
-- `lsa2hybrid` maps each node that is the LSA of some hybrid to a
-  vector listing these hybrids.
+Dictionary `lsa2hybrid`, mapping `lsa_i => [h_i's...]` mapping
+the index of each node that is the LSA of some hybrid's parents
+to the vector of these hybrids' indices. Indices are in `net.node`.
 
 Also, the network is modified:
 for each hybrid node `h` in `net`, `h.prev` stores the LSA of its parents.
-The LSA (Least Stable Ancestor) of a set of nodes X (here the parents
+
+The LSA (least stable ancestor) of a set X of nodes (here the parents
 of a given hybrid) is the lowest node `n` with the following property:
 *any* path between the root and any `x ∈ X` must go through `n`.
-
-fixit:
-- think if it should only return lsa2hybrid if not code coulde be a bit faster
-
-Returns:
-- `(hybrid2lsa, lsa2hybrid)`: A tuple of dictionaries where keys and
-values are indices into the `net.node` array.
 
 **Warning**: assume that `net` is already preordered, that is,
 with its nodes listed in a preorder in `net.vec_node`
@@ -486,7 +477,7 @@ with its nodes listed in a preorder in `net.vec_node`
 function prepare_LSAtreetraversal(net::HybridNetwork)
     lsaM = leaststableancestor_matrix(net, false)[:all] # do not preorder again
     # get LSA(parents(n)) for each hybrid node n
-    hybrid2lsa = Dict{Int,Int}()
+    lsa2hybrid = Dict{Int, Vector{Int}}()
     for (ni,nn) in enumerate(net.node)
         nn.hybrid || continue
         # switch to indices in net.vec_node
@@ -500,17 +491,10 @@ function prepare_LSAtreetraversal(net::HybridNetwork)
         # back to indices in net.node
         lsa_node = net.vec_node[lsa_i]
         nn.prev = lsa_node
-        push!(hybrid2lsa, ni => indexin_net(lsa_node, net))
+        lsa_ni = indexin_net(lsa_node, net)
+        push!(get!(lsa2hybrid, lsa_ni, Int[]), ni)
     end
-    lsa2hybrid = Dict{Int, Vector{Int}}()
-    for (h_ni, lsa_ni) in hybrid2lsa
-        if haskey(lsa2hybrid, lsa_ni)
-            push!(lsa2hybrid[lsa_ni], h_ni)
-        else
-            lsa2hybrid[lsa_ni] = [h_ni]
-        end
-    end
-    return (hybrid2lsa, lsa2hybrid)
+    return lsa2hybrid
 end
 
 """
@@ -539,7 +523,7 @@ For each node with index `ni`, `d[ni]` is a vector containing the following tupl
 with its nodes listed in a preorder in `net.vec_node`
 """
 function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
-    lsa2hybrid = (style == :lsatree ? prepare_LSAtreetraversal(net)[2] : nothing)
+    lsa2hybrid = (style == :lsatree ? prepare_LSAtreetraversal(net) : nothing)
     fulltree = (style == :fulltree)
     childType = Tuple{Int,Bool}
     node2childvec = Dict{Int,Vector{childType}}()

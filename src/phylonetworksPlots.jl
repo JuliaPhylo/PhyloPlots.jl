@@ -464,11 +464,22 @@ the index of each node that is the LSA of some hybrid's parents
 to the vector of these hybrids' indices. Indices are in `net.node`.
 
 Also, the network is modified:
-for each hybrid node `h` in `net`, `h.prev` stores the LSA of its parents.
+for each hybrid node `h` in `net`, `h.prev` stores its parents' LSA node.
 
-The LSA (least stable ancestor) of a set X of nodes (here the parents
-of a given hybrid) is the lowest node `n` with the following property:
-*any* path between the root and any `x ∈ X` must go through `n`.
+The LSA of a set of nodes `X` is the lowest node `n` with the following property:
+any path between the root and any `x ∈ X` must go through `n`.
+In `:lsatree` plotting, the LSA "backbone" tree is used to assign y coordinates
+to leaves and hybrid nodes, as described by
+[Huson (2025)](https://doi.org/10.1371/journal.pcbi.1013805).
+In this LSA tree, all hybrid edges are removed. Each hybrid node is connected
+to its LSA node by a new edge.
+
+fixit:
+- think if it should only return lsa2hybrid if not code coulde be a bit faster
+
+Returns:
+- `(hybrid2lsa, lsa2hybrid)`: A tuple of dictionaries where keys and 
+values are indices into the `net.node` array.
 
 **Warning**: assume that `net` is already preordered, that is,
 with its nodes listed in a preorder in `net.vec_node`
@@ -592,7 +603,8 @@ function leafYcoordinates_cladewiseorder!(
 )
     node_y, node_yB, node_yE, edge_yB, edge_yE = node_edge_y
     if haskey(cladewisedict, pni) # parent node: not a leaf in traversal tree
-        for (ni,ismajor) in cladewisedict[pni]
+        # originally the stack processed LIFO so restoring that order right to left
+        for (ni,ismajor) in Iterators.reverse(cladewisedict[pni])
             if ismajor
                 leafYcoordinates_cladewiseorder!(node_edge_y, nexty, ni, cladewisedict, net, fulltree)
             else # fake leaf, corner edge: stop recursion, assign next y

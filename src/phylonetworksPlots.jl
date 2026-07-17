@@ -468,20 +468,16 @@ Indices are in `net.node`.
   vector listing these hybrids.
 
 Also, the network is modified:
-for each hybrid node `n` in `net`, `n.prev` stores its LSA node.
-
-The LSA (Least Stable Ancestor) is calculated as the most recent
-common ancestor of all parents of a hybrid node. In `:lsatree`
-plotting, this LSA node acts as the "rescue" point: the cladewise
-traversal skips the hybrid node initially and only processes its major
-parent edge when the traversal reaches this LSA node.
+for each hybrid node `h` in `net`, `h.prev` stores the LSA of its parents.
+The LSA (Least Stable Ancestor) of a set of nodes X (here the parents
+of a given hybrid) is the lowest node `n` with the following property:
+*any* path between the root and any `x ∈ X` must go through `n`.
 
 fixit:
--add reference to PhyloNetworks leaststableancestor_matrix
 - think if it should only return lsa2hybrid if not code coulde be a bit faster
 
 Returns:
-- `(hybrid2lsa, lsa2hybrid)`: A tuple of dictionaries where keys and 
+- `(hybrid2lsa, lsa2hybrid)`: A tuple of dictionaries where keys and
 values are indices into the `net.node` array.
 
 **Warning**: assume that `net` is already preordered, that is,
@@ -611,7 +607,7 @@ function leafYcoordinates_cladewiseorder!(
 )
     node_y, node_yB, node_yE, edge_yB, edge_yE = node_edge_y
     if haskey(cladewisedict, pni) # parent node: not a leaf in traversal tree
-        # originally the stack processed LIFO so restoring that oder 
+        # originally the stack processed LIFO so restoring that order
         for (ni,ismajor) in Iterators.reverse(cladewisedict[pni])
             if ismajor
                 leafYcoordinates_cladewiseorder!(node_edge_y, nexty, ni, cladewisedict, net, fulltree)
@@ -656,7 +652,7 @@ function internalYcoordinates!(
         nn = net.vec_node[i]
         nn.leaf && continue
         ni = indexin_net(nn, net)
-        setnode_y = haskey(cladewise_node2children, ni) # previous loop already set its node_y
+        setnode_y = node_y[ni]==0
         node_yB[ni]=ymax; node_yE[ni]=ymin
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
@@ -763,15 +759,6 @@ function reticulatedisplacement(
             rd += abs(node_y[vi] - node_y[wi])
         end
     end
-    #=
-    for e in net.edge
-        e.hybrid || continue
-        lsatree || !e.ismajor || continue # lsa tree or minor hybrid edges only
-        vi = indexin_net(getparent(e), net) # parent index
-        wi = indexin_net(getchild(e), net) # child index
-        rd += abs(node_y[vi] - node_y[wi])
-    end
-    =#
     return rd
 end
 
@@ -785,10 +772,10 @@ function _all_permutations(v::Vector{T}) where T
         # 3. This temporary list will hold the new, longer versions
         extended_permutations = Vector{T}[]
         # 4. Look at every arrangement we have built so far
-        for existing_perm in all_permutations    
+        for existing_perm in all_permutations
             # 5. Find every possible "gap" where we can stick the new element.
             # (Example: In [A, B], gaps are: [Gap] A [Gap] B [Gap])
-            for gap_index in 1:(length(existing_perm) + 1)  
+            for gap_index in 1:(length(existing_perm) + 1)
                 # 6. Create a copy of the existing arrangement
                 candidate = copy(existing_perm)
                 # 7. Insert the new element into that specific gap
@@ -839,7 +826,7 @@ function find_optimal_reticulate_ordering!(
     lsatree = (style == :lsatree)
     fulltree = (style == :fulltree)
 
-    # This INNER function is a "Simulator". 
+    # This INNER function is a "Simulator".
     # It calculates the RD score for whatever the current state of the dictionary is.
     function rd_for_current_ordering()
         # Create empty arrays to hold temporary coordinates
@@ -848,18 +835,16 @@ function find_optimal_reticulate_ordering!(
         node_yE = zeros(Float64, net.numnodes)
         edge_yB = zeros(Float64, net.numedges)
         edge_yE = Vector{Float64}(undef, net.numedges)
-        
         # Initialize node weights (leaves = 1, internal = 0)
         node_w  = [(nn.leaf ? 1 : 0) for nn in net.node]
 
         # Step A: Run the leaf coordinate logic (sets the "tips" of the tree)
         leafYcoordinates_cladewiseorder!(
-            (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), 
+            (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax),
             cladewise_node2children, net, fulltree)
-
         # Step B: Run the internal coordinate logic (sets the "parents")
         internalYcoordinates!(
-            (node_y, node_yB, node_yE, node_w), 
+            (node_y, node_yB, node_yE, node_w),
             cladewise_node2children, net, edge_yB,
             usedirecthybridline, majorcurved, ymin, ymax)
 
@@ -873,28 +858,22 @@ function find_optimal_reticulate_ordering!(
     #for every parent
     for ni in collect(keys(cladewise_node2children))
         children = cladewise_node2children[ni]
-        
         # 6. If a parent only has 1 child, there's nothing to shuffle. Skip it.
         length(children) > 1 || continue
-        
         # 7. Remember the current best order for this specific family
         best_children = children
-
         # 8. Try every possible left-to-right permutation of this parent's children
         for candidate in _all_permutations(children)
             # Temporarily update the dictionary with this new "shuffled" order
             cladewise_node2children[ni] = candidate
-            
             # Run the simulator to see the new RD score
             rd = rd_for_current_ordering()
-
             # 9. If this shuffle is better (lower score), remember it!
             if rd < best_rd
                 best_rd = rd
                 best_children = candidate
             end
         end
-
         # 10. Once we've tried all shuffles for this node, lock in the best one found
         cladewise_node2children[ni] = best_children
     end

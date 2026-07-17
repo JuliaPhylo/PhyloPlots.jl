@@ -555,18 +555,19 @@ function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
             if ce.ismajor
                 if !(style == :lsatree && ce.hybrid)
                     ni = indexin_net(cn, net)
-                    push!(get!(node2childvec, pni, childType[]), (ni, true))
+                    # push first for first-in first-out: we will iterate from first to last
+                    pushfirst!(get!(node2childvec, pni, childType[]), (ni, true))
                     push!(cladewise_stack, ni)
                 end
             elseif fulltree
                 ei = indexin_net(ce, net)
-                push!(get!(node2childvec, pni, childType[]), (ei, false))
+                pushfirst!(get!(node2childvec, pni, childType[]), (ei, false))
             end
         end
         if style == :lsatree  && haskey(lsa2hybrid, pni)
             # pn = lsa(h) for some hybrid h: push h to stack
             for h_ni in lsa2hybrid[pni]
-                push!(get!(node2childvec, pni, childType[]), (h_ni, true))
+                pushfirst!(get!(node2childvec, pni, childType[]), (h_ni, true))
                 push!(cladewise_stack, h_ni)
             end
        end
@@ -607,8 +608,7 @@ function leafYcoordinates_cladewiseorder!(
 )
     node_y, node_yB, node_yE, edge_yB, edge_yE = node_edge_y
     if haskey(cladewisedict, pni) # parent node: not a leaf in traversal tree
-        # originally the stack processed LIFO so restoring that order
-        for (ni,ismajor) in Iterators.reverse(cladewisedict[pni])
+        for (ni,ismajor) in cladewisedict[pni]
             if ismajor
                 leafYcoordinates_cladewiseorder!(node_edge_y, nexty, ni, cladewisedict, net, fulltree)
             else # fake leaf, corner edge: stop recursion, assign next y

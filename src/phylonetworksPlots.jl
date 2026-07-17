@@ -114,9 +114,10 @@ function edgenode_coordinates(
     leafYcoordinates_cladewiseorder!(
         (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), # modified
         cladewise_node2children, net, style==:fulltree)
-    internalYcoordinates!((node_y, node_yB, node_yE, node_w),
-        net, edge_yB, usedirecthybridline, majorcurved, ymin, ymax)
-    rd_score = reticulatedisplacement(net, node_y, style==:lsatree)
+    internalYcoordinates!((node_y, node_yB, node_yE, node_w), edge_yB,
+        net, usedirecthybridline, majorcurved, ymin, ymax)
+    rd_score = reticulatedisplacement(node_y, edge_yB,
+        cladewise_node2children, net, style==:lsatree)
 
     #= fixit:
     - fix but in reticulatedisplacement, :fulltree style
@@ -558,7 +559,8 @@ function prepare_cladewiseorder(net::HybridNetwork, style::Symbol)
 end
 
 """
-    leafYcoordinates_cladewiseorder!(node_edge_y, nexty::Base.RefValue, cladewisedict, net, fulltree)
+    leafYcoordinates_cladewiseorder!(node_edge_y, nexty::Base.RefValue,
+        cladewisedict, net, fulltree)
 
 Set the node y-axis coordinates of leaves, and the edge y-axis coordinates of
 minor diagonal segments (placement of "corners", or fake leaves, for
@@ -608,8 +610,8 @@ function leafYcoordinates_cladewiseorder!(
 end
 
 """
-    internalYcoordinates!(node_y_yB_yE_w, cladewise_node2children, net,
-                           edge_yB, usedirecthybridline, majorcurved, ymin, ymax)
+    internalYcoordinates!(node_y_yB_yE_w, edge_yB, net,
+                          usedirecthybridline, majorcurved, ymin, ymax)
 
 Set the node y-axis coordinate of each internal node, along with its
 [yB,yE] range (used to draw the node's vertical bar), by post-order
@@ -619,9 +621,9 @@ The first argument is a tuple `(node_y, node_yB, node_yE, node_w)`,
 all of which are modified.
 """
 function internalYcoordinates!(
-    node_y_yB_yE_w,
+    node_y_yB_yE_w, # modified
+    edge_yB::Vector{Float64}, # not modified
     net::HybridNetwork,
-    edge_yB::Vector{Float64},
     usedirecthybridline::Bool,
     majorcurved::Bool,
     ymin::Real,
@@ -710,7 +712,8 @@ function internalYcoordinates!(
 end
 
 """
-    reticulatedisplacement(net::HybridNetwork, node_y::AbstractVector, lsatree::Bool)
+    reticulatedisplacement(node_y::AbstractVector, edge_y::AbstractVector,
+        cladewise_node2children::Dict, net::HybridNetwork, lsatree::Bool)
 
 Reticulate displacement (RD) cost of a network drawing:
 the sum, over some hybrid edges `e=(v,w)` of the vertical distance `|y(v) - y(w)|`
@@ -725,8 +728,10 @@ It is used as a proxy for the number of crossing edges in the drawing,
 with a smaller cost associated with fewer crossing edges.
 """
 function reticulatedisplacement(
-    net::HybridNetwork,
     node_y::AbstractVector{<:Real},
+    edge_yB::AbstractVector{<:Real},
+    cladewisedict::Dict,
+    net::HybridNetwork,
     lsatree::Bool,
 )
     rd = 0.0
@@ -739,7 +744,7 @@ function reticulatedisplacement(
             but this is incorrect for the :fulltree style, for which
                 the y value of the corner is *not* stored in node_y,
                 but in edge_yB/E and at the edge index, not the node index.
-            To get this information, the function many need the cladewisedict (use the flag)
+            To get this information, the function should use the cladewisedict (use the flag)
             and the edge_yB vector as well.
             =#
             vi = indexin_net(getparent(e), net) # parent index
@@ -749,6 +754,43 @@ function reticulatedisplacement(
     return rd
 end
 
+"""
+    setY_reticulatedisplacement!
+
+1. Set the y coordinates of leaves, internal nodes and edge "corners"
+   based on the clade-wise ordering of each node's children in the traversal tree,
+   stored in dictionary `cladewisedict`
+2 then output the resulting reticulate displacement.
+"""
+function setY_reticulatedisplacement!(
+    node_edge_y,
+    nexty::Base.RefValue,
+    node_w::AbstractVector{<:Real},
+    cladewisedict::Dict,
+    net::HybridNetwork,
+    lsatree::Bool, # then usedirecthybridline = !fulltree
+    fulltree::Bool,
+    majorcurved::Bool,
+    ymin::Real,
+    ymax::Real,
+)
+    for v in node_edge_y # re-initialize
+        fill!(v, 0.0)
+    end
+    node_y, node_yB, node_yE, edge_yB, edge_yE = node_edge_y
+    nexty[] = ymax
+    for (i,nn) in enumerate(net.node) # re-initialize, but there should be a
+        nn.leaf && continue # better way bc node_w does not depend on ordering
+        node_w[i] = 0
+    end
+    leafYcoordinates_cladewiseorder!(node_edge_y, nexty,
+        cladewisedict, net, fulltree)
+    internalYcoordinates!((node_y, node_yB, node_yE, node_w), edge_yB,
+        net, !fulltree, majorcurved, ymin, ymax)
+    return reticulatedisplacement(net, node_y, edge_yB, cladewisedict, lsatree)
+end
+
+# fixit: not needed. Use instead Combinatorics.permutations(): an interator --less memory-greedy
 # all permutations of the elements of `v`, as a vector of vectors.
 # local helper: avoids adding Combinatorics.jl as a dependency just for this.
 function _all_permutations(v::Vector{T}) where T
@@ -776,13 +818,13 @@ function _all_permutations(v::Vector{T}) where T
     end
     return all_permutations
 end
-"""
-    find_optimal_reticulate_ordering!(
-        cladewise_node2children, # modified
-        net, style, usedirecthybridline, majorcurved, ymin, ymax)
 
-Search for a node ordering `O` (that is, a left-to-right order of children
-at each internal node) that minimizes the Reticulate Displacement (RD) cost
+"""
+    find_optimal_reticulate_ordering!(node_edge_y, cladewise_node2children,
+        net, style, majorcurved, ymin, ymax)
+
+Search for a node ordering (that is, a left-to-right order of children
+at each internal node) that minimizes the reticulate displacement cost
 (see [`reticulatedisplacement`](@ref)) of the resulting network drawing.
 
 Trying every joint combination of sibling orders across all nodes at once
@@ -794,67 +836,55 @@ and the resulting RD score (holding all other nodes' child orders fixed),
 and keeps whichever permutation yields the lowest RD score before moving
 on to the next node. This is not guaranteed to find a global optimum.
 
-The first argument `(cladewise_node2children,)` is a 1-tuple: the
-dictionary (as built by [`prepare_cladewiseorder`](@ref)) is modified in
-place, overwritten with the best child ordering found for each node.
+`cladewise_node2children` is a dictionary as built by
+[`prepare_cladewiseorder`](@ref).
 
-Returns the RD score of the final ordering.
+Output: reticulate displacement of the final ordering.
+Also, the first 2 arguments are modified in place, and their final values
+correspond to the best ordering found.
 """
 function find_optimal_reticulate_ordering!(
+    node_edge_y,
+    nexty::Base.RefValue,
+    node_w::AbstractVector{<:Real}, # independent of ordering
     cladewise_node2children::Dict,
     net::HybridNetwork,
     style::Symbol,
-    usedirecthybridline::Bool,
     majorcurved::Bool,
     ymin::Real,
     ymax::Real,
 )
-    lsatree = (style == :lsatree)
-    fulltree = (style == :fulltree)
-    # grab memory, to be re-used multiple times
-    node_y  = zeros(Float64, net.numnodes)
-    node_yB = zeros(Float64, net.numnodes)
-    node_yE = zeros(Float64, net.numnodes)
-    edge_yB = zeros(Float64, net.numedges)
-    edge_yE = Vector{Float64}(undef, net.numedges)
-    node_edge_y = (node_y, node_yB, node_yE, edge_yB, edge_yE)
-    node_w  = [(nn.leaf ? 1 : 0) for nn in net.node] # independent of ordering
-    nexty = Ref(ymax)
-
-    function rd_for_current_ordering()
-        for v in node_edge_y fill!(v, 0.0); end # re-initialize
-        nexty[] = ymax
-        leafYcoordinates_cladewiseorder!(node_edge_y, nexty,
-            cladewise_node2children, net, fulltree)
-        internalYcoordinates!((node_y, node_yB, node_yE, node_w),
-            net, edge_yB, usedirecthybridline, majorcurved, ymin, ymax)
-        return reticulatedisplacement(net, node_y, lsatree)
-    end
-
-    # Calculate the starting score
-    best_rd = rd_for_current_ordering()
-
-    #for every parent
-    for ni in collect(keys(cladewise_node2children))
-        children = cladewise_node2children[ni]
-        # 6. If a parent only has 1 child, there's nothing to shuffle. Skip it.
-        length(children) > 1 || continue
-        # 7. Remember the current best order for this specific family
-        best_children = children
-        # 8. Try every possible left-to-right permutation of this parent's children
-        for candidate in _all_permutations(children)
+    costRD!() = setY_reticulatedisplacement!(node_edge_y, nexty, node_w,
+        cladewise_node2children, net, style == :lsatree, style == :fulltree,
+        majorcurved, ymin, ymax)
+    best_rd = costRD!()
+    originalchildren = Int[]
+    best_children = Int[] # current best, memory re-used
+    # optimize order at every LSA node, processed in pre-order
+    for nn in net.vec_node
+        ni = indexin_net(nn, net)
+        haskey(cladewise_node2children, ni) || continue
+        nchildren = xlength(cladewise_node2children[ni])
+        nchildren > 1 || continue
+        copy!(originalchildren, cladewise_node2children[ni])
+        copy!(best_children,    cladewise_node2children[ni])
+        # exhaustive search
+        # fixit: place the for loop below into a separate function,
+        # so that later we can write a second non-exhaustive (heuristic) function,
+        # and call the exhaustive function if nchildren <= 8,
+        #          or the other non-exhaustive function if nchildren > 8.
+        for candidate in permutations(originalchildren)
             # Temporarily update the dictionary with this new "shuffled" order
-            cladewise_node2children[ni] = candidate
-            # Run the simulator to see the new RD score
+            cladewise_node2children[ni] .= candidate
             rd = rd_for_current_ordering()
-            # 9. If this shuffle is better (lower score), remember it!
             if rd < best_rd
                 best_rd = rd
-                best_children = candidate
+                best_children .= candidate # .= to copy in place: re-use memory
             end
         end
-        # 10. Once we've tried all shuffles for this node, lock in the best one found
-        cladewise_node2children[ni] = best_children
+        cladewise_node2children[ni] .= best_children
     end
-    return best_rd
+    # call costRD! one last time to set y coordinates to their best value,
+    #      and replace those from the last candidate ordering that was tried
+    return costRD!()
 end

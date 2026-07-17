@@ -108,22 +108,20 @@ function edgenode_coordinates(
     edge_yE = Vector{Float64}(undef, net.numedges)
     node_w = [(nn.leaf ? 1 : 0) for nn in net.node] # weight: number of descendant tips
 
-    # set node_y of leaves: follow cladewise order along some tree
-    # also sets edge_yB of minor hybrid edges
+    # follow cladewise order along some tree, to set
+    # node_y of leaves (in that tree) and edge_y[BE] of minor hybrid edges
     cladewise_node2children =  prepare_cladewiseorder(net, style)
     leafYcoordinates_cladewiseorder!(
         (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), # modified
         cladewise_node2children, net, style==:fulltree)
+    internalYcoordinates!((node_y, node_yB, node_yE, node_w),
+        net, edge_yB, usedirecthybridline, majorcurved, ymin, ymax)
+    rd_score = reticulatedisplacement(net, node_y, style==:lsatree)
 
     #= fixit:
-    1. check new functions
-    3. create new function that finds the orderings with the best cost
+    - fix but in reticulatedisplacement, :fulltree style
+    - use new function that finds the orderings with the best cost
     =#
-    internalYcoordinates!(
-        (node_y, node_yB, node_yE, node_w), # modified
-        cladewise_node2children, net, edge_yB,
-        usedirecthybridline, majorcurved, ymin, ymax)
-    rd_score = reticulatedisplacement(net, node_y, style==:lsatree)
 
     # setting branch lengths for plotting
     elenCalculate = !useedgelength
@@ -622,7 +620,6 @@ all of which are modified.
 """
 function internalYcoordinates!(
     node_y_yB_yE_w,
-    cladewise_node2children::Dict,
     net::HybridNetwork,
     edge_yB::Vector{Float64},
     usedirecthybridline::Bool,
@@ -713,20 +710,19 @@ function internalYcoordinates!(
 end
 
 """
-    reticulatedisplacement((rd,), net, node_y, lsatree)
+    reticulatedisplacement(net::HybridNetwork, node_y::AbstractVector, lsatree::Bool)
 
-Calculate the reticulate displacement (RD) cost of a network drawing:
+Reticulate displacement (RD) cost of a network drawing:
 the sum, over some hybrid edges `e=(v,w)` of the vertical distance `|y(v) - y(w)|`
 between the edge's parent `v` and child `w`. This cost was introduced by
 [Huson (2025)](https://doi.org/10.1371/journal.pcbi.1013805).
 - If `lsatree` is true, all hybrid edges are considered in the sum (the "combining view"
   in Huson (2025));
 - otherwise, only minor hybrid edges are considered ("transfer view").
-Used to compare candidate node orderings and pick the
-one that minimizes the vertical stretching of hybrid lines.
 
-The first argument `(rd,)` is a 1-tuple holding a `Base.RefValue{Float64}`
-that is set (modified) to the RD score, which is also returned.
+This cost measures the vertical stretching of hybrid lines.
+It is used as a proxy for the number of crossing edges in the drawing,
+with a smaller cost associated with fewer crossing edges.
 """
 function reticulatedisplacement(
     net::HybridNetwork,
@@ -739,6 +735,13 @@ function reticulatedisplacement(
         for e in hn.edge # loop over parent (hybrid) edges of hn
             getchild(e) === hn || continue
             lsatree || !e.ismajor || continue # lsa tree or minor hybrid edges only
+            #= fixit: this is correct for the :majortree or :lsatree styles without "corners"
+            but this is incorrect for the :fulltree style, for which
+                the y value of the corner is *not* stored in node_y,
+                but in edge_yB/E and at the edge index, not the node index.
+            To get this information, the function many need the cladewisedict (use the flag)
+            and the edge_yB vector as well.
+            =#
             vi = indexin_net(getparent(e), net) # parent index
             rd += abs(node_y[vi] - node_y[wi])
         end
@@ -775,7 +778,7 @@ function _all_permutations(v::Vector{T}) where T
 end
 """
     find_optimal_reticulate_ordering!(
-        (cladewise_node2children,), # modified
+        cladewise_node2children, # modified
         net, style, usedirecthybridline, majorcurved, ymin, ymax)
 
 Search for a node ordering `O` (that is, a left-to-right order of children
@@ -798,7 +801,7 @@ place, overwritten with the best child ordering found for each node.
 Returns the RD score of the final ordering.
 """
 function find_optimal_reticulate_ordering!(
-    (cladewise_node2children,), # : a dictionary of parent -> [children] that we will modify
+    cladewise_node2children::Dict,
     net::HybridNetwork,
     style::Symbol,
     usedirecthybridline::Bool,
@@ -806,33 +809,25 @@ function find_optimal_reticulate_ordering!(
     ymin::Real,
     ymax::Real,
 )
-    # 2. Helper booleans to know which plotting style we are using
     lsatree = (style == :lsatree)
     fulltree = (style == :fulltree)
+    # grab memory, to be re-used multiple times
+    node_y  = zeros(Float64, net.numnodes)
+    node_yB = zeros(Float64, net.numnodes)
+    node_yE = zeros(Float64, net.numnodes)
+    edge_yB = zeros(Float64, net.numedges)
+    edge_yE = Vector{Float64}(undef, net.numedges)
+    node_edge_y = (node_y, node_yB, node_yE, edge_yB, edge_yE)
+    node_w  = [(nn.leaf ? 1 : 0) for nn in net.node] # independent of ordering
+    nexty = Ref(ymax)
 
-    # This INNER function is a "Simulator".
-    # It calculates the RD score for whatever the current state of the dictionary is.
     function rd_for_current_ordering()
-        # Create empty arrays to hold temporary coordinates
-        node_y  = zeros(Float64, net.numnodes)
-        node_yB = zeros(Float64, net.numnodes)
-        node_yE = zeros(Float64, net.numnodes)
-        edge_yB = zeros(Float64, net.numedges)
-        edge_yE = Vector{Float64}(undef, net.numedges)
-        # Initialize node weights (leaves = 1, internal = 0)
-        node_w  = [(nn.leaf ? 1 : 0) for nn in net.node]
-
-        # Step A: Run the leaf coordinate logic (sets the "tips" of the tree)
-        leafYcoordinates_cladewiseorder!(
-            (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax),
+        for v in node_edge_y fill!(v, 0.0); end # re-initialize
+        nexty[] = ymax
+        leafYcoordinates_cladewiseorder!(node_edge_y, nexty,
             cladewise_node2children, net, fulltree)
-        # Step B: Run the internal coordinate logic (sets the "parents")
-        internalYcoordinates!(
-            (node_y, node_yB, node_yE, node_w),
-            cladewise_node2children, net, edge_yB,
-            usedirecthybridline, majorcurved, ymin, ymax)
-
-        # Step C: Calculate the "Penalty" (how stretched the hybrid lines are)
+        internalYcoordinates!((node_y, node_yB, node_yE, node_w),
+            net, edge_yB, usedirecthybridline, majorcurved, ymin, ymax)
         return reticulatedisplacement(net, node_y, lsatree)
     end
 

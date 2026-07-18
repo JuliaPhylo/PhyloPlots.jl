@@ -7,6 +7,7 @@ indexin_net(e::PhyloNetworks.Edge, net::HybridNetwork) = findfirst(x -> x === e,
         useedgelength::Bool,
         style::Symbol,
         majorcurved::Bool,
+        minimizeRD::Bool,
         preorder::Bool=true,
     )
 
@@ -61,6 +62,7 @@ function edgenode_coordinates(
     useedgelength::Bool,
     style::Symbol,
     majorcurved::Bool,
+    minimizeRD::Bool,
     preorder::Bool=true,
 )
     lsatree  = (style == :lsatree)
@@ -642,7 +644,10 @@ function internalYcoordinates!(
         nn.leaf && continue
         ni = indexin_net(nn, net)
         setnode_y = node_y[ni]==0
-        node_yB[ni]=ymax; node_yE[ni]=ymin
+        if setnode_y # otherwise yB/yE already initialized at node_y
+            node_yB[ni] = ymax
+            node_yE[ni] = ymin
+        end
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
         for e in nn.edge

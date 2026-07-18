@@ -159,7 +159,7 @@ function plot(
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
      xmin, xmax, ymin, ymax) = edgenode_coordinates(
-        net, useedgelength, style, curved==:both, preorder)
+        net, useedgelength, style, curved==:both, false, preorder)
     nedges = length(net.edge)
     nminor = length(hybridedge_xB)
     labelnodes, nodelabel = check_nodedataframe(net, nodelabel)

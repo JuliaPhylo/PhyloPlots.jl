@@ -752,15 +752,19 @@ function reticulatedisplacement(
         for e in hn.edge # loop over parent (hybrid) edges of hn
             getchild(e) === hn || continue
             lsatree || !e.ismajor || continue # lsa tree or minor hybrid edges only
+            vi = indexin_net(getparent(e), net) # parent index
+            ei = indexin_net(e, net)
             #= fixit: this is correct for the :majortree or :lsatree styles without "corners"
             but this is incorrect for the :fulltree style, for which
-                the y value of the corner is *not* stored in node_y,
-                but in edge_yB/E and at the edge index, not the node index.
+            the y value of the corner is *not* stored in node_y,
+            but in edge_yB/E and at the edge index, not the node index.
             To get this information, the function should use the cladewisedict (use the flag)
             and the edge_yB vector as well.
             =#
-            vi = indexin_net(getparent(e), net) # parent index
-            rd += abs(node_y[vi] - node_y[wi])
+            corner = !e.ismajor && haskey(cladewisedict, vi) &&
+                     (ei, false) in cladewisedict[vi]
+            wy = corner ? edge_yB[ei] : node_y[wi]
+            rd += abs(node_y[vi] - wy)
         end
     end
     return rd

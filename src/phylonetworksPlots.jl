@@ -63,7 +63,9 @@ function edgenode_coordinates(
     majorcurved::Bool,
     preorder::Bool=true,
 )
-    usedirecthybridline = style != :fulltree
+    lsatree  = (style == :lsatree)
+    fulltree = (style == :fulltree)
+    usedirecthybridline = !fulltree
     if preorder
       try
         directedges!(net)   # to update ischild1
@@ -81,9 +83,9 @@ function edgenode_coordinates(
     # y max is the numtaxa + number of minor edges
     ymin = 1.0;
     ymax = net.numtaxa
-    if style == :fulltree # reserve space for "corner" nodes: from minor edges
+    if fulltree # reserve space for "corner" nodes: from minor edges
         ymax += sum(!e.ismajor for e in net.edge)
-    elseif style == :lsatree
+    elseif lsatree
         # add number of internal nodes that are leaves in the LSA tree
         for n in net.node
             n.leaf && continue
@@ -113,14 +115,12 @@ function edgenode_coordinates(
     cladewise_node2children =  prepare_cladewiseorder(net, style)
     leafYcoordinates_cladewiseorder!(
         (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), # modified
-        cladewise_node2children, net, style==:fulltree)
+        cladewise_node2children, net, fulltree)
     internalYcoordinates!((node_y, node_yB, node_yE, node_w), edge_yB,
         net, usedirecthybridline, majorcurved, ymin, ymax)
-    rd_score = reticulatedisplacement(node_y, edge_yB,
-        cladewise_node2children, net, style==:lsatree)
+    rd_score = reticulatedisplacement(node_y, edge_yB, net, lsatree, fulltree)
 
     #= fixit:
-    - fix but in reticulatedisplacement, :fulltree style
     - use new function that finds the orderings with the best cost
     =#
 
@@ -436,7 +436,7 @@ function prepare_edgedataframe(
         end
         edf[j,:hyb] = ee.hybrid
         edf[j,:min] = !ee.ismajor
-        if ee.ismajor || style != :majortree # use first segment
+        if ee.ismajor || style == :fulltree # use first segment
             x0,y0, x2,y2 = (edge_xB[i], edge_yB[i], edge_xE[i], edge_yE[i])
         else # minor edge, use second segment (arrow)
             x0,y0, x2,y2 = (minoredge_xB[imh], minoredge_yB[imh],
@@ -444,7 +444,7 @@ function prepare_edgedataframe(
             imh += 1
         end
         if curved==:none || !ee.hybrid || (ee.ismajor && curved != :both) ||
-                (!ee.ismajor && style != :majortree)
+                (!ee.ismajor && style == :fulltree)
             edf[j,:x] = (x0 + x2)/2
             edf[j,:y] = (y0 + y2)/2
         else # mid-point depends on the Bézier control point
@@ -466,20 +466,15 @@ to the vector of these hybrids' indices. Indices are in `net.node`.
 Also, the network is modified:
 for each hybrid node `h` in `net`, `h.prev` stores its parents' LSA node.
 
-The LSA of a set of nodes `X` is the lowest node `n` with the following property:
-any path between the root and any `x ∈ X` must go through `n`.
-In `:lsatree` plotting, the LSA "backbone" tree is used to assign y coordinates
-to leaves and hybrid nodes, as described by
+The LSA (least stable ancestor) of a set `X` of nodes (here the parents
+of a given hybrid) is the lowest node `n` with the following property:
+*any* path between the root and any `x ∈ X` must go through `n`.
+
+In `:lsatree` plotting, the LSA "backbone" tree is used to assign
+y coordinates to leaves and hybrid nodes, as described by
 [Huson (2025)](https://doi.org/10.1371/journal.pcbi.1013805).
-In this LSA tree, all hybrid edges are removed. Each hybrid node is connected
-to its LSA node by a new edge.
-
-fixit:
-- think if it should only return lsa2hybrid if not code coulde be a bit faster
-
-Returns:
-- `(hybrid2lsa, lsa2hybrid)`: A tuple of dictionaries where keys and 
-values are indices into the `net.node` array.
+In this LSA backbone, all hybrid edges are removed. Each hybrid node is
+connected to its parents' LSA (in the original network) by a new edge.
 
 **Warning**: assume that `net` is already preordered, that is,
 with its nodes listed in a preorder in `net.vec_node`
@@ -603,8 +598,7 @@ function leafYcoordinates_cladewiseorder!(
 )
     node_y, node_yB, node_yE, edge_yB, edge_yE = node_edge_y
     if haskey(cladewisedict, pni) # parent node: not a leaf in traversal tree
-        # originally the stack processed LIFO so restoring that order right to left
-        for (ni,ismajor) in Iterators.reverse(cladewisedict[pni])
+        for (ni,ismajor) in cladewisedict[pni]
             if ismajor
                 leafYcoordinates_cladewiseorder!(node_edge_y, nexty, ni, cladewisedict, net, fulltree)
             else # fake leaf, corner edge: stop recursion, assign next y
@@ -725,7 +719,7 @@ end
 
 """
     reticulatedisplacement(node_y::AbstractVector, edge_y::AbstractVector,
-        cladewise_node2children::Dict, net::HybridNetwork, lsatree::Bool)
+        net::HybridNetwork, lsatree::Bool, fulltree::Bool)
 
 Reticulate displacement (RD) cost of a network drawing:
 the sum, over some hybrid edges `e=(v,w)` of the vertical distance `|y(v) - y(w)|`
@@ -742,9 +736,9 @@ with a smaller cost associated with fewer crossing edges.
 function reticulatedisplacement(
     node_y::AbstractVector{<:Real},
     edge_yB::AbstractVector{<:Real},
-    cladewisedict::Dict,
     net::HybridNetwork,
     lsatree::Bool,
+    fulltree::Bool,
 )
     rd = 0.0
     for (wi, hn) in enumerate(net.node)
@@ -752,19 +746,13 @@ function reticulatedisplacement(
         for e in hn.edge # loop over parent (hybrid) edges of hn
             getchild(e) === hn || continue
             lsatree || !e.ismajor || continue # lsa tree or minor hybrid edges only
-            vi = indexin_net(getparent(e), net) # parent index
-            ei = indexin_net(e, net)
-            #= fixit: this is correct for the :majortree or :lsatree styles without "corners"
-            but this is incorrect for the :fulltree style, for which
-            the y value of the corner is *not* stored in node_y,
-            but in edge_yB/E and at the edge index, not the node index.
-            To get this information, the function should use the cladewisedict (use the flag)
-            and the edge_yB vector as well.
-            =#
-            corner = !e.ismajor && haskey(cladewisedict, vi) &&
-                     (ei, false) in cladewisedict[vi]
-            wy = corner ? edge_yB[ei] : node_y[wi]
-            rd += abs(node_y[vi] - wy)
+            if !e.ismajor && fulltree # then y-value of corner stored in edge_y
+                vy = edge_yB[indexin_net(e, net)]
+            else # not a corner / fake minor leaf: y-value stored in parent node
+                vy = node_y[indexin_net(getparent(e), net)]
+            end
+            rd += abs(vy - node_y[wi])
+            # @info "edge $(e.number) to y=$(node_y[wi]): cost $(abs(vy - node_y[wi]))"
         end
     end
     return rd
@@ -803,7 +791,7 @@ function setY_reticulatedisplacement!(
         cladewisedict, net, fulltree)
     internalYcoordinates!((node_y, node_yB, node_yE, node_w), edge_yB,
         net, !fulltree, majorcurved, ymin, ymax)
-    return reticulatedisplacement(net, node_y, edge_yB, cladewisedict, lsatree)
+    return reticulatedisplacement(net, node_y, edge_yB, lsatree, fulltree)
 end
 
 # fixit: not needed. Use instead Combinatorics.permutations(): an interator --less memory-greedy

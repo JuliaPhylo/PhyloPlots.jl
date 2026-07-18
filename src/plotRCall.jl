@@ -10,10 +10,13 @@ the right, using R graphics. Optional arguments are listed below.
   drawn proportionally to their length. Minor hybrid edges are not, however.
   Note that edge lengths in coalescent units may scale very poorly with time.
 - `style = :majortree`: symbol indicating the style of the diagram
-  * `:majortree` draws minor edges onto the major tree.
+  * `:majortree` draws the major tree (following the major hybrid parent
+     only, at each hybrid node) then adds extra segments for minor edges.
   * `:fulltree` draws minor edges as their own branches in the tree,
     in the same style used by [icytree](https://icytree.org). This is
     useful for overlapping or confusing networks.
+  * `:lsatree` places each hybrid node on its own as in the "combining view"
+    of PhyloSketch, by [Huson (2025)](https://doi.org/10.1371/journal.pcbi.1013805).
 - `curved = :both`: curvature for hybrid edges (`:none`, `:minor`, `:both`).
 - `arrowlen=0.1`: the length of the arrow tips for minor hybrid edges,
   and also for major hybrid edges when they are curved.

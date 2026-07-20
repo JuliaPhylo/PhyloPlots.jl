@@ -796,36 +796,48 @@ function setY_reticulatedisplacement!(
         cladewisedict, net, fulltree)
     internalYcoordinates!((node_y, node_yB, node_yE, node_w), edge_yB,
         net, !fulltree, majorcurved, ymin, ymax)
-    return reticulatedisplacement(net, node_y, edge_yB, lsatree, fulltree)
+    return reticulatedisplacement(node_y, edge_yB, net, lsatree, fulltree)
 end
 
-# fixit: not needed. Use instead Combinatorics.permutations(): an interator --less memory-greedy
-# all permutations of the elements of `v`, as a vector of vectors.
-# local helper: avoids adding Combinatorics.jl as a dependency just for this.
-function _all_permutations(v::Vector{T}) where T
-     # 1. Start with a list containing one empty arrangement
-    all_permutations = Vector{T}[T[]]
-    # 2. Go through every new element we want to add to our arrangements
-    for current_element in v
-        # 3. This temporary list will hold the new, longer versions
-        extended_permutations = Vector{T}[]
-        # 4. Look at every arrangement we have built so far
-        for existing_perm in all_permutations
-            # 5. Find every possible "gap" where we can stick the new element.
-            # (Example: In [A, B], gaps are: [Gap] A [Gap] B [Gap])
-            for gap_index in 1:(length(existing_perm) + 1)
-                # 6. Create a copy of the existing arrangement
-                candidate = copy(existing_perm)
-                # 7. Insert the new element into that specific gap
-                insert!(candidate, gap_index, current_element)
-                # 8. Add this new version to our temporary list
-                push!(extended_permutations, candidate)
-            end
+"""
+    _exhaustive_search_ordering!(
+        (best_rd, best_children), # modified
+        cladewise_node2children, ni, originalchildren, costRD!)
+
+Exhaustive search over all permutations of `originalchildren` (the children
+of node `ni`, as currently stored in `cladewise_node2children[ni]`): try
+every ordering in turn, overwriting `cladewise_node2children[ni]` with it,
+evaluate its cost by calling `costRD!()`, and keep whichever ordering
+achieves the lowest cost.
+
+Permutations are generated with `Combinatorics.permutations`, an iterator,
+so all `factorial(length(originalchildren))` orderings are never allocated
+at once.
+
+The first argument `(best_rd, best_children)` holds the values modified in
+place:
+- `best_rd` is a `Base.RefValue` holding the lowest cost found so far
+  (possibly coming in already set from other nodes); overwritten via
+  `best_rd[] = rd` whenever a new best is found.
+- `best_children` holds the children order achieving `best_rd[]`; updated
+  with `.=` (rather than reassigned) to reuse its memory.
+"""
+function exhaustive_search_ordering!(
+    (best_rd, best_children), # modified
+    cladewise_node2children::Dict,
+    ni::Int,
+    originalchildren::Vector{Tuple{Int,Bool}},
+    costRD!::Function,
+)
+    for candidate in Combinatorics.permutations(originalchildren)
+        cladewise_node2children[ni] .= candidate
+        rd = costRD!()
+        if rd < best_rd[]
+            best_rd[] = rd
+            best_children .= candidate
         end
-        # 9. Move our finished "extended" list into our main list for the next round
-        all_permutations = extended_permutations
     end
-    return all_permutations
+    return nothing
 end
 
 """
@@ -866,31 +878,23 @@ function find_optimal_reticulate_ordering!(
     costRD!() = setY_reticulatedisplacement!(node_edge_y, nexty, node_w,
         cladewise_node2children, net, style == :lsatree, style == :fulltree,
         majorcurved, ymin, ymax)
-    best_rd = costRD!()
-    originalchildren = Int[]
-    best_children = Int[] # current best, memory re-used
+    best_rd = Ref(costRD!())
+    originalchildren = Tuple{Int,Bool}[]
+    best_children = Tuple{Int,Bool}[] # current best, memory re-used
     # optimize order at every LSA node, processed in pre-order
     for nn in net.vec_node
         ni = indexin_net(nn, net)
         haskey(cladewise_node2children, ni) || continue
-        nchildren = xlength(cladewise_node2children[ni])
+        nchildren = length(cladewise_node2children[ni])
         nchildren > 1 || continue
         copy!(originalchildren, cladewise_node2children[ni])
         copy!(best_children,    cladewise_node2children[ni])
         # exhaustive search
-        # fixit: place the for loop below into a separate function,
-        # so that later we can write a second non-exhaustive (heuristic) function,
-        # and call the exhaustive function if nchildren <= 8,
-        #          or the other non-exhaustive function if nchildren > 8.
-        for candidate in permutations(originalchildren)
-            # Temporarily update the dictionary with this new "shuffled" order
-            cladewise_node2children[ni] .= candidate
-            rd = rd_for_current_ordering()
-            if rd < best_rd
-                best_rd = rd
-                best_children .= candidate # .= to copy in place: re-use memory
-            end
-        end
+        # fixit: write a second non-exhaustive (heuristic) function, and call
+        # the exhaustive function if nchildren <= 8, or the heuristic one otherwise.
+        exhaustive_search_ordering!(
+            (best_rd, best_children), # modified
+            cladewise_node2children, ni, originalchildren, costRD!)
         cladewise_node2children[ni] .= best_children
     end
     # call costRD! one last time to set y coordinates to their best value,

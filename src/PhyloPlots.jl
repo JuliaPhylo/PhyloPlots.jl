@@ -12,6 +12,7 @@ using DataFrames
 using RCall
 import RCall.sexp
 using PhyloNetworks
+import Combinatorics
 
 export plot
 export sexp

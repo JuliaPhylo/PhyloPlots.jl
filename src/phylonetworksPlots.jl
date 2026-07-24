@@ -56,6 +56,7 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 11. `minoredge_yB`: y coordinate for the beginning and ...
 12. `minoredge_yE`: ... end of the diagonal segment of each minor hybrid edge.
 13-16. `xmin`, `xmax`, `ymin`, `ymax`: ranges for the x and y axes.
+17. rdisplacement : The reticulate displacement cost.
 """
 function edgenode_coordinates(
     net::HybridNetwork,
@@ -120,11 +121,13 @@ function edgenode_coordinates(
         cladewise_node2children, net, fulltree)
     internalYcoordinates!((node_y, node_yB, node_yE, node_w), edge_yB,
         net, usedirecthybridline, majorcurved, ymin, ymax)
-    rd_score = reticulatedisplacement(node_y, edge_yB, net, lsatree, fulltree)
+    rdisplacement = reticulatedisplacement(node_y, edge_yB, net, lsatree, fulltree)
 
-    #= fixit:
-    - use new function that finds the orderings with the best cost
-    =#
+    if minimizeRD
+        rdisplacement = find_optimal_reticulate_ordering!(
+            (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), node_w,
+            cladewise_node2children, net, style, majorcurved, ymin, ymax)
+    end
 
     # setting branch lengths for plotting
     elenCalculate = !useedgelength
@@ -218,7 +221,7 @@ function edgenode_coordinates(
     return edge_xB, edge_xE, edge_yB, edge_yE,
            node_x, node_y, node_yB, node_yE,
            minoredge_xB, minoredge_xE, minoredge_yB, minoredge_yE,
-           xmin, xmax, ymin, ymax
+           xmin, xmax, ymin, ymax, rdisplacement
 end
 
 
@@ -800,9 +803,13 @@ function setY_reticulatedisplacement!(
 end
 
 """
-    _exhaustive_search_ordering!(
-        (best_rd, best_children), # modified
-        cladewise_node2children, ni, originalchildren, costRD!)
+    exhaustive_search_ordering!(
+        best_rd::Base.RefValue,
+        best_children::Vector{Tuple{Int,Bool}},
+        cladewise_node2children::Dict,
+        ni::Int,
+        originalchildren::Vector{Tuple{Int,Bool}},
+        costRD!::Function,)
 
 Exhaustive search over all permutations of `originalchildren` (the children
 of node `ni`, as currently stored in `cladewise_node2children[ni]`): try
@@ -814,16 +821,15 @@ Permutations are generated with `Combinatorics.permutations`, an iterator,
 so all `factorial(length(originalchildren))` orderings are never allocated
 at once.
 
-The first argument `(best_rd, best_children)` holds the values modified in
+The first two argument `best_rd, best_children` holds the values modified in
 place:
-- `best_rd` is a `Base.RefValue` holding the lowest cost found so far
-  (possibly coming in already set from other nodes); overwritten via
-  `best_rd[] = rd` whenever a new best is found.
-- `best_children` holds the children order achieving `best_rd[]`; updated
-  with `.=` (rather than reassigned) to reuse its memory.
+- `best_rd` is holding the lowest cost found so far
+  (possibly coming in already set from other nodes);
+- `best_children` holds the children order achieving `best_rd[]`;
 """
 function exhaustive_search_ordering!(
-    (best_rd, best_children), # modified
+    best_rd::Base.RefValue,
+    best_children::Vector{Tuple{Int,Bool}},
     cladewise_node2children::Dict,
     ni::Int,
     originalchildren::Vector{Tuple{Int,Bool}},
@@ -893,7 +899,7 @@ function find_optimal_reticulate_ordering!(
         # fixit: write a second non-exhaustive (heuristic) function, and call
         # the exhaustive function if nchildren <= 8, or the heuristic one otherwise.
         exhaustive_search_ordering!(
-            (best_rd, best_children), # modified
+            best_rd, best_children, # modified
             cladewise_node2children, ni, originalchildren, costRD!)
         cladewise_node2children[ni] .= best_children
     end

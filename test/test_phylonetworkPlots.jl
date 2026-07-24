@@ -6,7 +6,7 @@
   # edge_xB, edge_xE, edge_yB, edge_yE,
   # node_x, node_y, node_yB, node_yE,
   # minoredge_xB, minoredge_xE, minoredge_yB, minoredge_yE,
-  # xmin, xmax, ymin, ymax
+  # xmin, xmax, ymin, ymax, rdisplacement
   @test PhyloPlots.edgenode_coordinates(net, true, :fulltree, false, false) == (
     [0.0, 1.5, 1.5, 0.5, 1.5, 2.0, 1.5, 0.5, 0.0],
     [2.5, 2.5, 2.0, 1.5, 2.5, 2.5, 2.0, 1.5, 0.5],
@@ -16,7 +16,7 @@
     [1.0, 2.0, 2.5, 4.0, 5.0, 5.0, 4.5, 3.5, 3.0],
     [1.0, 2.0, 2.0, 4.0, 5.0, 5.0, 4.0, 2.5, 1.0],
     [1.0, 2.0, 3.0, 4.0, 5.0, 5.0, 5.0, 4.5, 3.5],
-    [2.0], [2.0], [3.0], [5.0], 0.0, 2.5, 1.0, 5.0)
+    [2.0], [2.0], [3.0], [5.0], 0.0, 2.5, 1.0, 5.0, 2.0)
   @test PhyloPlots.edgenode_coordinates(net, true, :majortree, false, false, false) == (
     [0.0, 1.5, 1.5, 0.5, 1.5, 2.0, 1.5, 0.5, 0.0],
     [2.5, 2.5, 1.5, 1.5, 2.5, 2.5, 2.0, 1.5, 0.5],
@@ -26,7 +26,7 @@
     [1.0, 2.0, 2.0, 3.0, 4.0, 4.0, 3.5, 3.0, 2.5],
     [1.0, 2.0, 2.0, 3.0, 4.0, 4.0, 3.0, 2.0, 1.0],
     [1.0, 2.0, 2.0, 3.0, 4.0, 4.0, 4.0, 3.5, 3.0],
-    [1.5], [2.0], [2.0], [4.0], 0.0, 2.5, 1.0, 4)
+    [1.5], [2.0], [2.0], [4.0], 0.0, 2.5, 1.0, 4, 2.0)
   @test PhyloPlots.edgenode_coordinates(net, false, :majortree, false, false, false) == (
     [0.0, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0],
     [4.0, 4.0, 2.0, 2.0, 4.0, 4.0, 3.0, 2.0, 1.0],
@@ -36,7 +36,7 @@
     [1.0, 2.0, 2.0, 3.0, 4.0, 4.0, 3.5, 3.0, 2.5],
     [1.0, 2.0, 2.0, 3.0, 4.0, 4.0, 3.0, 2.0, 1.0],
     [1.0, 2.0, 2.0, 3.0, 4.0, 4.0, 4.0, 3.5, 3.0],
-    [2.0], [3.0], [2.0], [4.0], 0.0, 4.0, 1.0, 4)
+    [2.0], [3.0], [2.0], [4.0], 0.0, 4.0, 1.0, 4, 2.0)
   dat = DataFrame(node=[-5,-3,-4,5,100],bs=["90","95","99","mytip","bogus"],edge=[8,9,4,6,200]);
   @test_logs (:warn, "Some node numbers in the nodelabel data frame are not found in the network:\n 100") PhyloPlots.check_nodedataframe(net, dat);
   @test_logs (:warn, "nodelabel should have 2+ columns, the first one giving the node numbers (Integer)") PhyloPlots.check_nodedataframe(net, dat[!,2:3])
@@ -80,7 +80,7 @@
     [5.0, 5.0, 4.0, 2.0, 3.0, 3.0, 6.0, 5.5, 4.0, 3.5],
     [5.0, 5.0, 4.0, 2.0, 3.0, 2.0, 6.0, 5.0, 3.0, 1.0],
     [5.0, 5.0, 4.0, 2.0, 3.0, 4.0, 6.0, 6.0, 5.5, 4.0],
-    [4.0, 3.0], [4.0, 3.0], [4.0, 1.0], [5.0, 4.0], 0.0, 5.0, 1.0, 6)
+    [4.0, 3.0], [4.0, 3.0], [4.0, 1.0], [5.0, 4.0], 0.0, 5.0, 1.0, 6, 4.0)
   net = readnewick("((((B)#H1:::0.2)#H2,((D,C,#H2)S1,(#H1,A)S2)S3)S4);")
   @test_logs plot(net, shownodenumber=true, showgamma=true, style=:fulltree, curved=:none);
   @test PhyloPlots.edgenode_coordinates(net, false, :fulltree, false, false, false) == (
@@ -92,7 +92,7 @@
     [5.0, 5.0, 1.0, 2.0, 3.0, 3.0, 6.0, 5.5, 4.0, 3.5],
     [5.0, 5.0, 1.0, 2.0, 3.0, 2.0, 6.0, 5.0, 3.0, 1.0],
     [5.0, 5.0, 1.0, 2.0, 3.0, 4.0, 6.0, 6.0, 5.5, 4.0],
-    [4.0, 3.0], [4.0, 3.0], [1.0, 4.0], [5.0, 1.0], 0.0, 5.0, 1.0, 6)
+    [4.0, 3.0], [4.0, 3.0], [1.0, 4.0], [5.0, 1.0], 0.0, 5.0, 1.0, 6, 7.0)
 end # basic
 
 @testset "node with nomajorchild" begin
@@ -249,8 +249,19 @@ end # of curved edges
   @test res[:node_y_lo][12] == 8 # vertical bar for hybrid node
   @test res[:node_y_hi][12] == 9
 
-  # without optimization: rd=3 with majortree, rd=6 with fulltree, rd=18.5 with lsatree
-
 end # of lsatree style
+
+@testset "reticulate displacement (rdisplacement)" begin
+  # without optimization: rd=3 with majortree, rd=6 with fulltree, rd=18.5 with lsatree
+  net = readnewick("((((a2,(a3)#H1),((#H1,(a5)#H2),#H2)),((a1)#H4)#H3),(((#H4,b1),#H3),(c2,c1)));")
+  for (style, expected_rd) in ((:majortree, 3.0), (:fulltree, 6.0), (:lsatree, 18.5))
+    rd_minor = PhyloPlots.edgenode_coordinates(net, false, style, false, false, true)[end] # curved=:minor / :none
+    rd_both  = PhyloPlots.edgenode_coordinates(net, false, style, true,  false, true)[end] # curved=:both
+    @test rd_minor ≈ expected_rd
+    # majorcurved (curved=:both vs :minor) only bends how major edges are drawn;
+    # it should not change the reticulate displacement cost itself
+    @test rd_both == rd_minor
+  end
+end # of reticulate displacement
 
 end

@@ -17,6 +17,11 @@ the right, using R graphics. Optional arguments are listed below.
     useful for overlapping or confusing networks.
   * `:lsatree` places each hybrid node on its own as in the "combining view"
     of PhyloSketch, by [Huson (2025)](https://doi.org/10.1371/journal.pcbi.1013805).
+- `minimizeRD = true`: if `true`, searches for a node ordering that heuristically
+  minimizes the reticulate displacement (RD) cost, a proxy for edge crossings in
+  the drawing (see [`reticulatedisplacement`](@ref)). The search uses the greed
+  heuristic [`find_optimal_reticulate_ordering!`](@ref), which finds the minimum
+  number of edge crossings. See [Huson (2025)], (https://doi.org/10.1371/journal.pcbi.1013805).
 - `curved = :both`: curvature for hybrid edges (`:none`, `:minor`, `:both`).
 - `arrowlen=0.1`: the length of the arrow tips for minor hybrid edges,
   and also for major hybrid edges when they are curved.
@@ -150,6 +155,7 @@ function plot(
     edgelabeladj = [.5,0],
     nodelabeladj = 1,
     preorder::Bool=true,
+    minimizeRD::Bool=true,
 )
     if getroot(net).leaf
         @warn """The network is rooted at a leaf: the plot won't look good.
@@ -158,8 +164,8 @@ function plot(
     end
     (edge_xB, edge_xE, edge_yB, edge_yE, node_x, node_y, node_yB, node_yE,
      hybridedge_xB, hybridedge_xE, hybridedge_yB, hybridedge_yE,
-     xmin, xmax, ymin, ymax) = edgenode_coordinates(
-        net, useedgelength, style, curved==:both, false, preorder)
+     xmin, xmax, ymin, ymax, _) = edgenode_coordinates(
+        net, useedgelength, style, curved==:both, minimizeRD, preorder)
     nedges = length(net.edge)
     nminor = length(hybridedge_xB)
     labelnodes, nodelabel = check_nodedataframe(net, nodelabel)

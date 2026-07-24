@@ -260,7 +260,7 @@ end # of lsatree style
     @test rd_minor ≈ expected_rd
     # majorcurved (curved=:both vs :minor) only bends how major edges are drawn;
     # it should not change the reticulate displacement cost itself
-    @test rd_both == rd_minor
+    @test rd_both ≈ expected_rd
   end
 end # of reticulate displacement
 

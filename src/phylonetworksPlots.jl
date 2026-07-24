@@ -56,7 +56,8 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 11. `minoredge_yB`: y coordinate for the beginning and ...
 12. `minoredge_yE`: ... end of the diagonal segment of each minor hybrid edge.
 13-16. `xmin`, `xmax`, `ymin`, `ymax`: ranges for the x and y axes.
-17. rdisplacement : The reticulate displacement cost.
+17. rdisplacement : The reticulate displacement cost. 
+    Defined in [Huson (2025)](https://doi.org/10.1371/journal.pcbi.1013805)
 """
 function edgenode_coordinates(
     net::HybridNetwork,

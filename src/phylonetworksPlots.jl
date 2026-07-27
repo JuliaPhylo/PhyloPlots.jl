@@ -848,28 +848,33 @@ function exhaustive_search_ordering!(
 end
 
 """
-    find_optimal_reticulate_ordering!(node_edge_y, cladewise_node2children,
-        net, style, majorcurved, ymin, ymax)
+    find_optimal_reticulate_ordering!(node_edge_y, nexty, node_w,
+        cladewise_node2children, net, style, majorcurved, ymin, ymax)
 
-Search for a node ordering (that is, a left-to-right order of children
+Search for the node ordering (that is, a left-to-right order of children
 at each internal node) that minimizes the reticulate displacement cost
 (see [`reticulatedisplacement`](@ref)) of the resulting network drawing.
 
-Trying every joint combination of sibling orders across all nodes at once
-is combinatorially infeasible, so this uses a greedy coordinate-descent
-heuristic instead: for each node with more than 1 child (in the order
-returned by `keys(cladewise_node2children)`), it tries every permutation
-of *that node's* children only, recomputes the full set of y-coordinates
-and the resulting RD score (holding all other nodes' child orders fixed),
-and keeps whichever permutation yields the lowest RD score before moving
-on to the next node. This is not guaranteed to find a global optimum.
+This is a **true brute-force global search**: every node with more than 1
+child, as recorded in `cladewise_node2children`, contributes one
+independent choice of child order; this tries every *joint* combination of
+these choices (the Cartesian product across all such nodes), evaluates
+[`setY_reticulatedisplacement!`](@ref) for each, and keeps the combination
+with the lowest RD score. Unlike a coordinate-descent/greedy search, this
+is guaranteed to find the global optimum, since it enumerates the entire
+search space with no shortcuts.
+
+Cost: `O(∏ᵢ kᵢ!)` evaluations, where kᵢ is the number of children at the
+i-th multi-child node — exponential in the number of such nodes. This is
+only tractable for small networks or networks with few polytomies; there
+is no size guard here; consider a heuristic search for larger inputs.
 
 `cladewise_node2children` is a dictionary as built by
 [`prepare_cladewiseorder`](@ref).
 
-Output: reticulate displacement of the final ordering.
-Also, the first 2 arguments are modified in place, and their final values
-correspond to the best ordering found.
+Output: reticulate displacement of the best ordering found.
+Also, the first 3 arguments are modified in place, and their final values
+correspond to that best ordering.
 """
 function find_optimal_reticulate_ordering!(
     node_edge_y,
@@ -882,29 +887,67 @@ function find_optimal_reticulate_ordering!(
     ymin::Real,
     ymax::Real,
 )
+    # Create a helper shortcut function to calculate the Reticulate
+    # Displacement (RD) score for the current tree state
     costRD!() = setY_reticulatedisplacement!(node_edge_y, nexty, node_w,
         cladewise_node2children, net, style == :lsatree, style == :fulltree,
         majorcurved, ymin, ymax)
-    best_rd = Ref(costRD!())
-    originalchildren = Tuple{Int,Bool}[]
-    best_children = Tuple{Int,Bool}[] # current best, memory re-used
-    # optimize order at every LSA node, processed in pre-order
-    for nn in net.vec_node
-        ni = indexin_net(nn, net)
-        haskey(cladewise_node2children, ni) || continue
-        nchildren = length(cladewise_node2children[ni])
-        nchildren > 1 || continue
-        copy!(originalchildren, cladewise_node2children[ni])
-        copy!(best_children,    cladewise_node2children[ni])
-        # exhaustive search
-        # fixit: write a second non-exhaustive (heuristic) function, and call
-        # the exhaustive function if nchildren <= 8, or the heuristic one otherwise.
-        exhaustive_search_ordering!(
-            best_rd, best_children, # modified
-            cladewise_node2children, ni, originalchildren, costRD!)
-        cladewise_node2children[ni] .= best_children
+
+    # Find all parent nodes that have more than 1 child (meaning
+    # they can be shuffled) and sort their IDs
+    permutable = sort([ni for ni in keys(cladewise_node2children)
+                        if length(cladewise_node2children[ni]) > 1])
+    
+    # If no nodes have multiple children, there is nothing to optimize;
+    # just calculate the score once and exit
+    isempty(permutable) && return costRD!()
+
+    # Save a backup copy of the original children arrangement for each 
+    #shufflable node
+    originalchildren = [copy(cladewise_node2children[ni]) for ni in permutable]
+    
+    # Create a reference box to track the lowest RD score found, starting
+    # at Infinity so the first score always wins
+    best_rd = Ref(Inf)
+    
+    # Create a storage list to remember the specific child arrangement
+    # that achieves the lowest score
+    best_combo = [copy(children) for children in originalchildren]
+
+    # Loop through every possible combination of shuffles across all
+    # shufflable nodes at the same time (Cartesian product)
+    for combo in Iterators.product(Combinatorics.permutations.(originalchildren)...)
+        
+        # For this specific combination, update the master dictionary with the
+        # candidate child order for each node
+        for (ni, candidate) in zip(permutable, combo)
+            cladewise_node2children[ni] .= candidate
+        end
+        
+        # Run the simulator/helper to get the RD score (how messy the hybrid lines
+        # are) for this configuration
+        rd = costRD!()
+        
+        # Check if this new score is lower (better) than our previous record
+        if rd < best_rd[]
+            
+            # If it's a new record, update our best score variable with this lower number
+            best_rd[] = rd
+            
+            # Save this winning combination of child orders into our best_combo storage
+            for (bc, candidate) in zip(best_combo, combo)
+                bc .= candidate
+            end
+        end
     end
-    # call costRD! one last time to set y coordinates to their best value,
-    #      and replace those from the last candidate ordering that was tried
+
+    # Once all combinations have been tested, update the master dictionary one last
+    # time with the winning combination
+    for (ni, bc) in zip(permutable, best_combo)
+        cladewise_node2children[ni] .= bc
+    end
+    
+    # Run the coordinate calculator one final time using the winning layout so the final
+    # drawing coordinates match, then return the best score
     return costRD!()
 end

@@ -84,30 +84,25 @@ function edgenode_coordinates(
 
     # determine y for each node = y of its parent edge: post-order traversal
     # also [yB,yE] for each internal node: range of y's of all children nodes
-    # y max is the numtaxa + number of minor edges
+    # y max is the numtaxa + number of "extra leaves" (nodes with no major child,
+    # or corners, depending on style): computed from cladewise_node2children,
+    # built now so both this budget and the traversal below can use it.
     ymin = 1.0;
     ymax = net.numtaxa
+    cladewise_node2children = prepare_cladewiseorder(net, style)
     if fulltree # reserve space for "corner" nodes: from minor edges
         ymax += sum(!e.ismajor for e in net.edge)
-    elseif lsatree
-        # add number of internal nodes that are leaves in the LSA tree
-        for n in net.node
-            n.leaf && continue
-            isleaf = true
-            for e in n.edge
-                getchild(e) === n && continue
-                if !e.hybrid
-                    isleaf = false
-                    break
-                end
-            end
-            if isleaf
-                ymax += 1
-            end
-        end
+    else
+        # :majortree or :lsatree: a non-leaf node with no entry in
+        # cladewise_node2children has no major child (or, for :lsatree, no
+        # non-hybrid child): it is treated like a leaf in the traversal below,
+        # so it needs its own slot too.
+        ymax += count(pair -> !pair[2].leaf && !haskey(cladewise_node2children, pair[1]),
+                       enumerate(net.node))
     end
 
-    node_y  = zeros(Float64, net.numnodes) # order: in net.nodes, *!not in vec_node!*
+    node_y  = fill(NaN, net.numnodes) # order: in net.nodes, *!not in vec_node!*
+                                       # NaN: not yet computed (0.0 is a valid y value)
     node_yB = zeros(Float64,net.numnodes) # min (B=begin) and max (E=end)
     node_yE = zeros(Float64,net.numnodes) #   of at children's nodes
     edge_yB = zeros(Float64,net.numedges) # yE of edge = y of child node
@@ -116,7 +111,6 @@ function edgenode_coordinates(
 
     # follow cladewise order along some tree, to set
     # node_y of leaves (in that tree) and edge_y[BE] of minor hybrid edges
-    cladewise_node2children =  prepare_cladewiseorder(net, style)
     leafYcoordinates_cladewiseorder!(
         (node_y, node_yB, node_yE, edge_yB, edge_yE), Ref(ymax), # modified
         cladewise_node2children, net, fulltree)
@@ -647,10 +641,11 @@ function internalYcoordinates!(
         nn = net.vec_node[i]
         nn.leaf && continue
         ni = indexin_net(nn, net)
-        setnode_y = node_y[ni]==0
+        setnode_y = isnan(node_y[ni])
         if setnode_y # otherwise yB/yE already initialized at node_y
             node_yB[ni] = ymax
             node_yE[ni] = ymin
+            node_y[ni]  = 0.0 # reset accumulator (was NaN, the "not yet computed" sentinel)
         end
         minor_yB  = ymax; minor_yE  = ymin;
         nomajorchild = usedirecthybridline # only use this var if using simple hybrid lines
@@ -661,7 +656,7 @@ function internalYcoordinates!(
                         cc = getchild(e)
                         ci = indexin_net(cc, net)
                         cy = node_y[ci]
-                        cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
+                        !isnan(cy) || error("child $(cc.number) has not been visited before node $(nn.number).")
                     end
                     if e.ismajor
                         nomajorchild = false # we found a child edge that is a major edge
@@ -683,7 +678,7 @@ function internalYcoordinates!(
                         ci = indexin_net(cc, net)
                         if setnode_y
                             cy = node_y[ci]
-                            cy != 0 || error("child $(cc.number) has not been visited before node $(nn.number).")
+                            !isnan(cy) || error("child $(cc.number) has not been visited before node $(nn.number).")
                             node_y[ni] += node_w[ci] * cy
                         end
                         node_w[ni] += node_w[ci]
@@ -701,7 +696,7 @@ function internalYcoordinates!(
                 end
             end
         end
-        if nomajorchild # children edges are all minor hybrids
+        if nomajorchild # children edges are all minor hybrids (or none at all)
             if minor_yB == minor_yE # one single child. jitter by 0.1 to make the plot readable
                 minor_yB += (minor_yB < (ymax+ymin)/2 ? 0.1 : -0.1)
                 minor_yE = minor_yB
@@ -711,6 +706,10 @@ function internalYcoordinates!(
             if setnode_y
                 node_y[ni]  = (minor_yB + minor_yE)/2
             end
+            # this node has no major-edge (real-tip) descendants of its own,
+            # but it still occupies one position slot for its ancestors'
+            # weighted averages, exactly like a leaf: weight 1, not 0.
+            node_w[ni] = 1
         elseif setnode_y
             # node_y[ni] = (node_yB[ni]+node_yE[ni])/2 ## v2.1.0 and earlier
             node_y[ni] /= node_w[ni] # weight > 0 necessarily if !nomajorchild
@@ -791,6 +790,7 @@ function setY_reticulatedisplacement!(
         fill!(v, 0.0)
     end
     node_y, node_yB, node_yE, edge_yB, edge_yE = node_edge_y
+    fill!(node_y, NaN) # not yet computed (0.0 is a valid y value)
     nexty[] = ymax
     for (i,nn) in enumerate(net.node) # re-initialize, but there should be a
         nn.leaf && continue # better way bc node_w does not depend on ordering
@@ -901,6 +901,10 @@ function find_optimal_reticulate_ordering!(
         haskey(cladewise_node2children, ni) || continue
         nchildren = length(cladewise_node2children[ni])
         nchildren > 1 || continue
+        if nchildren > 8 
+            @warn "funciton not implemeneted (have to call that function here)"
+            continue
+        end
         copy!(originalchildren, cladewise_node2children[ni])
         copy!(best_children,    cladewise_node2children[ni])
         # exhaustive search

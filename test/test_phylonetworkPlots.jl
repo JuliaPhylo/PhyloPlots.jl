@@ -264,4 +264,27 @@ end # of lsatree style
   end
 end # of reticulate displacement
 
+@testset "find_optimal_reticulate_ordering! improves RD, but is not required to reach the global optimum" begin
+  #
+  # FIXIT:
+  # The globally optimal RD for this network is 3.5, but the current
+  # coordinate-descent algorithm cannot reach it because it only optimizes
+  # one parent's child ordering at a time while keeping all others fixed.
+  # Reaching the global optimum would require considering joint permutations
+  # of multiple parents simultaneously.
+  # Global Optimum:-
+  # net = readnewick("((((A,B),((C)#H1,D)),(E,(F,#H1))),(((I)#H2,J),(G,H,#H2)));")
+  # style = :lsatree
+  # directedges!(net)
+  # preorder!(net)
+  net = readnewick("((((A,B),((C)#H1,D)),(E,(F,#H1))),(((I)#H2,J),(G,H,#H2)));")
+  style = :lsatree
+  # plot(net, style=:lsatree, minimizeRD=false)
+  initial_rd = PhyloPlots.edgenode_coordinates(net, false, style, false, false, true)[end]
+  # plot(net, style=:lsatree, minimizeRD=true)
+  final_rd   = PhyloPlots.edgenode_coordinates(net, false, style, false, true,  true)[end]
+  @test final_rd < initial_rd # strict improvement over the un-optimized ordering
+  @test final_rd ≈ 4.5        # the (non-global) local optimum reached by coordinate descent
+end # of find_optimal_reticulate_ordering! local optimum
+
 end

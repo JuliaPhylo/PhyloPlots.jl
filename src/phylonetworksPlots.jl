@@ -56,8 +56,8 @@ edges corresponds to that in `net.edge` (filtered to minor edges as needed).
 11. `minoredge_yB`: y coordinate for the beginning and ...
 12. `minoredge_yE`: ... end of the diagonal segment of each minor hybrid edge.
 13-16. `xmin`, `xmax`, `ymin`, `ymax`: ranges for the x and y axes.
-17. rdisplacement : reticulate displacement cost, as defined in
-    [Huson (2025)](https://doi.org/10.1371/journal.pcbi.1013805)
+17. rdisplacement : The reticulate displacement cost. 
+    Defined in [Huson (2025)](https://doi.org/10.1371/journal.pcbi.1013805)
 """
 function edgenode_coordinates(
     net::HybridNetwork,
@@ -812,25 +812,21 @@ end
         originalchildren::Vector{Tuple{Int,Bool}},
         costRD!::Function,)
 
-Exhaustive search of the best permutation of `originalchildren` of node `ni`:
-to minimize the cost calculated by `costRD!`, e.g. the
-reticulation displacement by [`setY_reticulatedisplacement!`](@ref).
-This vector of children could initially come from `cladewise_node2children[ni]`.
-- `ni` is the parent node index, in the network's node vector
-- "parent" here is in the traversal tree, which may differ from the major
-  parent in the network. The topology of this traversal tree is encoded in
-  `cladewise_node2children`.
+Exhaustive search over all permutations of `originalchildren` (the children
+of node `ni`, as currently stored in `cladewise_node2children[ni]`): try
+every ordering in turn, overwriting `cladewise_node2children[ni]` with it,
+evaluate its cost by calling `costRD!()`, and keep whichever ordering
+achieves the lowest cost.
 
-Output: nothing.
+Permutations are generated with `Combinatorics.permutations`, an iterator,
+so all `factorial(length(originalchildren))` orderings are never allocated
+at once.
 
-The first 3 arguments are modified in place:
-- `best_rd` stores the best score
-- `best_children` stores the children vector, in the order with the best score
-- `cladewise_node2children[ni]` stores the best children vector, at the end.
-  It is modified in place with candidate vectors, so the `originalchildren`
-  should come from a deep (not shallow) copy.
-
-fixit: why not make `best_rd` a plain number, and return it?
+The first two argument `best_rd, best_children` holds the values modified in
+place:
+- `best_rd` is holding the lowest cost found so far
+  (possibly coming in already set from other nodes);
+- `best_children` holds the children order achieving `best_rd[]`;
 """
 function exhaustive_search_ordering!(
     best_rd::Base.RefValue,
@@ -841,7 +837,6 @@ function exhaustive_search_ordering!(
     costRD!::Function,
 )
     for candidate in Combinatorics.permutations(originalchildren)
-        # lazy iterator: *no* allocation of vector of size factorial(nchildren)
         cladewise_node2children[ni] .= candidate
         rd = costRD!()
         if rd < best_rd[]
@@ -849,8 +844,6 @@ function exhaustive_search_ordering!(
             best_children .= candidate
         end
     end
-    # the last one tried may not be best
-    cladewise_node2children[ni] .= best_children
     return nothing
 end
 
@@ -901,7 +894,7 @@ function find_optimal_reticulate_ordering!(
         haskey(cladewise_node2children, ni) || continue
         nchildren = length(cladewise_node2children[ni])
         nchildren > 1 || continue
-        if nchildren > 8 
+        if nchildren > 8
             @warn "funciton not implemeneted (have to call that function here)"
             continue
         end
